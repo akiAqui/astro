@@ -1,0 +1,255 @@
+---
+title: vite.config.tsについて
+description: vite.config.tsはnpm create vite@latest <project_dir> -- --template vanilla-tsで自動作成されるが内容のカスタマイズのためにその中身を知っておく必要がある。
+---
+# vite.config.tsについて
+
+## 前提
+- Viteは<u>モジュールとして読み込まれたファイルのみ</u>を処理対象とする。
+- vite.config.tsはNode.jsをrun dev, run build両方で読み込まれる
+- vite.config.tsはTypescriptで記述されている
+  - TypeScriptの恩恵を受けるには、モジュールとして読み込む前提がある。viteの方針と一致
+    
+
+## 動き
+- run dev, run buildいずれの場合でもviteは自動的にプロジェクトルートのvite.config.tsを探して読み込む
+- vite.config.tsプロジェクトルートに配置
+  
+### npm run devの場合 
+  1. Viteが起動
+  2. vite.config.tsを読み込み
+  3. 開発サーバーを起動（デフォルトポート: 5173）
+  4. index.htmlを読み込み
+  5. モジュールの依存関係を解析
+  6. 必要に応じてファイルをトランスパイル（TypeScript → JavaScript）
+  7. ブラウザにコードを提供
+  8. ファイル変更を監視（Hot Module Replacement）
+
+### npm run buildの場合
+  1. Viteが起動
+  2. vite.config.tsを読み込み
+  3. TypeScriptのビルド（tsc）を実行
+  4. Rollupによるバンドル処理開始
+     - コードの最適化
+     - チャンク分割
+     - ミニファイ
+  5. distディレクトリに静的ファイルを出力
+  6. 処理終了
+
+### 基本的なvite.config.ts
+```
+   import { defineConfig } from 'vite'
+   export default defineConfig({
+      // 設定オブジェクト
+   })
+```
+
+### vite.config.ts内でのNode.jsの標準モジュールの利用
+
+vite.config.ts内でのNode.jsの標準モジュールを利用するためには、
+
+```bash
+> npm install -D @types/node
+```
+をしないとエラーになる。
+
+- 理由としては、このモジュールはhtml/typescriptの
+クライアントで動作する対象の開発は使われなくても
+開発のビルド時に使われるためである。
+
+- 型定義パッケージはトランスパイルされたJavaScriptで動作する実行環境では不要であるので
+  "-D"でインストールされるべき
+
+```json
+   {
+    "devDependencies": {
+      "@types/node": "^20.0.0"  // -Dありの場合
+　　}
+   }
+```
+
+## 有用なプラグイン
+```typescript
+import fs from 'fs'                         // Node.jsの標準モジュール
+import os from 'os'                         // Node.jsの標準モジュール
+import path from 'path';                    // Node.jsの標準モジュール（パス操作用）
+import vue from '@vitejs/plugin-vue'        // Vueサポート
+import react from '@vitejs/plugin-react'    // Reactサポート
+import legacy from '@vitejs/plugin-legacy'  // 古いブラウザ対応
+import compress from 'vite-plugin-compress' // 圧縮
+```
+
+## パス解決の簡易化
+
+defineConfigのresolvにてaliasを定義することでパスの省略形が使えるようになる
+
+```typescript
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),  // @でsrcディレクトリを参照可能に
+      '@assets': path.resolve(__dirname, './public/assets')  // @assetsでアセットディレクトリを参照可能に
+    }
+  },
+```
+- __dirnameを使えるようにするためにはpathをimportする必要がある
+- path.resolveを使えるようにするためにはpathをimportする必要がある
+
+
+ 変更前
+   import { Scene } from '../../../src/scenes/MainScene'
+   import texture from '../../../public/assets/textures/wall.jpg'
+
+ 変更後
+   import { Scene } from '@/scenes/MainScene'
+   import texture from '@assets/textures/wall.jpg'
+
+
+  
+
+## viteconf.ts
+```typescript
+import { defineConfig } from 'vite';  // Viteの設定を型安全に定義するための関数
+import glsl from 'vite-plugin-glsl';  // GLSLをfileで扱うためのvite plugin,  step.1 まずpluginをimport
+import path from 'path';              // Node.jsの標準モジュール（パス操作用）
+export default defineConfig({
+
+  //
+  // (1) プラグインの設定
+  // GLSLシェーダーファイルを直接importできるようになるため
+  // 以下のような記述が可能になる。
+  //
+  //   import fragmentShader from './shaders/fragment.glsl'
+  //   import vertexShader from './shaders/vertex.vert'
+  //
+  // プラグインがない場合：GLSLファイルは文字列として読み込む必要がある
+
+  plugins: [glsl()],  // step.2 defineConfigの設定でプラグインを有効化
+
+
+
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),  // @でsrcディレクトリを参照可能に
+      '@assets': path.resolve(__dirname, './public/assets')  // @assetsでアセットディレクトリを参照可能に
+    }
+  },
+
+  //
+  // (3) 静的ファイルの設定
+  //
+  //   デフォルトではpublicディレクトリが使用される
+  //   設定を変更することで、異なるディレクトリを指定できるようになる。
+  //   指定しないとpublicが使用されるため、大きな問題は起こらない
+
+  //   publicディレクトリ内のファイルは処理されずにそのままdistディレクトリにコピーされます
+  //   画像、3Dモデル、音声ファイルなどの静的アセットを配置する場所が明確になります
+
+
+  
+  publicDir: 'public',  // 静的ファイルのディレクトリ指定
+
+  
+  build: {
+
+    //
+    // (4) ビルド設定
+    //
+    //    - target: 'esnext': 最新のJavaScript機能が使用可能になります
+    //    - outDir: 'dist': ビルドされたファイルがdistディレクトリに出力されます
+    //    - assetsDir: 'assets': アセットファイルがdist/assetsに配置されます
+    //    - assetsInlineLimit: 4096: 4KB以下の小さいファイルは
+    //      自動的にBase64エンコードされてJavaScriptに埋め込まれます（HTTP要求の削減）
+    //      <img src="./small-icon.png">のようなものが自動的にbase64 encodeで
+    //      <img src="data:image/png;base64,XXXXX...">のように変換されてhttp要求が削減される
+
+    // 最新のJavaScript機能を使用    
+    target: 'esnext',
+
+    // ビルド出力先    
+    outDir: 'dist',
+
+    // アセットファイルの出力先    
+    assetsDir: 'assets',
+
+    // 4KB以下のファイルはインライン化
+    // ファイルサイズがassetsInlineLimit（デフォルト4KB）以下の場合のみ自動変換を行う
+    assetsInlineLimit: 4096,  
+    
+    
+
+
+    rollupOptions: {
+      //
+      // (6) エントリーポイントの設定
+      //
+      //  アプリケーションのエントリーポイントがindex.htmlであることを明示します
+      //  ビルド時にHTMLファイルも最適化の対象となります
+      //
+      //  これらの設定により：
+      //   開発時は効率的なコーディングが可能になります（エイリアス、直接インポート）
+      //   ビルド時は最適化された出力が得られます（コード分割、アセット管理）
+      //   プロダクション環境で高いパフォーマンスが期待できます（キャッシュ制御、ファイルの最適化）
+
+      input: {
+        // エントリーポイント指定
+        // 本来はデフォルトでindex.htmlになっている
+        main: path.resolve(__dirname, 'index.html')
+
+        // 複数エントリポイントも定義可能
+        // 
+      },
+      output: {
+        //
+        // (5) rollup optionの設定
+        //
+        // Three.jsとCsoundのコードが別々のファイルに分割されます
+        // dist/
+        // ├── index.html
+        // ├── assets/
+        // └── js/
+        //     ├── main.[hash].js      // メインのアプリケーションコード
+        //     ├── three.[hash].js     // Three.js関連のコード
+        //     └── csound.[hash].js    // Csound関連のコード
+        //
+        // この設定により、コードが分割され、変更がない部分（例：ライブラリ）は同じハッシュ値を保持する
+        // ブラウザは変更されていないファイルを再ダウンロードせず、キャッシュを使用します。
+        //
+        // よって下記の効果が期待されます
+        // 
+        //  - ブラウザのキャッシュが効率的に機能します
+        //  - 必要なコードのみを必要なタイミングで読み込めます
+        
+        manualChunks: {
+
+          // 
+          // コードの分割設定
+          //
+          // チャンクとは、出力される個別のJavaScriptファイルのことです
+          // これにより
+          // 必要なコードのみを必要なタイミングで読み込める
+          // パラレルダウンロードが可能
+          // 効率的なキャッシュ利用
+
+          // ライブラリのコードが変更されない限り、このハッシュ値は変わりません
+          // ハッシュ値が変わればまた読み込まれる
+          //
+          // 開発時
+          //   チャンク分割は行われるが、ハッシュ値は付与されない
+          // 本番環境
+          //   静的なファイルとして出力され、チャンク分割され、ハッシュ値が付与され、distに配備
+          //   このdistディレクトリの内容をそのままデプロイすることで
+          //      - 本番環境でもチャンク分割が維持される
+          //      - ブラウザのキャッシュが効率的に機能する
+          //      - 必要なコードのみを必要なタイミングで読み込める
+
+
+
+          three: ['three'],          // Three.jsを別チャンクに
+          csound: ['@csound/browser']  // Csoundを別チャンクに
+        }
+      }
+    }
+  }
+});
+
+```

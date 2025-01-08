@@ -1,0 +1,188 @@
+---
+title: (*)四元数とデュアルクォータニオン
+description: 四元数（クォータニオン）と平行移動まで含めた拡張をデュエルクオータニオンでカバーする
+layout: '../../../layouts/BaseLayout.astro'
+---
+## 四元数を使った線形変換
+線形変換を行列形式ではなく、四元数を用いて表現することで、回転をより効率的かつ安定的に扱うことができます。
+しかし注意が必要ですが、四元数では回転しか扱えないためその概念の拡張が必要になる。
+
+### 四元数の基本
+
+四元数を用いた回転変換は
+
+$$
+ \mathbf{q} = w + xi + yj + zk
+$$
+
+ここで：
+- $w$: スカラー成分
+- $x, y, z$: ベクトル成分
+- $i, j, k$: 四元数の単位ベクトル
+- $ i^2=j^2=k^2=ijk=-1$
+- $ij=+k, jk=+i, ki=+j$
+- $ji=-k, kj=-i, ik=-j$
+
+### 四元数の共役
+- $\mathbf{q}$の共役は
+  - $\bar{\mathbf{q}}$とも表記する
+  - $\overline{\mathbf{q}}$とも表記する
+  - $\mathbf{q}^*$とも表記する(デュアルクォータニオンを利用した場合）
+- 虚数成分の符号を反転させたもの
+- 幾何学的には回転を元に戻すことに相当
+
+$$
+ \bar{\mathbf{q}} = w -xi -yj -zk
+$$
+
+### 四元数のノルム
+
+- $\mathbf{q}$のノルムは$\|\mathbf{q}\|$と表記される
+
+
+$$
+\|\mathbf{q}\| = \sqrt{w^2+x^2+y^2+z^2}
+$$
+
+### 四元数の逆元
+- $\mathbf{q}$の逆数(逆元)は$\mathbf{q}^{-1}$と表記される
+- お互いをかけると１ ($1+0i+0j+0k$)になるもの（逆行列みたいなもの）
+
+$$
+  \mathbf{q}^{-1} = \frac{\bar{\mathbf{q}}}{\|\mathbf{q}\|}
+$$
+
+### 積の共役
+$$
+ \overline{ \mathbf{q_1} \cdot \mathbf{q_2} } = \bar{\mathbf{q_1}} \cdot \bar{\mathbf{q_2}}
+$$
+
+### 四元数の逆元
+
+四元数 $\mathbf{q} = w + xi + yj + zk$ の逆元 $\mathbf{q}^{-1}$ は、以下の式で計算されます：
+
+$$
+\mathbf{q}^{-1} = \frac{\bar{\mathbf{q}}}{\|\mathbf{q}\|^2}
+$$
+
+ここで：
+- $\bar{\mathbf{q}}$: 共役四元数で、$\bar{\mathbf{q}} = w - xi - yj - zk$
+- $\|\mathbf{q}\|^2$: 四元数のノルムの二乗で、$\|\mathbf{q}\|^2 = w^2 + x^2 + y^2 + z^2$
+
+
+### デュアルクォータニオン：四元数の拡張と空間変換
+
+
+
+
+
+### 四元数による回転
+
+任意のベクトル $\mathbf{v} = (x, y, z)$ に対して、四元数回転を適用する場合：
+
+$$
+\mathbf{v}' = \mathbf{q} \mathbf{v} \mathbf{q}^{-1}
+$$
+
+- $\mathbf{q}$: 回転を表す四元数
+- $\mathbf{q}^{-1}$: 四元数 $\mathbf{q}$ の逆元
+
+### 四元数による平行移動
+
+四元数では直接平行移動を表現できないため、回転と平行移動を統合する場合、以下の形式を使用します：
+
+$$
+T(\mathbf{v}) = \mathbf{q} \mathbf{v} \mathbf{q}^{-1} + \mathbf{t}
+$$
+
+ここで：
+- $T$: 変換全体
+- $\mathbf{t}$: 平行移動ベクトル
+
+## 四元数を使った計算の具体例
+### 具体例(1)
+対象の図形を以下の要領で移動させることを考える
+- 世界座標点 $(1, 1)$ を中心に $\pi/2$ 回転
+- ローカル座標での移動ベクトル $(2, 0)$
+
+二次元の時には 四元数は右手系座標系で考えるため、二次元の場合はz軸を除くｘ、ｙ軸の平面で考えるため、回転軸はz軸方向となる
+
+#### 詳細計算
+四元数 $\mathbf{q} = w + xi + yj + zk$ でz軸周りに$\theta$だけ回転するときはの$x, y, z$は
+回転軸の方向ベクトル $u = (u_x, u_y, u_z)$を用いて以下のようにあらわされる
+
+- $w = \cos(\theta/2)$
+- $x = \sin(\theta/2) \cdot u_x$
+- $y = \sin(\theta/2) \cdot u_y$
+- $z = \sin(\theta/2) \cdot u_z$
+  - $\theta$はz軸方向を軸とした回転角
+
+回転軸の方向ベクトルは二次元の場合は
+- $u_x=0$
+- $u_y=0$
+- $u_z=1$
+
+$z$ 成分だけに依存し、四元数は
+
+$$
+q = \cos(\theta/2) + \sin(\theta/2) \cdot k
+$$
+
+となる。
+
+$\theta=\pi/2$の場合の$\mathbf{q}\mathbf{v}\mathbf{q}^{-1}$ の計算を行う。
+
+$$
+\begin{aligned}
+   \mathbf{q}
+   &= \cos(\pi/4) + \sin(\pi/4)j \\
+   &= \frac{\sqrt{2}}{2} + \frac{\sqrt{2}}{2}j
+\end{aligned}              
+$$
+
+$$
+ \begin{aligned}
+ \bar{\mathbf{q}} =
+ \end{aligned}
+$$
+
+四元数の逆元 $\mathbf{q}^{-1}$は定義に基づき
+
+$$
+ \begin{aligned}   
+   \mathbf{q}^{-1} &= \frac{\bar{\mathbf{q}}}{\|\mathbf{q}\|^2}\\
+                   &= \frac{\frac{\sqrt{2}}{2} - \frac{\sqrt{2}}{2}j}{1}\\
+                   &= \frac{\sqrt{2}}{2} - \frac{\sqrt{2}}{2}j
+ \end{aligned}         
+$$
+
+ベクトル $\mathbf{v} = (2, 0, 0)$ を四元数形式に変換
+   $$
+   \mathbf{v} = 0 + 2i + 0j + 0k
+   $$
+
+
+
+$$
+ \begin{aligned}   
+   \mathbf{q}\mathbf{v} &= \frac{\sqrt{2}}{2}  + \frac{\sqrt{2}}{2}j\\
+                        &= 0 + 2j   
+ \end{aligned}      
+   $$
+
+
+
+
+   次に：
+   $$
+   (\mathbf{q}\mathbf{v})\mathbf{q}^{-1} = \left(0 + 2j\right)\left(\frac{\sqrt{2}}{2} - \frac{\sqrt{2}}{2}j\right)
+   $$
+   計算結果：
+   $$
+   \mathbf{v}' = 0 + 0i + 2j + 0k = (0, 2)
+   $$
+
+## Three.jsにおけるクォータニオン、デュアルクオータニオン
+
+### THREE.Quaternionクラス
+

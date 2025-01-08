@@ -1,0 +1,214 @@
+---
+title: Three.jsアニメーションの方式比較
+description: 外部ライブラリを使う場合やshaderを使う手法などを網羅
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+
+|手法|性能|利点|欠点|使用例|制約|
+|----|----|----|----|------|----|
+|シェーダーベース|4|GPU利用で高性能|Gデバッグが複雑|粒子、波、プロシージャルアニメーション|GPUが必要|
+|AnimationMixer|3|スケルトンリグを用いた複雑な3Dモデルのアニメーションに最適|スケルトンアニメーションのみに特化|ヒューマノイドなどのアニメーション|事前にリグが設定されたモデルが必要で|
+|requestAnimationFrame|3|シンプルでネイティブ|高頻度の更新には向いていない場合がある|回転や移動などの基本的なオブジェクト変換|時間と補間の手動設定が必要|
+|GSAP(外部ライブラリ)|3|高度なイージングとタイムライン管理を提供|シンプルなタスクにはオーバーヘッドが発生する可能性がある|カスタマイズされた同期UIアニメーション|パッケージ依存性の管理|
+|Clock利用|3|時間に基づく正確な更新が可能|複雑な効果には手動計算が必要|光の点滅や徐々に変化する変形などの時間制御されたエフェクト|外部クロックや手動同期が必要|
+|Popmotion|3|シンプルなAPIで物理ベースのアニメーションやタイムラインの管理が可能|Three.jsとの統合には手動での設定が必要|物理ベースのアニメーションやThree.jsオブジェクトのタイムライン制御|物理ベースの効果には調整が必要で、学習コストがある|
+|Anime.js|3|CSSプロパティやThree.jsのオブジェクトに柔軟に対応可能|高度なアニメーションでは手動での細かい設定が必要になる場合がある|Three.jsオブジェクトの基本的なプロパティ（位置、回転、スケール）のアニメーション|インタラクティブ性の高いシーンでは手動での制御が必要になることがある|
+|Velocity.js|3|CSSスタイルに近い操作でThree.jsオブジェクトを簡単にアニメーション化|大量のアニメーションを扱う場合にパフォーマンスが低下することがある|Three.jsのプロパティを時間に応じてスムーズに変化させる簡単なアニメーション|高度なアニメーション効果を追加する際にはスクリプトの複雑さが増す|
+|Ammo.js|4|高度な物理シミュレーションが可能、BulletPhysicsエンジンの移植版|設定が複雑、学習コストが高い|高度な物理シミュレーション（剛体、柔軟体、車両など）|大規模なシミュレーションではパフォーマンスが低下する場合がある|
+|Cannon.js|3|軽量でシンプルなAPIを持ち、Three.jsとの統合が容易|高度なシミュレーションには対応していない|シンプルな剛体物理シミュレーション|一部の物理機能が制限されている|
+|Oimo.js|3|リアルタイムの物理シミュレーションに適し、高いパフォーマンスを発揮|サポートされている機能が限定的、複雑なシミュレーションには不向き|軽量なリアルタイムシミュレーション|物理演算の複雑さに限界あり |
+
+
+### アニメーション関連のライブラリ(javascript)
+
+| ライブラリ | Three.jsとの適用範囲 | 使用適性 |
+|------------|----------------------|----------|
+|Anime.js|Three.jsオブジェクトのアニメーションが可能|高い|
+|Velocity.js|プロパティ操作でThree.jsと連携可能|高い|
+|Popmotion|タイムラインや物理ベースアニメーションが可能|高い|
+|Motion|DOMトリガーでThree.jsを制御可能|中程度|
+|Lottie|主にUIや背景エフェクトとして間接的に活用|限定的|
+
+#### Velocity.js
+```javascript
+
+```
+#### GSAP.js
+```javascript
+gsap.to(mesh.position, { x: 5, duration: 2, ease: "power1.inOut" });
+```
+#### Three.js内のclockを利用
+```javascript
+const clock = new THREE.Clock();
+function animate() {
+    const delta = clock.getDelta(); // 経過時間
+    mesh.rotation.x += delta;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+animate();
+```
+
+#### Three.jsのanimationMixer()
+```javascript
+const mixer = new THREE.AnimationMixer(model);
+const action = mixer.clipAction(animationClip);
+action.play();
+function animate() {
+    const delta = clock.getDelta();
+    mixer.update(delta);
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+animate();
+```
+
+#### Three.jsのKeyframeとAnimationClipを利用
+```javascript
+const positionTrack = new THREE.VectorKeyframeTrack('.position', [0, 1, 2], [0, 0, 0, 1, 1, 1, 2, 2, 2]);
+const clip = new THREE.AnimationClip('move', -1, [positionTrack]);
+const mixer = new THREE.AnimationMixer(mesh);
+const action = mixer.clipAction(clip);
+action.play();
+```
+
+#### Velocity.js
+```javascript
+
+```
+
+
+#### Oimo.js
+
+
+
+```javascript
+// 床
+const floorGeometry = new THREE.BoxGeometry(10, 1, 10);
+const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+floorMesh.position.y = -1;
+scene.add(floorMesh);
+
+// ボックス
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+boxMesh.position.y = 5;
+scene.add(boxMesh);
+
+// Oimo.jsのセットアップ
+const world = new OIMO.World({ timestep: 1 / 60 });  //シミュレーション時の時間刻みを設定
+
+// 重力の設定
+world.setGravity([0, -9.8, 0]);  //重力加速度を設定
+
+// 床の物理オブジェクト
+const floorBody = world.add({
+    type: "box",　　　　// バウンダリーボックスの形状種類
+    size: [10, 1, 10],  // バウンダリーボックスのサイズ
+    pos: [0, -1, 0],    // バウンダリーボックスの位置
+    rot: [0, 0, 0],     // バウンダリーボックスの回転
+    move: false,        // 動かないオブジェクトとして設定
+});
+
+// ボックスの物理オブジェクト
+const boxBody = world.add({
+    type: "box",
+    size: [1, 1, 1],
+    pos: [0, 5, 0],
+    rot: [0, 0, 0],
+    move: true,         // 動くオブジェクトとして設定
+});
+
+// 初速度を設定
+boxBody.setLinearVelocity([2, 0, 0]); // X方向に初速度を与える
+
+// アニメーションループ
+function animate() {
+    requestAnimationFrame(animate);
+
+    //数値積分を用いて、運動方程式を解いて物理シミュレーションの更新
+    world.step();
+
+    // Three.jsのメッシュ位置をOimo.jsのボディに同期
+    boxMesh.position.copy(boxBody.getPosition());
+    boxMesh.quaternion.copy(boxBody.getQuaternion());
+
+    renderer.render(scene, camera);
+}
+animate();
+
+
+
+// Oimo.jsのセットアップ
+const world = new OIMO.World({ timestep: 1 / 60 });
+const floorBody = world.add({
+    type: "sphere"       // バウンダリーボックスの形状種類
+    size: [10],          // バウンダリーボックスのサイズ
+    pos: [0, -1, 0],     // バウンダリーボックスの位置
+    restitution: 0.8,    // 反発係数
+    friction: 0.5,       // 摩擦係数    
+    move: false,         // 
+});
+const boxBody = world.add({
+    type: "box",       // バウンダリーボックスの形状を設定している
+    size: [1, 1, 1],
+    pos: [0, 2, 0],
+    rot: [0, 0, 0],
+    move: true,
+});
+
+// アニメーションループ
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // 物理シミュレーションの更新
+    world.step();
+    
+    // Three.jsのメッシュ位置をOimo.jsのボディに同期
+    boxMesh.position.copy(boxBody.getPosition());
+    boxMesh.quaternion.copy(boxBody.getQuaternion());
+    
+    renderer.render(scene, camera);
+}
+animate();
+```
+
+#### Velocity.js
+```javascript
+
+```
+
+
+
+#### requestAnimationFrame
+```javascript
+function animate() {
+    requestAnimationFrame(animate);
+    mesh.rotation.x += 0.01; // 回転の更新
+    renderer.render(scene, camera);
+}
+animate();
+```
+#### popmotion
+```javascript
+import { animate } from 'popmotion';
+
+animate({
+    from: 0,
+    to: Math.PI,
+    onUpdate: (value) => {
+        mesh.rotation.y = value;
+    },
+});
+```
+
+```javascript
+
+```

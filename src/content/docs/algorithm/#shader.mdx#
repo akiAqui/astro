@@ -1,0 +1,136 @@
+---
+title: (*)shaderコード
+description: THREE.Pointsを利用して、パーティクルを円形に見せる方法を検討する
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+
+## glsl/shaderコードの基本
+-  全頂点やピクセルは「独立したタスク」として扱われ、それぞれにシェーダーコードが適用される
+
+### 頂点シェーダー:
+  - モデルの各頂点ごとに個別に実行される。
+  - 頂点数が100個あれば、シェーダーは各頂点に対して並列に処理を行う。
+
+### フラグメントシェーダー:
+  - 各ピクセル（フラグメント)ごとに個別に実行される。
+  - 描画対象の解像度が1920x1080であれば、約200万個のフラグメントごとに処理が並列に行われる
+  - GPUは「大量のデータ（頂点やピクセル)」を同時に処理するよう設計されている
+
+
+
+
+## アルファ・カット
+- パーティクルシステムにシェイダーのコードで円形にアルファカットする方法を例にとる
+
+フラグメントシェーダーコード
+```glsl
+void main() {
+    vec2 coord = gl_PointCoord * 2.0 - 1.0;
+    if (length(coord) > 1.0) {
+        discard; // 四角形の外周をカットして丸にする
+    }
+}
+```
+
+### gl_PointCoord
+- gl_PointCoordは、パーティクルシステム(THREE.Points)を描画する際に自動的に有効になる組み込み変数
+- メッシュ(THREE.Mesh)やスプライト(THREE.Sprite)では利用できない
+  - UVマッピングやカスタム計算を使って座標を取得し、同様の処理を行う必要がある
+- 値の範囲は[0.0, 1.0]で、テクスチャ内の2次元位置を表す
+- gl_PointCoordで四角形の外周を透明化(discard)する処理がこのコードの核心部分
+- vec2 coordは中心((0, 0))からの相対座標
+
+
+## アルファカット＋変色
+
+パーティクルシステムの円形処理と色を白色を基本に若干の灰色のノイズを加えたコード
+
+``` glsl
+precision highp float;
+
+// ユーザー指定のuniform
+uniform float time; // 時間によるノイズの変化
+uniform vec2 resolution; // 解像度
+
+// GLSLノイズ関数
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+void main() {
+
+    // パーティクルシステム内の位置を取得
+    vec2 coord = gl_PointCoord * 2.0 - 1.0; // [-1, 1] の範囲に正規化
+    float dist = length(coord); // 中心からの距離
+
+    // 円形外の破棄
+    if (dist > 1.0) {
+        discard; // 四角形の外周をカット
+    }
+
+    // ノイズ生成
+    float noise = random(coord + time); // 時間で変化するノイズ
+
+    // 基本色(白色)とノイズによるグレーの混合
+    vec3 baseColor = vec3(1.0); // 白色
+    vec3 grayNoise = vec3(0.9) * noise; // ノイズで灰色を追加
+    vec3 finalColor = mix(baseColor, grayNoise, 0.2); // 白色にノイズを20%加える
+
+    // フラグメントカラーの設定
+    gl_FragColor = vec4(finalColor, 1.0); // 完全不透明
+}
+
+```
+
+
+
+ポイントサイズ(gl_PointSize)
+頂点シェーダーで gl_PointSize を設定することにより、パーティクルシステムの各ポイントのサイズを制御します。
+他の描画プリミティブ(例: 三角形メッシュ)ではこの変数は無効です。
+
+
+## uniform
+- javascript/shaderコード間でのデータのやり取り
+- すべての頂点シェーダーとフラグメントシェーダーで同一の値が共有される
+- 一度設定すれば、レンダリング中は変わらない（シェーダーの1実行周期内で固定）
+
+### 利用例
+- 点群かメッシュかを切り替えるフラグ（isPoints）。
+- 光源の位置や強度を設定する値。
+- 各フラグメントや頂点に個別の値を渡すよりも効率的です（それには attribute を使う必要がある）。
+
+
+### 利用方法
+
+#### shaderコード側
+```glsl
+uniform int isPoints; // CPUから渡される値
+```
+
+#### javascript側
+```javascript
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        isPoints: { value: 1 }, // uniform変数に渡す値
+    },
+    vertexShader: `...`,
+    fragmentShader: `...`,
+});
+```
+
+#### uniform の型
+
+``` text
+GLSL型	JavaScriptの値
+int	{ value: 1 }
+float	{ value: 1.0 }
+vec2	{ value: new THREE.Vector2(x, y) }
+vec3	{ value: new THREE.Vector3(x, y, z) }
+sampler2D	{ value: texture }
+```
+

@@ -1,0 +1,222 @@
+---
+title: (*)dual quaternionクラス
+description: 簡単なのをつくってみよ
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+
+
+```typescript
+# DualQuaternion クラス仕様書
+
+## ファイル: `three-quaternion.js`
+
+
+export class DualQuaternion {
+  /**
+   * デュアルクォータニオンの実部を表す。THREE.Quaternionとして表現される。
+   */
+  real: THREE.Quaternion;
+
+  /**
+   * デュアルクォータニオンのデュアル部を表す。THREE.Quaternionとして表現される。
+   */
+  dual: THREE.Quaternion;
+
+  /**
+   * コンストラクタ: 新しいDualQuaternionを初期化する。
+   * @param real - 実部のクォータニオン。
+   * @param dual - デュアル部のクォータニオン。
+   */
+  constructor(real?: THREE.Quaternion, dual?: THREE.Quaternion);
+
+  /**
+   * 実部とデュアル部を設定する。
+   * @param real - 実部のクォータニオン。
+   * @param dual - デュアル部のクォータニオン。
+   * @returns 現在のインスタンス。
+   */
+  set(real: THREE.Quaternion, dual: THREE.Quaternion): this;
+
+  /**
+   * このデュアルクォータニオンに別のデュアルクォータニオンを掛ける。
+   * @param dq - 掛け算対象のデュアルクォータニオン。
+   * @returns 現在のインスタンス。
+   */
+  multiply(dq: DualQuaternion): this;
+
+  /**
+   * デュアルクォータニオンを正規化する。
+   * @returns 現在のインスタンス。
+   */
+  normalize(): this;
+
+  /**
+   * 別のデュアルクォータニオンの値をコピーする。
+   * @param dq - コピー元のデュアルクォータニオン。
+   * @returns 現在のインスタンス。
+   */
+  copy(dq: DualQuaternion): this;
+
+  /**
+   * このデュアルクォータニオンを複製する。
+   * @returns 同じ値を持つ新しいDualQuaternionインスタンス。
+   */
+  clone(): DualQuaternion;
+
+  /**
+   * このデュアルクォータニオンが別のものと等しいか確認する。
+   * @param dq - 比較対象のデュアルクォータニオン。
+   * @returns 等しい場合はtrue、そうでなければfalse。
+   */
+  equals(dq: DualQuaternion): boolean;
+
+  /**
+   * このデュアルクォータニオンを使用してポイントを変換する。
+   * @param point - 変換対象のTHREE.Vector3。
+   * @returns 変換されたポイント。
+   */
+  transformPoint(point: THREE.Vector3): THREE.Vector3; //追記
+
+  /**
+   * このデュアルクォータニオンの共役を計算する。
+   * @returns 現在のインスタンス。
+   */
+  conjugate(): this; //追記
+
+  /**
+   * 2つのデュアルクォータニオンを補間する。
+   * @param dq - 補間対象のデュアルクォータニオン。
+   * @param t - 補間係数 (0.0 から 1.0)。
+   * @returns 補間されたデュアルクォータニオン。
+   */
+  slerp(dq: DualQuaternion, t: number): this; //追記
+
+  /**
+   * 平行移動と回転からデュアルクォータニオンを設定する。
+   * @param translation - 平行移動を表すTHREE.Vector3。
+   * @param rotation - 回転を表すTHREE.Quaternion。
+   * @returns 現在のインスタンス。
+   */
+  fromTranslationRotation(translation: THREE.Vector3, rotation: THREE.Quaternion): this; //追記
+
+  /**
+   * このデュアルクォータニオンから平行移動と回転を抽出する。
+   * @param translation - 出力先の平行移動ベクトル。
+   * @param rotation - 出力先の回転クォータニオン。
+   * @returns 現在のインスタンス。
+   */
+  toTranslationRotation(translation: THREE.Vector3, rotation: THREE.Quaternion): this; //追記
+}
+```
+
+
+
+``` typescript
+# DualQuaternion Class Specification
+
+## File: `three-quaternion.js`
+
+export class DualQuaternion {
+  /**
+   * Real part of the dual quaternion, represented as a THREE.Quaternion
+   */
+  real: THREE.Quaternion;
+
+  /**
+   * Dual part of the dual quaternion, represented as a THREE.Quaternion
+   */
+  dual: THREE.Quaternion;
+
+  /**
+   * Constructor: Initializes a new DualQuaternion.
+   * @param real - The real quaternion part.
+   * @param dual - The dual quaternion part.
+   */
+  constructor(real?: THREE.Quaternion, dual?: THREE.Quaternion);
+
+  /**
+   * Sets the real and dual components of the dual quaternion.
+   * @param real - The real quaternion part.
+   * @param dual - The dual quaternion part.
+   * @returns The current instance.
+   */
+  set(real: THREE.Quaternion, dual: THREE.Quaternion): this;
+
+  /**
+   * Multiplies this dual quaternion by another.
+   * @param dq - The dual quaternion to multiply with.
+   * @returns The current instance.
+   */
+  multiply(dq: DualQuaternion): this;
+
+  /**
+   * Normalizes the dual quaternion.
+   * @returns The current instance.
+   */
+  normalize(): this;
+
+  /**
+   * Copies the values from another dual quaternion.
+   * @param dq - The dual quaternion to copy from.
+   * @returns The current instance.
+   */
+  copy(dq: DualQuaternion): this;
+
+  /**
+   * Clones this dual quaternion.
+   * @returns A new DualQuaternion instance with the same values.
+   */
+  clone(): DualQuaternion;
+
+  /**
+   * Checks if this dual quaternion equals another.
+   * @param dq - The dual quaternion to compare with.
+   * @returns True if equal, false otherwise.
+   */
+  equals(dq: DualQuaternion): boolean;
+
+  /**
+   * Transforms a point using this dual quaternion.
+   * @param point - The THREE.Vector3 to transform.
+   * @returns The transformed point.
+   */
+  transformPoint(point: THREE.Vector3): THREE.Vector3; //追記
+
+  /**
+   * Calculates the conjugate of this dual quaternion.
+   * @returns The current instance.
+   */
+  conjugate(): this; //追記
+
+  /**
+   * Interpolates between two dual quaternions.
+   * @param dq - The target dual quaternion.
+   * @param t - The interpolation factor (0.0 to 1.0).
+   * @returns The interpolated dual quaternion.
+   */
+  slerp(dq: DualQuaternion, t: number): this; //追記
+
+  /**
+   * Sets this dual quaternion from a translation and rotation.
+   * @param translation - A THREE.Vector3 representing the translation.
+   * @param rotation - A THREE.Quaternion representing the rotation.
+   * @returns The current instance.
+   */
+  fromTranslationRotation(translation: THREE.Vector3, rotation: THREE.Quaternion): this; //追記
+
+  /**
+   * Extracts the translation and rotation from this dual quaternion.
+   * @param translation - The output translation vector.
+   * @param rotation - The output rotation quaternion.
+   * @returns The current instance.
+   */
+  toTranslationRotation(translation: THREE.Vector3, rotation: THREE.Quaternion): this; //追記
+}
+
+
+```
