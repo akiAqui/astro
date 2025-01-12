@@ -1,0 +1,101 @@
+---
+title: Textureの詳細、
+description: UV座標、繰り返し、クランプの方法
+layout: '../../../layouts/BaseLayout.astro'
+---
+<style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+<div style={{backgroundColor: 'violet', padding: '1rem'}}>
+  Try and change the background color to `tomato`.
+</div>
+{(function () {
+  const guess = Math.random()
+
+  if (guess > 0.66) {
+    return <span style={{color: 'tomato'}}>Look at us.</span>
+  }
+
+  if (guess > 0.33) {
+    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
+  }
+
+  return <span style={{color: 'goldenrod'}}>Not me.</span>
+})()}
+
+{2+232323}
+
+# Geometryクラスに関連するものとテクスチャへの影響
+
+<iframe 
+  src='/html/texture.html' 
+  style={{ height: '300px', width: '100%' }}
+/>
+
+
+
+
+
+export const Red = ({ message, children, className }) => {
+  return (
+    <div className={className}>
+      <span style={{ color: 'red' }}>{message}</span>
+      <span>{children}</span>
+    </div>
+  );
+};
+import {Blue} from '../../../components/Blue';
+
+<Red message='メッセージ'>umamama</Red>
+<Blue message='メッセージ'>nekonekone</Blue>
+
+## 1. attributes.uv
+- UV座標を定義し、テクスチャの貼り付け位置やスケールを制御。
+- UV座標が `[0, 1]` 範囲外の場合、`Texture` クラスの設定（`wrapS` や `wrapT`）によって以下の挙動が発生:
+  - 例1: 繰り返し (`THREE.RepeatWrapping`)  
+    - UVが `1.5` の場合、テクスチャが繰り返され、50%の位置に再描画。
+  - 例2: クランプ (`THREE.ClampToEdgeWrapping`)  
+    - UVが `1.5` の場合、テクスチャの端（右端や上端）の色が引き伸ばされる。
+- `Texture.repeat` の設定と連動し、UV範囲が `[0, repeat]` のスケールで計算される。
+
+## 2. deleteAttribute('uv')
+- UV座標を削除して、テクスチャマッピングを無効化。
+- 削除すると、ジオメトリのテクスチャは適用されず、マテリアルの色のみが描画される。
+
+## 3. attributes.position
+- 頂点の位置情報に基づき、テクスチャが形状に対応して配置される。
+
+---
+
+# Textureクラスに関連するものとテクスチャへの影響
+
+## 1. repeat
+- UV座標が `[0, 1]` の範囲を拡大または縮小。
+- 例: `repeat.set(2, 2)` の場合、テクスチャが2回繰り返され、UV範囲 `[0, 2]` に対応。
+
+## 2. offset
+- UV座標をシフトして、テクスチャの配置を調整。
+- 例: `offset.set(0.5, 0)` ならテクスチャが右に50%移動。
+
+## 3. wrapS / wrapT
+- UV座標が `[0, 1]` を超える場合の挙動を制御。
+  - 繰り返し: テクスチャがリピート（`RepeatWrapping`）。
+  - クランプ: UV範囲外をテクスチャの端の色で埋める（`ClampToEdgeWrapping`）。
+  - ミラー: UV範囲外でテクスチャを反転繰り返し（`MirroredRepeatWrapping`）。
+
+## 4. rotation
+- UV空間内でテクスチャを回転。
+
+## 5. center
+- 回転の基準点を設定し、スケールや回転時の中心を調整可能。
+
+
+
+import Mermaid from '../../../components/Mermaid.astro';
+
+<Mermaid>
+flowchart LR
+A --> B
+</Mermaid>

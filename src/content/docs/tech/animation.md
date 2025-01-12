@@ -1,5 +1,5 @@
 ---
-title: Three.jsアニメーションの方式比較
+title: (*)Three.jsアニメーションの方式比較
 description: 外部ライブラリを使う場合やshaderを使う手法などを網羅
 layout: '../../../layouts/BaseLayout.astro'
 ---

@@ -1,0 +1,669 @@
+---
+title: (r)補間法
+description: hermite, linear, 
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  30px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+
+# 補間法
+
+補間法というのは基本的に全ての点を通る関数を得ることである。
+何次の導関数まで滑らかにつなげるかは各補間の方式で異なる。
+また、最小二乗法などの近似法という類似の概念は、
+与えられた点を通るとは限らず、トレンドを表現する方法。
+
+
+## 比較表
+
+| 手法        | 特徴                                                  | 導関数の連続性                            |
+|-------------|-------------------------------------------------------|-------------------------------------------|
+| スプライン  | 三次のスプライン多項式を利用                          | 1,2次導関数が連続                         |
+| エルミート  | エルミート多項式を基底に利用                          | 1次導関数が連続                           |
+| ラグランジュ| 複数の補間点で単一の関数を定義。条件により端点が振動  | 一つのN次補間関数なので微分可能           |
+| 双曲線      | 2点間の双曲線は一意に定まらない                       | すべての導関数が連続（極を含まない区間で）|
+| 線形        | 2点間を直線で結ぶ　　　　　                      　　 | 非連続                                    |
+
+
+
+## 1. エルミート補間
+エルミート多項式の基底関数を利用して補間関数を見出す。
+一つの補完する区間で2点 $(x_0, y_0)$, $(x_1, y_1)$ と導関数 $ y_0', y_1' $ を初期条件とする。
+エルミート補間はラグランジュ補間の拡張であり、導関数の情報を加味することで、補間精度や滑らかさを向上させる。ラグランジュ補間は、導関数情報がない場合の特別なケースと見なせる。
+
+- 単一区間を見たときに$ (x_0, y_0), (x_1, y_1) $
+- 及び補間点の一次微分の値は: $ y_0' = 0, \, y_1' = 0 $
+
+
+補間関数：
+$$
+H(x) = h_0(t)y_0 + h_1(t)y_1 + h_2(t)y_0' + h_3(t)y_1'
+$$
+基底関数：
+$$
+h_0(t) = 1 - 3t^2 + 2t^3, \quad h_1(t) = 3t^2 - 2t^3, \quad h_2(t) = t - 2t^2 + t^3, \quad h_3(t) = -t^2 + t^3
+$$
+ここで、
+$$
+  t = \frac{x - x_0}{x_1 - x_0}
+$$
+
+### 計算例
+
+点 (1, 2), (2, 3), (3, 5)の３点を例にとる
+
+(1,2),(2,3)間の補間関数は
+
+1. $ t = \frac{x - 1}{2 - 1} = x - 1 $
+2. 導関数が $ y_0' = y_1' = 0 $ なので、補間式は次に簡略化：
+   $$
+   H(x) = h_0(t)y_0 + h_1(t)y_1
+   $$
+3. $ h_0(t) = 1 - 3t^2 + 2t^3, \, h_1(t) = 3t^2 - 2t^3 $
+   を代入し、以下を得る
+   $$
+   \begin{align*}
+   H(x) & = (1 - 3(x-1)^2 + 2(x-1)^3) \cdot 2 + (3(x-1)^2 - 2(x-1)^3) \cdot 3\\
+        & = - 2 x^3 + 9 x^2 - 12 x + 7 
+   \end{align*}
+   $$
+
+(2,3),(3,5)間の補間関数は
+
+1. $ t = \frac{x - 2}{3 - 2} = x - 2 $
+2. 導関数が $ y_0' = y_1' = 0 $ なので、補間式は次に簡略化：
+   $$
+   H(x) = h_0(t)y_0 + h_1(t)y_1
+   $$
+3. $ h_0(t) = 1 - 3t^2 + 2t^3, \, h_1(t) = 3t^2 - 2t^3 $
+   を代入し、以下を得る
+   $$
+   \begin{align*}
+   H(x) & = (1 - 3(x-2)^2 + 2(x-2)^3) \cdot 3 + (3(x-2)^2 - 2(x-2)^3) \cdot 5\\
+        & = - 4 x^3 + 30 x^2  - 72 x + 59 
+   \end{align*}
+   $$
+
+よって、
+$$
+   \begin{align*}
+     y & = - 2 x^3 + 9 x^2 - 12 x + 7    & \left[ (1,2)-(2,3) \right]\\
+     y & = - 4 x^3 + 30 x^2  - 72 x + 59 & \left[ (2,3)-(3,5) \right]
+   \end{align*}     
+$$
+---
+
+## 2. ラグランジュ補間
+与えられた $ n+1 $ 点 $(x_0, y_0), \dots, (x_n, y_n)$ を一つのn+1次曲線で補間する。
+
+補間関数：
+$$
+L(x) = \sum_{i=0}^n L_i(x)y_i
+$$
+基底関数：
+$$
+L_i(x) = \prod_{\substack{j=0 \\ j \neq i}}^n \frac{x - x_j}{x_i - x_j}
+$$
+
+### 計算例（１）
+点 (1, 2), (2, 3), (3, 5)の３点を例にとる。
+
+1. $ L_0(x) $:
+   $$
+   L_0(x) = \frac{x - x_1}{x_0 - x_1} \cdot \frac{x - x_2}{x_0 - x_2} = \frac{x - 2}{1 - 2} \cdot \frac{x - 3}{1 - 3} = \frac{(x-2)(x-3)}{2}
+   $$
+2. $ L_1(x) $:
+   $$
+   L_1(x) = \frac{x - x_0}{x_1 - x_0} \cdot \frac{x - x_2}{x_1 - x_2} = \frac{x - 1}{2 - 1} \cdot \frac{x - 3}{2 - 3} = -(x-1)(x-3)
+   $$
+3. $ L_2(x) $:
+   $$
+   L_2(x) = \frac{x - x_0}{x_2 - x_0} \cdot \frac{x - x_1}{x_2 - x_1} = \frac{x - 1}{3 - 1} \cdot \frac{x - 2}{3 - 2} = \frac{(x-1)(x-2)}{2}
+   $$
+
+以上より補間式は、
+
+$$
+   \begin{align*}
+L(x) & = \frac{(x-2)(x-3)}{2} \cdot 2 - (x-1)(x-3) \cdot 3 + \frac{(x-1)(x-2)}{2} \cdot 5\\
+     & = + \frac{x^2}{2} - \frac{x}{2} + 2 
+   \end{align*}
+$$
+
+
+### 計算例（２）
+
+1. (1, 2), (4, -3), (5, 5)の3点について補間した曲線を青色
+$$
+ y= \frac{29}{12} x^2 - \frac{55}{4} x + \frac{40}{3}
+$$
+
+2. (1, 2), (4, -3), (5, 5),(6,-4)の3点について補間を赤色
+$$
+ y = -\frac{131}{60}x^3 + \frac{97}{4}x^2 - \frac{1156}{15}x + 57
+
+$$
+
+
+<center><img src="/lagrange.png" width="60%"/></center>
+
+### Runge現象について
+等間隔な点での高次多項式補間において、補間点の間で大きな振動が発生する現象です
+特に、区間の端部近くで振動が顕著になります
+補間点の数を増やしても改善されず、むしろ振動が悪化する場合があります
+
+
+#### なぜ起こるのか
+高次の多項式補間では、すべての補間点を通過するために多項式の次数が上がります
+高次の多項式は本質的に振動的な性質を持ちます
+特に区間の端では、他の点を通るための「代償」として大きな振動が発生します
+
+#### 具体例
+例えば、関数 f(x) = 1/(1 + 25x2) を [-1,1] 区間で等間隔な点を使って補間する場合：
+- この関数自体は滑らかで振動のない関数です
+- しかし、等間隔な点で高次のラグランジュ補間を行うと、端部で大きな振動が発生します
+補間点を増やすと、振動はさらに激しくなります
+
+#### 対策方法
+Runge現象を回避または軽減するための方法がいくつかあります：
+
+1. チェビシェフ点の使用
+- 等間隔点の代わりに、区間の端部で密になるように分布させたチェビシェフ点を使用すると端部での振動を抑制できる
+
+2.スプライン補間の使用
+- 高次の多項式の代わりに、低次の区分的多項式を使用する。各区間で3次や4次程度の多項式を使うため、振動が抑制される
+
+#### なぜラグランジュ補間で特に問題になるのか
+ラグランジュ補間は、与えられたすべての点を通る単一の多項式を構築する。
+点の数が増えると多項式の次数も上がり、振動が増幅される可能性がある。
+特に等間隔点を使用する場合、この問題が顕著になる。
+
+これが、冒頭の表で「ラグランジュ補間では大区間でRunge現象の可能性がある」
+と記載されている理由です。ただし、適切な点の選び方（チェビシェフ点など）や区間の分割を行えば、この問題は軽減できます。
+
+#### 可視化して確認してみる
+11個の等間隔な点でのラグランジュ補間したグラフが緑色の線である。
+区間の端部で大きな振動が発生しており、これをRunge現象と呼び、
+確かに補間点の間でも望ましくない振動が見られる
+
+<center><img src="/lagrange2.png" width="60%"/></center>
+
+
+---
+
+## 3. スプライン補間
+各区間 $[x_i, x_{i+1}]$ 毎に3次多項式を用いる補間法。
+
+各区間の補間関数：
+$$
+S_i(x) = a_i + b_i(x - x_i) + c_i(x - x_i)^2 + d_i(x - x_i)^3
+$$
+係数 $ a_i, b_i, c_i, d_i $ は、値と1次・2次導関数の連続性、および境界条件を用いて決定。
+
+
+#### 1. 前提条件
+n+1個のデータ点 $(x_0,y_0), (x_1,y_1), ..., (x_n,y_n)$ が与えられているとします。
+
+#### 2. 連続性条件
+以下の条件を満たす必要があります：
+
+1. 位置の連続性：$S_i(x_{i+1}) = S_{i+1}(x_{i+1})$
+2. 1次導関数の連続性：$S'_i(x_{i+1}) = S'_{i+1}(x_{i+1})$
+3. 2次導関数の連続性：$S''_i(x_{i+1}) = S''_{i+1}(x_{i+1})$
+
+#### 3. 2次導関数を用いた表現
+$$
+\begin{align}
+  & S''_{i-1}(x) & = &2 c_{i-1}    &+& 6 d_{i-1} ( x-x_{i-1}) \\
+  & S''_i(x)     & = &2 c_i        &+& 6 d_i ( x-x_i)  \\
+  & S''_{i+1}(x) & = &2 c_{i+1}    &+& 6 d_{i+1} ( x-x_{i+1}) \\
+\end{align} 
+
+$$
+
+2次導関数の連続性から
+$$
+\begin{align}
+  &S''_{i-1}(x_i)&=& S''_i(x_i)\\
+  &S''_{i}(x_{i+1}) &=& S''_{i+1}(x_{i+1})\\
+\end{align} 
+$$
+
+$$
+\begin{align}
+  &S''_{i-1}(x_i)&=&  2 c_{i-1} \cdot ( x_i - x_{i-1})\\
+  &S''_i(x_i)    &=&  2 c_{i-1}\\
+  &S''_{i}(x_{i+1}) &=&  2 c_{i-1} \cdot ( x_{i+1} - x_i)\\
+  &S''_{i+1}(x_{i+1}) &=&  2 c_{i-1}\\
+\end{align} 
+$$
+各点での2次導関数の値を $M_i = S''_i(x_i)$ とおきます。
+区間の長さを $h_i = x_{i+1} - x_i$ とします。
+
+$$
+\begin{align}
+ M_i = 2 \cdot c_{i-1}\\
+ c_{i} = \frac{1}{2}M_{i+1}
+\end{align} 
+$$
+
+$$
+\begin{align}
+\end{align} 
+$$
+
+
+$$h_{i-1}M_{i-1} + 2(h_{i-1}+h_i)M_i + h_iM_{i+1} = 6(\frac{y_{i+1}-y_i}{h_i} - \frac{y_i-y_{i-1}}{h_{i-1}})$$
+
+#### 5. 三重対角行列の形成
+これを行列形式で書くと：
+
+$$
+ \begin{pmatrix} 
+  2(h_0+h_1) & h_1 & 0 & \cdots & 0 \\
+  h_1 & 2(h_1+h_2) & h_2 & \cdots & 0 \\
+  0 & h_2 & 2(h_2+h_3) & \cdots & 0 \\
+  \vdots & \vdots & \vdots & \ddots & \vdots \\
+  0 & 0 & 0 & \cdots & 2(h_{n-1}+h_n)
+\end{pmatrix}
+
+\begin{pmatrix}
+  M_1 \\
+  M_2 \\
+  M_3 \\
+  \vdots \\
+  M_n
+\end{pmatrix}
+= 6
+\begin{pmatrix}
+  \frac{y_2-y_1}{h_1} - \frac{y_1-y_0}{h_0} \\
+  \frac{y_3-y_2}{h_2} - \frac{y_2-y_1}{h_1} \\
+  \frac{y_4-y_3}{h_3} - \frac{y_3-y_2}{h_2} \\
+  \vdots \\
+  \frac{y_n-y_{n-1}}{h_n} - \frac{y_{n-1}-y_{n-2}}{h_{n-1}}
+\end{pmatrix}
+
+$$
+
+#### 6.トーマスのアルゴリズム
+
+##### 問題設定
+三重対角行列を解く問題を次の形で表します：
+
+$$
+\begin{bmatrix}
+b_1 & c_1 & 0 & \cdots & 0 \\
+
+a_2 & b_2 & c_2 & \cdots & 0 \\
+0 & a_3 & b_3 & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & c_{n-1} \\
+0 & 0 & 0 & a_n & b_n
+\end{bmatrix}
+\begin{bmatrix}
+x_1 \\
+x_2 \\
+x_3 \\
+\vdots \\
+x_n
+\end{bmatrix}
+=
+\begin{bmatrix}
+d_1 \\
+d_2 \\
+d_3 \\
+\vdots \\
+d_n
+\end{bmatrix}
+$$
+
+ここで：
+- $b_i$ は対角成分
+- $a_i, c_i$ はそれぞれ下対角・上対角成分
+- $d_i$ は右辺ベクトル
+
+目的は、$x_i$ を効率的に求めることです。
+
+---
+
+##### アルゴリズムの手順
+
+###### ステップ1: 前進消去
+三重対角行列の下対角成分 $a_i$ をゼロにして、簡略化します。
+
+1. 対角成分を更新：
+   $$ \tilde{b}_i = b_i - \frac{a_i}{\tilde{b}_{i-1}} c_{i-1} $$
+
+2. 右辺ベクトルを更新：
+   $$ \tilde{d}_i = d_i - \frac{a_i}{\tilde{b}_{i-1}} \tilde{d}_{i-1} $$
+
+計算は $i=2$ から $n$ まで進めます。
+
+---
+
+###### ステップ2: 後退代入
+前進消去で得られた三角行列を用いて、$x_i$ を逆順に計算します。
+
+1. 最後の未知数を計算：
+   $$ x_n = \frac{\tilde{d}_n}{\tilde{b}_n} $$
+
+2. 上から順に再帰的に計算：
+   $$ x_i = \frac{\tilde{d}_i - c_i x_{i+1}}{\tilde{b}_i} $$
+
+計算は $i=n-1$ から $1$ まで進めます。
+
+
+
+##### 特徴
+- 計算量: $O(n)$
+- 効率的: 行列サイズが大きい場合でも高速に解ける。
+- 制約: 三重対角行列にのみ適用可能。
+
+
+
+##### 結論
+トーマスのアルゴリズムは、三重対角行列の特殊な構造を活用し、効率的に線形方程式を解く方法です。前進消去と後退代入の2ステップで計算します。この手法は、三次スプライン補間のような問題に適用されます。
+
+
+
+## 6. スプライン係数の計算
+三重対角行列を解いて $M_i$ が得られたら、各区間 $[x_i, x_{i+1}]$ の係数は以下のように計算できます：
+
+$$a_i = \frac{M_{i+1} - M_i}{6h_i}$$
+$$b_i = \frac{M_i}{2}$$
+$$c_i = \frac{y_{i+1} - y_i}{h_i} - \frac{h_i(2M_i + M_{i+1})}{6}$$
+$$d_i = y_i$$
+
+これにより、各区間での三次スプライン関数が完全に決定されます。得られる補間関数は：
+
+- 各データ点を通り
+- 隣接する区間で1次導関数まで連続
+- 2次導関数も連続
+
+という性質を持ちます。
+
+## 7. 実装上の注意点
+
+1. 境界条件の設定
+   - 自然スプライン：両端で2次導関数を0とする（$M_0 = M_n = 0$）
+   - 周期的スプライン：始点と終点で1次・2次導関数が一致
+   - Not-a-knot：両端の2つの区間で3次導関数が一致
+
+2. 三重対角行列の解法
+   - トーマスのアルゴリズム（LU分解の特殊ケース）を使用
+   - 計算量は O(n)
+
+3. 数値安定性
+   - 等間隔でないデータ点の場合も適切に処理
+   - 丸め誤差の影響を最小限に抑える必要あり
+
+
+---
+
+## 4. 双曲線補間
+双曲線の形を用いた補間法。
+
+補間関数：
+$$
+y = \frac{ax + b}{cx + d}
+$$
+与えられた点を代入して、係数 $ a, b, c, d $ を求める。
+
+- 補間区間に極を含む場合、関数値が発散するため適切な補間ができないため
+双曲線補間を利用する時は、補間区間に極を含まないように注意する必要がある
+- 二点間の補間のため、4変数は定まらず2変数が残るので補間関数には自由度が残る
+
+### 極について
+- 極とは、関数値が無限大に発散する点のことである。
+下記の関数を例にとって極とその周辺のふるまいを説明する。
+$$
+ f(x) = \frac{1}{x-2}
+$$
+
+<center><img src="/hyperbolic.png" width="70%" /></center>
+- この例では x = 2 が極で分母が0になる点で発生する。
+- 極を含まない区間では、関数は無限回微分可能だが、極の近傍では導関数も無限大に発散する。
+
+
+---
+
+## 5. 線形補間
+2点間を直線で結ぶ簡単な補間法。
+
+補間関数：
+$$
+y = y_0 + \frac{y_1 - y_0}{x_1 - x_0}(x - x_0)
+$$
+
+### 計算例
+点 (1, 2), (2, 3), (3, 5)の３点を例にとる
+
+(1,2)と(2,3)間の式は、
+$$
+\begin{align*}
+y & =  2 + \frac{3 - 2}{2 - 1}(x - 1)\\
+  & =  2 + (x - 1)\\
+  & =  x + 1
+\end{align*}  
+$$
+(2,3),(3,5)間の式は、
+
+$$
+\begin{align*}
+y & = 3 + \frac{5-3}{3-2}(x-2)\\
+  & = 3 + 2 (x - 1)\\
+  & = 2x + 1
+\end{align*}   
+$$
+
+
+
+---
+
+
+---
+
+## サンプルコード
+
+### 1. エルミート補間
+
+```typescript
+function hermiteInterpolation(x: number, x0: number, x1: number, y0: number, y1: number, y0Prime: number, y1Prime: number): number {
+    const t = (x - x0) / (x1 - x0);
+    const h0 = 1 - 3 * t * t + 2 * t * t * t;
+    const h1 = 3 * t * t - 2 * t * t * t;
+    const h2 = t - 2 * t * t + t * t * t;
+    const h3 = -t * t + t * t * t;
+
+    return h0 * y0 + h1 * y1 + h2 * (x1 - x0) * y0Prime + h3 * (x1 - x0) * y1Prime;
+}
+```
+
+### 2.エルミート補間
+```typescript
+function lagrangeInterpolation(x: number, points: { x: number, y: number }[]): number {
+    let result = 0;
+
+    for (let i = 0; i < points.length; i++) {
+        let term = points[i].y;
+        for (let j = 0; j < points.length; j++) {
+            if (i !== j) {
+                term *= (x - points[j].x) / (points[i].x - points[j].x);
+            }
+        }
+        result += term;
+    }
+
+    return result;
+}
+```
+
+### 3.1.線形スプライン補間
+
+```typescript
+function linearSplineInterpolation(x: number, points: { x: number, y: number }[]): number {
+    for (let i = 0; i < points.length - 1; i++) {
+        const x0 = points[i].x, y0 = points[i].y;
+        const x1 = points[i + 1].x, y1 = points[i + 1].y;
+
+        if (x >= x0 && x <= x1) {
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+        }
+    }
+
+    throw new Error("x is out of the range of the provided points.");
+}
+```
+
+- CubicSpline クラス:
+  - スプライン係数 a,b,c,d を計算し保存します。
+- calculateCoefficients メソッド:
+  - 3次スプラインの係数を計算します。h,α,l,μ,z を用いて b,c,d を決定します。
+- interpolate メソッド:
+  - 指定された x の値に基づいて補間を実行します。
+
+
+### 3.2. 三次のスプライン補間
+```typescript
+// 3次スプライン補間
+class CubicSpline {
+    private x: number[];
+    private y: number[];
+    private a: number[]; // 各区間の定数項
+    private b: number[]; // 各区間の一次係数
+    private c: number[]; // 各区間の二次係数
+    private d: number[]; // 各区間の三次係数
+
+    constructor(x: number[], y: number[]) {
+        if (x.length !== y.length || x.length < 2) {
+            throw new Error("x と y は同じ長さで、少なくとも2点必要です。");
+        }
+        this.x = x;
+        this.y = y;
+        this.a = [...y];
+        this.b = [];
+        this.c = [];
+        this.d = [];
+        this.calculateCoefficients();
+    }
+
+    private calculateCoefficients() {
+        const n = this.x.length - 1;
+        const h: number[] = [];
+        const alpha: number[] = new Array(n).fill(0);
+
+        for (let i = 0; i < n; i++) {
+            h[i] = this.x[i + 1] - this.x[i];
+            if (h[i] <= 0) {
+                throw new Error("x は単調増加でなければなりません。");
+            }
+        }
+
+        for (let i = 1; i < n; i++) {
+            alpha[i] = (3 / h[i]) * (this.a[i + 1] - this.a[i]) - (3 / h[i - 1]) * (this.a[i] - this.a[i - 1]);
+        }
+
+        const l: number[] = new Array(n + 1).fill(1);
+        const mu: number[] = new Array(n + 1).fill(0);
+        const z: number[] = new Array(n + 1).fill(0);
+
+        for (let i = 1; i < n; i++) {
+            l[i] = 2 * (this.x[i + 1] - this.x[i - 1]) - h[i - 1] * mu[i - 1];
+            mu[i] = h[i] / l[i];
+            z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+        }
+
+        const c: number[] = new Array(n + 1).fill(0);
+        const b: number[] = new Array(n).fill(0);
+        const d: number[] = new Array(n).fill(0);
+
+        for (let j = n - 1; j >= 0; j--) {
+            c[j] = z[j] - mu[j] * c[j + 1];
+            b[j] = (this.a[j + 1] - this.a[j]) / h[j] - h[j] * (c[j + 1] + 2 * c[j]) / 3;
+            d[j] = (c[j + 1] - c[j]) / (3 * h[j]);
+        }
+
+        this.b = b;
+        this.c = c.slice(0, n);
+        this.d = d;
+    }
+
+    public interpolate(x: number): number {
+        const n = this.x.length - 1;
+        let i = n - 1;
+        for (let j = 0; j < n; j++) {
+            if (x >= this.x[j] && x <= this.x[j + 1]) {
+                i = j;
+                break;
+            }
+        }
+
+        const dx = x - this.x[i];
+        return this.a[i] + this.b[i] * dx + this.c[i] * dx ** 2 + this.d[i] * dx ** 3;
+    }
+}
+
+// 使用例
+const x = [1, 2, 3, 4];
+const y = [2, 3, 5, 4];
+
+const spline = new CubicSpline(x, y);
+console.log(spline.interpolate(2.5)); // 点 x=2.5 の補間値を計算
+console.log(spline.interpolate(3.5)); // 点 x=3.5 の補間値を計算
+
+```
+### 4.双曲線補間
+
+```typescript
+function hyperbolicInterpolation(x: number, x0: number, x1: number, y0: number, y1: number): number {
+    const a = (y1 - y0) / (x1 - x0);
+    const b = y0 - a * x0;
+    const c = (x1 - x0) / (y1 - y0);
+    const d = 1 / (y0 - a / b);
+
+    return (a * x + b) / (c * x + d);
+}
+```
+
+### 5.線形補完
+
+```typescript
+function linearInterpolation(x: number, x0: number, x1: number, y0: number, y1: number): number {
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+```

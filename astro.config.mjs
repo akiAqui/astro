@@ -1,5 +1,8 @@
 // @ts-check    
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+
+
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
 import starlight from '@astrojs/starlight';
@@ -9,6 +12,7 @@ import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 export default defineConfig({
     integrations: [// ここを最初に配置
+        react(),
         expressiveCode(),
         mdx(), sitemap(), starlight({
             title: 'ドキュメント',
@@ -16,6 +20,10 @@ export default defineConfig({
                 github: 'https://github.com/withastro/starlight',
             },
             sidebar: [
+                {
+                    label: 'THREE.js',
+                    autogenerate: {directory: 'three'},
+                },                
                 {
                     label: 'メディア操作',
                     autogenerate: {directory: 'algorithm'},
