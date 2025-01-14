@@ -7,6 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
 import starlight from '@astrojs/starlight';
 import remarkMath from 'remark-math';
+import remarkMermaid from 'remark-mermaidjs';
 import rehypeKatex from 'rehype-katex';
 import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
@@ -20,13 +21,18 @@ export default defineConfig({
                 github: 'https://github.com/withastro/starlight',
             },
             sidebar: [
+                { label: '補間法',link: '/algorithm/interpolation.mdx'},
                 {
                     label: 'THREE.js',
                     autogenerate: {directory: 'three'},
                 },                
                 {
-                    label: 'メディア操作',
-                    autogenerate: {directory: 'algorithm'},
+                    label: '各種アルゴリズム',
+                    autogenerate:
+                      {
+                        directory: 'algorithm',
+                        exclude: [interpolation]
+                      },
                 },                
                 {
                     label: '技術レポート',
@@ -37,18 +43,18 @@ export default defineConfig({
                     autogenerate: {directory: 'dev'},
                 },                
                 {
-                    label: 'その他ト',
+                    label: 'その他',
                     autogenerate: {directory: 'reports'},
                 },                
                 {
-                    label: 'temporary',
-                    autogenerate: {directory: 'tmp'},
+                    label: 'etc',
+                    autogenerate: {directory: 'etc'},
                 },                
             ],
         })
     ],
     markdown: {
-        remarkPlugins: [remarkMath],
+        remarkPlugins: [remarkMath,remarkMermaid],
         rehypePlugins: [rehypeKatex],
     },
 });

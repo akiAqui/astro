@@ -1,0 +1,418 @@
+---
+title: f) astroでのmdx簡単マニュアル
+description: 特にコードの書き方
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+## 1.MDXでのstyleの変更
+- styleを作ってimportしても反映されないのでここに表記すると他で定義されたスタイルが上書きされる
+- コードの行間が空くので強制的にmargin-topを0にする
+- 各MDXファイルで個別に変更しているが、共通化してインポートは今のところできない
+- 表記方法も独特
+
+```css
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+```
+## 2.mdx内部でのhtmlの記載
+
+### 2.1.iframeで、他のhtmlを含める
+```html
+<iframe 
+  src='/html/texture.html' 
+  style={{ height: '300px', width: '100%' }}
+/>
+```
+<iframe 
+  src='/html/texture.html' 
+  style={{ height: '300px', width: '100%' }}
+/>
+
+### 2.2.style付きでhtmlを記述
+```html
+<div style={{backgroundColor: 'violet', padding: '1rem'}}>
+  Try and change the background color to `tomato`.
+</div>
+```
+
+<div style={{backgroundColor: 'violet', padding: '1rem'}}>
+  Try and change the background color to `tomato`.
+</div>
+
+
+
+## 3.JavaScript
+- mdx内部で直にJavaScriptを記述できる
+- 中カッコで括る
+
+```javascript
+{(function () {
+  const guess = Math.random()
+
+  if (guess > 0.66) {
+    return <span style={{color: 'tomato'}}>Look at us.</span>
+  }
+
+  if (guess > 0.33) {
+    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
+  }
+
+  return <span style={{color: 'goldenrod'}}>Not me.</span>
+})()}
+
+{2+232323}
+```
+
+{(function () {
+  const guess = Math.random()
+
+  if (guess > 0.66) {
+    return <span style={{color: 'tomato'}}>Look at us.</span>
+  }
+
+  if (guess > 0.33) {
+    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
+  }
+
+  return <span style={{color: 'goldenrod'}}>Not me.</span>
+})()}
+
+{2+232323}
+
+
+
+## 4.コンポーネント定義と利用方法
+
+### 4.1 コンポーネント定義
+TimeStamp.jsxとして、コンポーネントを定義する
+```javascript
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+export const TimeStamp = () => {
+  // 現在のファイルパスを取得
+  const pth = fileURLToPath(import.meta.url);
+  //console.log(`File Path: ${pth}`);
+  
+  // ファイルのメタデータを取得
+  const stats = fs.statSync(pth);
+  //console.log(`Stats: ${JSON.stringify(stats)}`);
+  
+  // 更新日時を取得
+  const lastModified = new Date(stats.mtime);
+
+  // 日本時間でフォーマット (例: 2025年01月03日 22:33)
+  const year = lastModified.getFullYear();
+  const month = String(lastModified.getMonth() + 1).padStart(2, '0');
+  const day = String(lastModified.getDate()).padStart(2, '0');
+  const hours = String(lastModified.getHours()).padStart(2, '0');
+  const minutes = String(lastModified.getMinutes()).padStart(2, '0');
+  const formattedDate = `${year}年${month}月${day}日 ${hours}:${minutes}`;
+
+  //console.log(`Formatted Date: ${formattedDate}`);
+
+  // 表示
+  return (
+    <div>
+      <p>最終更新日時: {formattedDate}</p>
+    </div>
+  );
+};
+```
+
+
+### 4.2 利用方法
+```javascript
+import { TimeStamp } from '../../../components/TimeStamp';
+
+<TimeStamp />
+```
+
+
+import { TimeStamp } from '../../../components/TimeStamp';
+
+コンポーネントの結果以下が表示される
+<TimeStamp />
+
+## 5.コンポーネントの直接挿入
+mdxファイル内部でコンポーネントを記述し利用することも可能
+
+```javascript
+export const Red = ({ message, children, className }) => {
+  return (
+    <div className={className}>
+      <span style={{ color: 'red' }}>{message}</span>
+      <span>{children}</span>
+    </div>
+  );
+};
+import {Blue} from '../../../components/Blue';
+<Red message='メッセージ'>umamama</Red>
+<Blue message='メッセージ'>nekonekone</Blue>
+```
+
+export const Red = ({ message, children, className }) => {
+  return (
+    <div className={className}>
+      <span style={{ color: 'red' }}>{message}</span>
+      <span>{children}</span>
+    </div>
+  );
+};
+import {Blue} from '../../../components/Blue';
+
+<Red message='メッセージ'>umamama</Red>
+
+<Blue message='メッセージ'>nekonekone</Blue>
+
+
+## 6. mermaidの利用
+- コンポーネントを利用する
+- クライアントサイドにjavascriptをダウンロードして画像が生成される
+
+
+### 6-1.パッケージインストール
+mermaidを利用するには以下のようなパッケージがastroの元で必須
+
+- astro: Astro本体（必要）
+- @astrojs/mdx: MDXをサポートするためのパッケージ（必要）
+- @astrojs/react: AstroとReactを統合するためのパッケージ（必要）
+- @astrojs/starlight: Starlightテーマ（必要）
+- mermaid: Mermaid自体のライブラリ（必要）
+- remark-mermaidjs: Markdown内でMermaidを利用するためのパッケージ（必要）
+
+### 6-2.設定
+remarkPluginsにremarkMermaidを追加する
+
+
+```javascript
+export default defineConfig({
+    integrations: [// ここを最初に配置
+        react(),
+        expressiveCode(),
+        mdx(), sitemap(), starlight({
+            title: 'ドキュメント',
+            social: {
+                github: 'https://github.com/withastro/starlight',
+            },
+            sidebar: [
+                {
+                    label: 'THREE.js',
+                    autogenerate: {directory: 'three'},
+                },                
+                {
+                    label: 'メディア操作',
+                    autogenerate: {directory: 'algorithm'},
+                },                
+                {
+                    label: '技術レポート',
+                    autogenerate: {directory: 'tech'},
+                },                
+                {
+                    label: '開発関連書類',
+                    autogenerate: {directory: 'dev'},
+                },                
+                {
+                    label: 'その他',
+                    autogenerate: {directory: 'reports'},
+                },                
+                {
+                    label: 'etc',
+                    autogenerate: {directory: 'etc'},
+                },                
+            ],
+        })
+    ],
+    markdown: {
+        remarkPlugins: [remarkMath,remarkMermaid],
+        rehypePlugins: [rehypeKatex],
+    },
+```
+
+### 6-3.mermaid用コンポーネント定義
+
+```javascript
+---
+import mermaid from 'mermaid';
+export interface MermaidProps {
+  code: string;
+}
+const { code } = Astro.props;
+---
+<div class="mermaid">
+  {code}
+</div>
+
+<script>
+  import mermaid from 'mermaid';
+  mermaid.initialize({ startOnLoad: true });
+  mermaid.contentLoaded();
+</script>
+```
+
+### 6-4.利用
+コンポーネントをインポートしmermaidを記述する
+
+```jsx
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+<MermaidChart code={`
+graph TD
+    A[Start] --> B[uuauau]
+    B --> C{Decision}
+    C -->|Yes| D[End]
+    C -->|No| E[Retry]
+`} />
+```
+
+### 6-5.mermaidの表示例
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+<MermaidChart code={`
+graph TD
+    A[Start] --> B[uuauau]
+    B --> C{Decision}
+    C -->|Yes| D[End]
+    C -->|No| E[Retry]
+`} />
+
+<MermaidChart code={`
+sequenceDiagram
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    Alice-)John: See you later!
+`} />
+
+
+<MermaidChart code={`
+---
+title: Simple sample
+---
+stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]
+
+`} />
+
+<MermaidChart code={`
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaid
+`} />
+
+## install, server設置
+- node.js
+- npm
+- astro/starlight
+```bash
+> npm create astro@latest .
+```
+- serveの利用
+```bash
+> npm install -g serve
+> npm run build
+> serve dist/ -l 8080
+```

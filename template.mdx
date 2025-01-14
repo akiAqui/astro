@@ -1,0 +1,89 @@
+---
+title: タイトル
+description: 説明書き
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  30px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import {TimeStamp} from '../../../components/TimeStamp';
+<TimeStamp />
+
+
+<div style={{backgroundColor: 'violet', padding: '1rem'}}>
+  Try and change the background color to `tomato`.
+</div>
+{(function () {
+  const guess = Math.random()
+
+  if (guess > 0.66) {
+    return <span style={{color: 'tomato'}}>Look at us.</span>
+  }
+
+  if (guess > 0.33) {
+    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
+  }
+
+  return <span style={{color: 'goldenrod'}}>Not me.</span>
+})()}
+
+{2+232323}
+
+<iframe 
+  src='/html/texture.html' 
+  style={{ height: '300px', width: '100%' }}
+/>
+
+export const Red = ({ message, children, className }) => {
+  return (
+    <div className={className}>
+      <span style={{ color: 'red' }}>{message}</span>
+      <span>{children}</span>
+    </div>
+  );
+};
+import {Blue} from '../../../components/Blue';
+
+<Red message='メッセージ'>umamama</Red>
+<Blue message='メッセージ'>nekonekone</Blue>

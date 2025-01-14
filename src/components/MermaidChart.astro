@@ -1,0 +1,21 @@
+---
+// MermaidChart.astro
+import mermaid from 'mermaid';
+
+export interface MermaidProps {
+  code: string;
+}
+
+const { code } = Astro.props;
+---
+
+<div class="mermaid">
+  {code}
+</div>
+
+<script>
+  import mermaid from 'mermaid';
+  mermaid.initialize({ startOnLoad: true });
+  mermaid.contentLoaded();
+</script>
+
