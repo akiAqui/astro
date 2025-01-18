@@ -1,0 +1,170 @@
+---
+title: f) Performanceテスト
+description: Web Performance API, Lighthouse
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+## Web上でのパフォーマンス測定
+- Web Performance API
+  - コードの部分的なパフォーマンスを確認
+  - chrome の performance tabで結果を見ることができる
+- Lighthouse
+  - ページ全体の評価を行う
+
+
+THREE.jsのパフォーマンス評価にはWeb Performance APIかな
+
+
+
+## Performance タブ
+
+### User Timing セクション:
+- mark/measureの結果が時系列で表示
+- 各計測の詳細な時間情報
+
+### Main セクション:
+- JavaScript実行時間の詳細
+- 長時間実行の特定
+
+### Memory セクション:
+- JavaScriptヒープサイズの推移
+- メモリリークの検出
+
+
+## Web Performance APIの使い方
+
+
+### 時間計測
+
+<CodeTitle title="時間計測" id="time">
+```javascript
+// 単純な処理時間の計測
+const start = performance.now();
+// ... 計測したい処理 ...
+const end = performance.now();
+console.log(`実行時間: ${end - start}ms`);
+```
+</CodeTitle>
+
+### mark/mesure
+
+<CodeTitle title="mark/measureの使い方" id="mark-measure">
+```javascript
+performance.mark('start'); 
+// 処理を間に挟む
+performance.mark('end');
+performance.measure('処理名', 'start', 'end');
+```
+</CodeTitle>
+
+<CodeTitle title="mark/measureでの計測" id="mark-measure-exam">
+```javascript
+// 複数のポイントでの計測
+performance.mark('init-start');
+// ... 初期化処理 ...
+performance.mark('init-end');
+performance.measure('初期化処理', 'init-start', 'init-end');
+
+performance.mark('points-start');
+// ... Pointsの生成処理 ...
+performance.mark('points-end');
+performance.measure('Points生成', 'points-start', 'points-end');
+
+// 結果の取得方法
+const measures = performance.getEntriesByType('measure');
+console.table(measures);
+```
+</CodeTitle>
+
+### メモリ使用量
+
+<CodeTitle title="memory計測" id="memory">
+```javascript
+// メモリ使用量のスナップショット
+console.log(performance.memory); // Chromeのみ対応
+
+// 定期的なメモリ監視
+setInterval(() => {
+    const used = performance.memory.usedJSHeapSize / 1048576; // MBに変換
+    console.log(`使用メモリ: ${used.toFixed(2)} MB`);
+}, 1000);
+```
+</CodeTitle>
+
+
+## Lighthouseの使い方
+
+基本的な使い方:
+
+1. 開発者ツール（F12）を開く
+2. "Lighthouse" タブを選択
+3. 分析したい項目を選択:
+    - Performance（パフォーマンス）
+    - Accessibility（アクセシビリティ）
+    - Best Practices（ベストプラクティス）
+    - SEO
+    - Progressive Web App
+4. "Device"でモバイルかデスクトップを選択
+1. "Generate report"をクリック
+1. 分析結果とスコアが表示される
+    - ページ全体のパフォーマンスを包括的に分析
+    - 問題点の指摘と改善提案を提供
+    - スコアは0-100で評価
+    - 具体的な最適化アドバイスを提供
+
+
+
+
+<MermaidChart code={`
+graph TD
+    A[Start] --> B[uuauau]
+    B --> C{Decision}
+    C -->|Yes| D[End]
+    C -->|No| E[Retry]
+`} />

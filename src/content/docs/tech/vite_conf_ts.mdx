@@ -1,7 +1,56 @@
 ---
-title: vite.config.tsについて
+title: (*) vite.config.tsについて
 description: vite.config.tsはnpm create vite@latest <project_dir> -- --template vanilla-tsで自動作成されるが内容のカスタマイズのためにその中身を知っておく必要がある。
+layout: '../../../layouts/BaseLayout.astro'
 ---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+
 # vite.config.tsについて
 
 ## 前提
@@ -37,12 +86,15 @@ description: vite.config.tsはnpm create vite@latest <project_dir> -- --template
   6. 処理終了
 
 ### 基本的なvite.config.ts
-```
+<CodeTitle title="vite.config.tsの基本" id="vite.config">
+```javascript
    import { defineConfig } from 'vite'
    export default defineConfig({
       // 設定オブジェクト
    })
 ```
+</CodeTitle>
+
 
 ### vite.config.ts内でのNode.jsの標準モジュールの利用
 
@@ -95,15 +147,18 @@ defineConfigのresolvにてaliasを定義することでパスの省略形が使
 - path.resolveを使えるようにするためにはpathをimportする必要がある
 
 
- 変更前
+<CodeTitle title="変更前" id="before"> 
+```javascript 
    import { Scene } from '../../../src/scenes/MainScene'
    import texture from '../../../public/assets/textures/wall.jpg'
-
- 変更後
+```
+</CodeTitle> 
+<CodeTitle title=" 変更後" id="after"> 
+```javascript 
    import { Scene } from '@/scenes/MainScene'
    import texture from '@assets/textures/wall.jpg'
-
-
+```
+</CodeTitle> 
   
 
 ## viteconf.ts

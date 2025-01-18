@@ -2,6 +2,16 @@
 title: Windowsマシンを利用した業務環境のセキュア構築レポート
 description: 本レポートは、Windowsマシン上に個人事業主として受託案件ごとのセキュアな環境を構築するための調査結果をまとめたものです。以下は、設定手順、必要なライセンス、費用に関する情報を整理したものです。
 ---
+<style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        html {
+          scroll-behavior: smooth;
+        }         
+        
+ `}</style>
+import CodeTitle from '../../../components/CodeTitle';
 
 本レポートは、Windowsマシン上に個人事業主として受託案件ごとのセキュアな環境を構築するための調査結果をまとめたものです。以下は、設定手順、必要なライセンス、費用に関する情報を整理したものです。
 
@@ -19,7 +29,8 @@ description: 本レポートは、Windowsマシン上に個人事業主として
 
 ### 1. ホストおよび各環境へのリモートアクセスに関する設定と必要ライセンス
 
-| 項目          | 設定概要                                                     | 必要ライセンス                                              | ---------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| 項目   | 設定概要      | 必要ライセンス       |
+|------- | --------------|----------------------|
 | ホストOS      | Windows 11 Pro にリモートデスクトップ (RDP) を有効化         | RDP 標準機能に加え、リモートユーザー追加時に RDS CAL が必要 |                        |                                                                                                  |                                                                                  |
 | Hyper-Vゲスト | Hyper-V Manager または RDP 経由でアクセス可能                | RDP アクセスには RDS CAL が必要                             |                        |                                                                                                  |                                                                                  |
 | Dockerゲスト  | Docker のポートを公開して SSH または専用管理ツールでアクセス | Docker Desktop のライセンス (無料プランまたは有料プラン)    |                        |                                                                                                  |                                                                                  |
@@ -33,9 +44,12 @@ description: 本レポートは、Windowsマシン上に個人事業主として
 #### 1-1. 必要なホストOS設定
 
 1. Windows 11 Pro の機能で Hyper-V を有効化。
-   ```powershell
+<CodeTitle title="Hyper-Vを有効化" id="hyperv">
+```text
    dism /online /enable-feature /all /featurename:Microsoft-Hyper-V
-   ```
+```
+</CodeTitle>
+
 2. 仮想スイッチマネージャで外部ネットワークスイッチを作成し、192.168.x.x に接続。
    ```powershell
    New-VMSwitch -Name "ExternalSwitch" -NetAdapterName "Ethernet" -AllowManagementOS $true
@@ -397,8 +411,8 @@ Set-MpPreference -ScanAvgCPULoadFactor 50
 
 | 方式 | 初期費用 | 運用費用/月 | メリット | デメリット |
 |------|----------|-------------|-----------|------------|
-| 外付けHDD（Windows管理下） | 1-2万円 | 0円 | ・BitLocker暗号化可能<br>・高速なバックアップ/リストア<br>・運用が簡単 | ・物理的な管理が必要<br>・スケーラビリティに制限 |
-| NAS | 3-5万円 | 電気代のみ | ・独立した保管場所<br>・高い信頼性<br>・複数環境からアクセス可 | ・暗号化に制限<br>・初期費用が高い |
+| 外付けHDD（Windows管理下） | 1-2万円 | 0円 | ・BitLocker暗号化可能<br/>・高速なバックアップ/リストア<br/>・運用が簡単 | ・物理的な管理が必要<br/>・スケーラビリティに制限 |
+| NAS | 3-5万円 | 電気代のみ | ・独立した保管場所<br/>・高い信頼性<br/>・複数環境からアクセス可 | ・暗号化に制限<br/>・初期費用が高い |
 
 #### バックアップ実装
 

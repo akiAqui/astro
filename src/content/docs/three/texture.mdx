@@ -3,53 +3,323 @@ title: Textureの詳細、
 description: UV座標、繰り返し、クランプの方法
 layout: '../../../layouts/BaseLayout.astro'
 ---
-<style>{`
+ <style>{`
         .sl-markdown-content   div.ec-line {
             margin-top: 0 !important;
         }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
  `}</style>
-<div style={{backgroundColor: 'violet', padding: '1rem'}}>
-  Try and change the background color to `tomato`.
-</div>
-{(function () {
-  const guess = Math.random()
 
-  if (guess > 0.66) {
-    return <span style={{color: 'tomato'}}>Look at us.</span>
-  }
+import CodeTitle from '../../../components/CodeTitle';
 
-  if (guess > 0.33) {
-    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
-  }
+## テクスチャーマッピング
 
-  return <span style={{color: 'goldenrod'}}>Not me.</span>
-})()}
-
-{2+232323}
-
-# Geometryクラスに関連するものとテクスチャへの影響
-
-<iframe 
-  src='/html/texture.html' 
-  style={{ height: '300px', width: '100%' }}
-/>
+テクスチャーを貼り付けるのは、THREE.jsのレイヤでもglslのレイヤでも可能である。
 
 
+### THREE.jsレベルでのテクスチャ操作で可能なこと
+- テクスチャの基本的なマッピング（UV座標の割り当て）
+- テクスチャの繰り返し設定（repeat, wrapS, wrapT）
+- 画像のフィルタリング設定（minFilter, magFilter）
+- テクスチャのオフセット調整
+- 基本的なマッピングモード変更（平面、キューブマップ等）
+- テクスチャのアニメーション（UV座標の単純な移動）
+- 複数テクスチャの単純な重ね合わせ
+- 基本的な透明度設定
+- ミップマップの生成と制御
+- アンイソトロピックフィルタリングの設定
+
+### GLSLレベルでのテクスチャ操作で可能なこと
+パフォーマンスが重要な場合や、特殊な視覚効果が必要な場合
+- ピクセルごとの色情報の直接操作
+- テクスチャの動的な色調補正やカラーグレーディング
+- 複数テクスチャの高度なブレンド処理
+- UV座標の動的な変形（歪み、波紋効果など）
+- ノイズテクスチャを使用した手続き的なテクスチャ生成
+- テクスチャベースのディスプレイスメントマッピング
+- カスタムフィルタリング処理の実装
+- テクスチャデータを使用した物理ベースのエフェクト
+- リアルタイムの照明計算との連携
+- 時間やインタラクションに基づく動的なテクスチャ変形
+- マスクテクスチャを使用した複雑なブレンド効果
+- ピクセルごとの深度や法線情報との連携
+- カスタムUVアニメーションの実装
+- テクスチャデータを使用した独自のシェーディングモデルの実装
 
 
 
-export const Red = ({ message, children, className }) => {
-  return (
-    <div className={className}>
-      <span style={{ color: 'red' }}>{message}</span>
-      <span>{children}</span>
-    </div>
-  );
-};
-import {Blue} from '../../../components/Blue';
 
-<Red message='メッセージ'>umamama</Red>
-<Blue message='メッセージ'>nekonekone</Blue>
+
+## テクスチャマッピングの概要
+- THREE.jsで テクスチャファイルの読み込む([code 01](#load))
+- THREE.jsでジオメトリの作成
+  - ジオメトリを作成すると自動的にテクスチャ用のUV座標系が生成される([code 02](#geom))
+- THREE.jsでMaterialを作成する
+  - 単純なテクスチャマッピングの場合は、MeshBasicMaterialを利用([code 03](#basic_material))
+    - シェーダーを書かないがテクスチャでUV座標系の操作は可能([code 04](#texture_repeat))
+  - 色反転などカスタマイズする場合は、ShaderMaterialを利用([code 05](#shader_material))
+    - vertex shaderをがデフォルトでもいいが存在しないとUV座標系でエラーが出る
+  - uv座標系の受け渡しは明示的に記述する必要がある
+
+- フラグメントシェーダーでテクスチャをサンプリングし、色を出力する
+- THREE.js: テクスチャとUV座標をGPUに転送
+
+
+<CodeTitle title="テクスチャのロード" id="load" counter="01">
+```javascript
+const texture = new THREE.TextureLoader().load('texture.jpg');
+```
+</CodeTitle>
+
+<CodeTitle title=" ジオメトリを生成" id="geom"  counter="02">
+```javascript
+const geometry = new THREE.PlaneGeometry(2, 2);
+
+// このジオメトリには自動的にUV座標が含まれる
+console.log(geometry.attributes.uv); // UV座標データを確認できます
+```
+</CodeTitle>
+
+
+<CodeTitle title=" MeshBasicMaterialを生成" id="basic_material" counter="03">
+```javascript
+   const material = new THREE.MeshBasicMaterial({ 
+      map: texture 
+   });
+```
+</CodeTitle>
+
+<CodeTitle title="textureで繰り返し指定" id="texture_repeat" counter="04">
+```javascript
+const texture = new THREE.TextureLoader().load('texture.jpg');
+// テクスチャの繰り返し設定
+texture.repeat.set(2, 2);     // U方向に2回、V方向に2回繰り返し
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.RepeatWrapping;
+
+const material = new THREE.MeshBasicMaterial({ map: texture });
+```
+</CodeTitle>
+
+<CodeTitle title="textureでオフセット指定" id="texture_offset" counter="04">
+```javascript
+const texture = new THREE.TextureLoader().load('texture.jpg');
+// テクスチャの位置をずらす
+texture.offset.set(0.5, 0.5); // U方向に0.5、V方向に0.5ずらす
+const material = new THREE.MeshBasicMaterial({ map: texture });
+```
+</CodeTitle>
+
+<CodeTitle title="textureで回転" id="texture_rot" counter="04">
+```javascript
+const texture = new THREE.TextureLoader().load('texture.jpg');
+texture.rotation = Math.PI / 4; // 45度回転
+texture.center.set(0.5, 0.5);   // 回転の中心点を設定
+
+const material = new THREE.MeshBasicMaterial({ map: texture });
+```
+</CodeTitle>
+
+
+<CodeTitle title="ShaderMaterial。デフォルトvertex shaderを指定" id="shader_material" counter="05">
+```javascript
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uTexture: { value: texture }
+    },
+    vertexShader: THREE.ShaderLib.basic.vertexShader,  // デフォルトのvertex shaderを使用
+    fragmentShader: `
+        uniform sampler2D uTexture;
+        varying vec2 vUv; // デフォルトのvertexシェーダーからUV座標を受け取れる
+        void main() {
+            gl_FragColor = texture2D(uTexture, vUv);
+        }
+    `
+});
+```
+</CodeTitle>
+
+<CodeTitle title="MeshBasicMaterialでvertex shaderを指定なし" id="shader_material_wo_vertex_shader" counter="05">
+```javascript
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uTexture: { value: texture }
+    },
+    // vertexShaderを省略すると、エラーが発生します！
+    fragmentShader: `
+        uniform sampler2D uTexture;
+        varying vec2 vUv;  // エラー：vUvが定義されていない
+        void main() {
+            gl_FragColor = texture2D(uTexture, vUv);
+        }
+    `
+});
+```
+</CodeTitle>
+
+<CodeTitle title="MeshBasicMaterialでvertex shaderを指定" id="shader_material_w_vertex_shader"　counter="05">
+```javascript
+// ShaderMaterialを作成（THREE.jsの機能）
+const material = new THREE.ShaderMaterial({
+    // uniformsでテクスチャをシェーダーに渡す
+    uniforms: {
+        uTexture: { value: texture }  // THREE.jsがGPUにテクスチャを渡す
+    },
+    // vertex shader
+    vertexShader: `
+        // THREE.jsが自動的に提供する頂点属性
+        attribute vec3 position;  // 頂点座標
+        attribute vec2 uv;       // UV座標（PlaneGeometryで生成された）
+
+        // フラグメントシェーダーに渡す変数
+        varying vec2 vUv;
+
+        void main() {
+            vUv = uv;  // UV座標を渡す
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    // フラグメントシェーダー
+    fragmentShader: `
+        precision mediump float;
+        
+        // THREE.jsによって渡されるテクスチャ
+        uniform sampler2D uTexture;
+        
+        // UV座標は定義したvertex shaderから受け取れる
+        varying vec2 vUv;
+
+        void main() {
+            gl_FragColor = texture2D(uTexture, vUv);
+        }
+    `
+});
+```
+</CodeTitle>
+
+
+
+<CodeTitle title="ux座標系を受け渡し" id="ux"　counter="06">
+```javascript
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uTexture: { value: texture }
+    },
+    // 頂点シェーダーでUV座標を受け取って渡す
+    vertexShader: `
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    // フラグメントシェーダーで受け取ったUV座標を使用
+    fragmentShader: `
+        uniform sampler2D uTexture;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D(uTexture, vUv);
+        }
+    `
+});
+```
+</CodeTitle>
+
+
+
+
+
+### テクスチャ座標系（UV座標）
+- 3Dモデルの各頂点に、テクスチャ上の位置を示すUV座標が割り当てられる
+- UV座標は常に0.0から1.0の範囲に正規化されている
+  - U: 横方向（左端が0.0、右端が1.0）
+  - V: 縦方向（下端が0.0、上端が1.0）
+
+### texture()関数の挙動
+
+<CodeTitle title="ux座標系を受け渡し" id="ux"　counter="06">
+
+擬似コードで表現すると以下のようになっている
+
+```javascript
+vec4 texture(sampler2D tex, vec2 uv) {
+    // 1. テクスチャサイズの取得
+    ivec2 textureSize = getTextureSize(tex); // 例：ivec2(512, 512)
+    
+    // 2. UV座標からテクセル座標への変換
+    vec2 texelCoord = uv * vec2(textureSize);
+    // 例：uv(0.5, 0.5) * (512, 512) = (256, 256)
+    
+    // 3. 最近傍のテクセルの取得（NEAREST filteringの場合）
+    ivec2 nearestTexel = ivec2(floor(texelCoord));
+    return fetchTexel(tex, nearestTexel);
+    
+    // もしくは
+    // 4. バイリニア補間（LINEAR filteringの場合）
+    ivec2 texel00 = ivec2(floor(texelCoord));
+    ivec2 texel10 = texel00 + ivec2(1, 0);
+    ivec2 texel01 = texel00 + ivec2(0, 1);
+    ivec2 texel11 = texel00 + ivec2(1, 1);
+    
+    // 補間係数の計算
+    vec2 fraction = fract(texelCoord);
+    
+    // 4点のテクセルの色を取得
+    vec4 c00 = fetchTexel(tex, texel00);
+    vec4 c10 = fetchTexel(tex, texel10);
+    vec4 c01 = fetchTexel(tex, texel01);
+    vec4 c11 = fetchTexel(tex, texel11);
+    
+    // 線形補間
+    vec4 colorX0 = mix(c00, c10, fraction.x);
+    vec4 colorX1 = mix(c01, c11, fraction.x);
+    return mix(colorX0, colorX1, fraction.y);
+}
+```
+</CodeTitle>
+
+
+
+
+
 
 ## 1. attributes.uv
 - UV座標を定義し、テクスチャの貼り付け位置やスケールを制御。
@@ -92,10 +362,3 @@ import {Blue} from '../../../components/Blue';
 - 回転の基準点を設定し、スケールや回転時の中心を調整可能。
 
 
-
-import Mermaid from '../../../components/Mermaid.astro';
-
-<Mermaid>
-flowchart LR
-A --> B
-</Mermaid>

@@ -21,25 +21,28 @@ export default defineConfig({
                 github: 'https://github.com/withastro/starlight',
             },
             sidebar: [
-                { label: '補間法',link: '/algorithm/interpolation.mdx'},
+                {
+                    label: 'アートプロジェクト',
+                    autogenerate: {directory: 'art'},
+                },                
                 {
                     label: 'THREE.js',
                     autogenerate: {directory: 'three'},
                 },                
                 {
                     label: '各種アルゴリズム',
-                    autogenerate:
-                      {
-                        directory: 'algorithm',
-                        exclude: [interpolation]
-                      },
+                    autogenerate: {directory: 'algorithm'},
+                },                
+                {
+                    label: 'csound, P5jsなど',
+                    autogenerate: {directory: 'misc'},
                 },                
                 {
                     label: '技術レポート',
                     autogenerate: {directory: 'tech'},
                 },                
                 {
-                    label: '開発関連書類',
+                    label: 'その他開発',
                     autogenerate: {directory: 'dev'},
                 },                
                 {
@@ -47,8 +50,8 @@ export default defineConfig({
                     autogenerate: {directory: 'reports'},
                 },                
                 {
-                    label: 'etc',
-                    autogenerate: {directory: 'etc'},
+                    label: 'mdx',
+                    autogenerate: {directory: 'mdx'},
                 },                
             ],
         })
