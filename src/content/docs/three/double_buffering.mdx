@@ -49,6 +49,9 @@ layout: '../../../layouts/BaseLayout.astro'
 
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
+import {TimeStamp} from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
 
 ## source code
 - 初期化
@@ -69,7 +72,14 @@ import MermaidChart from '../../../components/MermaidChart.astro';
   - 次に書き込むnextTargetにもう一つのrenderTargetを指定して一度目のrenderingする
   - 次に書き込むrenderTargetをnullにしてレンダリングして二度目のrenderingをして画面に反映
   - 
+
+## shderコード
+- vertex shader, fragment shaderはレンダリングの瞬間に計算される
+- PlaneGeometoryでは４点で張られるテクスチャの貼り付けられる面がUV座標系になっている
+- フラグメントシェーダでは、v_uvが各頂点間で線形補間されます。
+  - 100x100の四角形のPlaneGeometryで、ピクセルが100x100ならそのピクセル位置が(23,91)ならフラグメントシェーダでその位置は(0.23,0.91)となってv_uvに値が代入される
   
+
 
 ```javascript
 // Import necessary modules

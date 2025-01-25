@@ -10,10 +10,10 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.0.5",
-    "@astrojs/react": "^4.1.2",
-    "@astrojs/starlight": "^0.30.3",
-    "astro": "^5.0.2",
+    "@astrojs/mdx": "^4.0.7",
+    "@astrojs/react": "^4.1.6",
+    "@astrojs/starlight": "^0.31.1",
+    "astro": "^5.1.9",
     "astro-expressive-code": "^0.38.3",
     "esdoc": "^1.1.0",
     "esdoc-standard-plugin": "^1.0.0",
