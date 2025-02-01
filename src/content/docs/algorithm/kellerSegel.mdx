@@ -1,0 +1,377 @@
+---
+title: ＊） Keller-Segel Model
+description: 形態形成に関する生物学的なモデル
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+
+
+## 概要
+形態形成(Morphogenesis)という考え方では、細胞増殖（Proliferation）、細胞分化（Differentiation）: 細胞が特定の機能を持つように変化すること、細胞移動（Cell Migration）、細胞が特定の位置に移動すること、細胞死（Apoptosis）、不要な細胞を除去すること、などのプロセスを通じて、組織や器官の特定の形状が作られるという考え方をする。
+
+Keller-Segelモデルは、特に細胞移動を化学物質の濃度勾配に反応に基づいて動きを記述する数理モデルである。
+
+言い方を替えると、このモデルは移動する生物（例: 細菌や細胞）の化学走性（chemotaxis）の現象を説明する。
+
+それゆえKeller-Segelモデルは生物学や生態学で、集団行動やパターン形成の研究にも用いられる。
+
+Keller-Segelモデルでは、化学物質が生物に与える影響として、餌（アトラクタ）としての化学物質の場合と、毒（リペラー）としての化学物質の場合や、化学物質の最適濃度の存在、アトラクターからリペラーへの反転の動きも記述することができる。
+
+ちなみに、形態形成は、動物の胚発生や植物の成長パターンなど、生命体の構造形成に関する広範な現象を包括する。チューリングパターンのような反応拡散系も形態形成の一部として研究される。
+
+
+---
+
+## Keller-Segelモデルの式
+
+1次元および2次元空間で用いられる偏微分方程式の形式は以下の通りです：
+
+$$
+\frac{\partial u}{\partial t} = \nabla \cdot \left(D \nabla u - \chi u \nabla c \right) + R(u)
+$$
+
+$$
+\frac{\partial c}{\partial t} = D_c \nabla^2 c - \lambda c + S(u)
+$$
+
+- $u(x,y,t) [cells/m^3]$: 生物の密度分布
+- $D [m^2/s]$: 生物の拡散係数（ランダム移動を表す）。
+- $c(x,y,t) [mol/m^3]$: 化学物質の濃度分布。
+- $D_c$: 化学物質の拡散係数。
+- $\chi$: 化学物質に対する感受性（化学走性の強度）。
+- $\lambda$: 化学物質の分解率。
+- $R(u)$: 生物の成長や減少を表す関数（例: $R(u) = au - bu^2$）。
+- $S(u)$: 化学物質の生成を表す関数（例: $S(u) = ku$）。
+
+
+#### Examples of R(u) (Growth and Decay Functions)
+
+##### 1. Linear Growth and Decay
+Describes logistic growth where $a$ represents the growth rate and $b$ limits the population through density-dependent effects.
+
+$$
+R(u) = au - bu^2
+$$
+
+
+##### 2. Exponential Growth
+Models growth where the rate accelerates exponentially with the population size.
+
+$$
+R(u) = ae^{bu}
+$$
+
+
+
+##### 3. Saturated Growth
+Growth slows down as $u$ increases, representing resource limitations.
+$$
+R(u) = \frac{au}{1 + bu}
+$$
+
+##### 4. Allee Effect
+Demonstrates a threshold population $b$ below which the population declines.
+$$
+R(u) = au(u - b)
+$$
+
+##### 5. Oscillatory Dynamics
+Represents periodic growth and decay, potentially modeling cyclical biological phenomena.
+$$
+R(u) = a\sin(bu)
+$$
+
+##### 6. Predator-Prey Interaction
+Population grows initially but decreases due to interactions with a predator.
+$$
+R(u) = au - b\frac{u}{1 + cu}
+$$
+
+##### 7. Stepwise Growth
+Models growth that abruptly stops and becomes negative beyond a threshold.
+$$
+R(u) = \begin{cases} 
+a, & u < b \\ 
+-c, & u \geq b 
+\end{cases}
+
+$$
+
+##### 8. Quadratic Decay
+Describes purely density-dependent negative growth.
+$$
+R(u) = -au^2
+$$
+
+##### 9. Sigmoid Dynamics
+Growth increases at low density but saturates as density rises.
+$$
+R(u) = \frac{au^2}{1 + bu^2}
+$$
+
+##### 10. Delayed Growth
+Models a delay in population response to changes in density.
+$$
+R(u) = a(u - b)e^{-cu}
+$$
+
+---
+
+#### Examples of S(u) (Chemical Production Functions)
+
+##### 1. Linear Production
+Chemical production increases proportionally with population size.
+$$
+S(u) = au
+$$
+
+##### 2. Constant Production
+Represents a fixed rate of chemical production, independent of population size.
+$$
+S(u) = a
+$$
+
+##### 3. Saturated Production
+Chemical production increases initially but saturates due to resource limitations.
+$$
+S(u) = \frac{au}{1 + bu}
+$$
+
+##### 4. Threshold Production
+Chemical is produced only when the population exceeds a threshold.
+$$
+S(u) = \begin{cases} 
+0, & u < b \\ 
+a, & u \geq b 
+\end{cases}
+$$
+
+##### 5. Inhibited Production
+Production decreases as the population increases, representing inhibitory effects.
+$$
+S(u) = \frac{a}{1 + bu}
+$$
+
+##### 6. Logistic Production
+Production is maximized at intermediate population levels and declines at higher levels.
+$$
+S(u) = au(1 - \frac{u}{b})
+$$
+
+##### 7. Sigmoid Production
+Represents slow initial production that accelerates before saturating.
+$$
+S(u) = \frac{au^2}{1 + bu^2}
+$$
+
+##### 8. Periodic Production
+Models oscillatory production rates, useful in periodic biological processes.
+$$
+S(u) = a\sin(bu)
+$$
+
+##### 9. Density-Dependent Decay
+Chemical production declines quadratically with population size.
+$$
+S(u) = -au^2
+$$
+
+##### 10. Delayed Production
+Production is delayed or decreases exponentially as the population increases.
+$$
+S(u) = ae^{-bu}
+$$
+
+
+---
+## 非線形Keller-Segelモデル
+
+化学物質感受性や成長率に非線形項を導入。
+
+$$
+\frac{\partial u}{\partial t} = \nabla \cdot \left(D \nabla u - \chi u^m \nabla c \right) + R(u)
+$$
+
+ここで、$m0$ は非線形性のパラメータ。
+
+- 線形モデル：$m=1$
+- 強化された応答：$m>1$
+  - 集団行動が強調され密度が高い領域での移動が加速。
+- 減衰した応答: $0<m<1$
+  - 個体数が少ない領域でも相対的には敏感に反応
+
+
+$y=x^m$のグラフは、$0<m<1$であれば$0<x<=1$で$y=x$より大きな値を取る。逆に$1<m$であれば$y=x$より小さい値を取る
+
+## 多種モデル
+
+複数の生物種を考慮した拡張。
+
+$$
+\frac{\partial u_i}{\partial t} = \nabla \cdot \left(D_i \nabla u_i - \chi_i u_i \nabla c \right) + R_i(u_i, u_j)
+$$
+
+ここで、$i, j$ は生物種を示すインデックス。
+
+---
+
+## 関連する数理モデル
+
+### Fisher-KPP方程式
+
+拡散と成長を記述する。
+
+$$
+\frac{\partial u}{\partial t} = D \nabla^2 u + ru(1 - u)
+$$
+
+生物の空間分布とその時間変化をモデル化。
+
+### Gray-Scottモデル
+
+自己組織化によるパターン形成。
+
+$$
+\frac{\partial u}{\partial t} = F(1 - u) - uv^2 + D_u \nabla^2 u
+$$
+
+$$
+\frac{\partial v}{\partial t} = uv^2 - (F + k)v + D_v \nabla^2 v
+$$
+
+化学反応と拡散を同時に扱う。
+
+---
+
+### 結果例
+
+- パターン形成: 細胞が特定の領域に集まるスポットやストライプ。
+- 波動パターン: 化学物質と生物の相互作用で動的パターンが発生。
+
+---
+
+
+## アトラクタとリペラー　化学物質の生物への影響
+
+Keller-Segelモデルでは、化学物質が生物に与える影響として、次の2つの主要なケースを考慮します。
+
+走性項で、正の感受性パラメータの場合は $\chi > 0$ はアトラクタ、負の場合はリペラーとなり、化学物質に近づく、遠ざかるという効果を生みだす。
+
+  $$
+  -\chi u \nabla c
+  $$
+
+
+### アトラクタからリペラーへの切り替えモデル
+
+アトラクタが一定の条件でリペラーに変わるモデルを考えることも可能。感受性 $\chi$ を動的に変化させるような拡張を行う。
+
+化学物質濃度 $c$ が増加するにつれて感受性 $\chi$ が減少し、
+一定値 $c_\text{max}$ を超えるとリペラーとして作用を行い、
+餌が過剰に存在すると毒として作用する状況をモデル化の例
+
+$$
+\chi(c) = \chi_0 \left(1 - \frac{c}{c_\text{max}}\right)
+$$
+
+---
+
+### 実際の応用例
+
+- 餌の場合: 細菌が栄養源（例: グルコース）に向かって移動。
+- 毒の場合: 細胞が有害物質（例: 過酸化水素）を回避。
+- アトラクタからリペラーへの切り替え: 餌が過剰になることで、集団密度や環境が悪化し、忌避物質として作用。
+
+---
+
+## 濃度依存の感受性モデル
+
+Keller-Segelモデルにおいて、化学物質の濃度が高い場合でも、同じアトラクタとしての性質が変わることを考慮できます。この現象をモデル化するためには、感受性 $\chi$ を化学物質濃度 $c$ の関数として動的に表現します。
+
+---
+
+### 濃度依存の感受性モデル
+感受性が濃度に依存する場合、次のように拡張されます：
+$$
+\chi(c) = \chi_0 f(c)
+$$
+ここで、$f(c)$ は濃度 $c$ によって変化する正の関数で、生物の化学物質への感受性を調整します。
+
+---
+
+### 具体例
+
+#### 1. 高濃度で感受性が減少するモデル
+$$
+\chi(c) = \chi_0 \exp\left(-\alpha c\right)
+$$
+- 意図: 濃度が高すぎると引き寄せる力が弱まる（飽和効果や適応を表現）。
+
+#### 2. 最適濃度が存在するモデル
+$$
+\chi(c) = \chi_0 \exp\left(-\frac{(c - c_\text{opt})^2}{\sigma^2}\right)
+$$
+- 意図: 生物が最適濃度 $c_\text{opt}$ に強く引き寄せられるが、それ以外では感受性が低下。
+
+---
+
+### 応用
+
+- 化学物質濃度が高すぎる場合: 引き寄せが減少（飽和）。
+- 濃度に適応した行動: 生物が最適な環境を選択。
+- 濃度範囲のフィルタリング: 生物が特定の濃度範囲にのみ反応。
+
+このように、濃度依存の感受性を導入することで、より現実的な生物の挙動をモデル化可能です。
+
+
+
+

@@ -49,11 +49,9 @@ layout: '../../../layouts/BaseLayout.astro'
 
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
-import {TimeStamp} from '../../../components/TimeStamp';
+import TimeStamp from '../../../components/TimeStamp';
 
 <TimeStamp fileUrl={import.meta.url} />
-
-# 点と線のためのアニメーションエンジン
 
 ## 概要
 - 階層構造を持つ点と線の集合を扱いアニメーションさせることを実現したい。
@@ -76,10 +74,8 @@ import {TimeStamp} from '../../../components/TimeStamp';
 ### ターゲット(tgt)
 - ターゲット(tgt)は以下に定義する、実オブジェクト、仮想オブジェクト、ディスプレイを総括してそう呼ぶ
   - 系に含まれるターゲットは配列で管理される
-
 - 点(point)もしくは線(line)であるところの３Dオブジェクトを実オブジェクト(obj)と呼ぶ
 　- objは配列として管理される
-
 - 複数のobjを含むまとまりを仮想オブジェクト(vir)と呼ぶ
 　- virは配列として管理される
 
@@ -100,7 +96,6 @@ function behavior(frame,target,prm1,prm2){
 
 ### スコアイメージ
 ``` text
-
 bpm:  120
 signature: 4/4
 +------+------+------+------+------+------+------+------+------+------+------+------+------+------+
@@ -133,20 +128,22 @@ signature: 4/4
 
 ### vir定義イメージ
 
+```text
 vir1 := obj1, obj2
 vir2 := obj3, obj4
 vir3 := obj5, obj6
 vir4 := obj1, obj2, obj3
 vir5 := obj4, obj5, obj6
 vir6 := obj1, obj2, obj3, obj4, obj5, obj6
-
+```
 ### アクション定義イメージ
+```text
 A1 := b1, b2
 A2 := b1, b3
 A3 := b2, b3, b4
 A4 := b1, b3, b5
 A5 := b4, b5, b6
-
+```
 ## シーンの構造
 想定するシーンを説明する。これは一例に過ぎない
 - ある3DオブジェクトをN1個、別の3DオブジェクトをN2個含むようなグループをG1とする

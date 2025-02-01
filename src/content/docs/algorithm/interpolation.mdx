@@ -41,9 +41,10 @@ layout: '../../../layouts/BaseLayout.astro'
         
  `}</style>
 
-import { TimeStamp } from '../../../components/TimeStamp';
+import TimeStamp from '../../../components/TimeStamp';
 
-<TimeStamp />
+<TimeStamp fileUrl={import.meta.url} />
+
 
 
 補間法というのは基本的に全ての点を通る関数を得ることである。

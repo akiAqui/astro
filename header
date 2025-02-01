@@ -1,6 +1,6 @@
 ---
-title: f) TypeScript
-description: 書き方
+title: f) Performanceテスト
+description: Web Performance API, Lighthouse
 layout: '../../../layouts/BaseLayout.astro'
 ---
  <style>{`
@@ -52,22 +52,3 @@ import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
 
 <TimeStamp fileUrl={import.meta.url} />
-
-## 前提
-- TypeScriptトランスパイルされる必要がある
-- トランスパイルのプロセスで型チェックが行われる
-  - scriptタグによる読み込みではTypeScriptは動かない
-  - インラインスクリプトはグローバルスコープで実行され、モジュール機能が使えない
-- モジュールシステムはES6以降の機能で、ファイルスコープを持つ
-
-## 分割代入
-
-```javascript
-const printUser = ({ name, age }: { name: string; age: number }) => {
-  console.log(`Name: ${name}, Age: ${age}`);
-};
-
-const user = { name: 'Bob', age: 30 };
-printUser(user);
-// 出力: Name: Bob, Age: 30
-```

@@ -1,6 +1,6 @@
 ---
-title: f) TypeScript
-description: 書き方
+title: -) JavaScript
+description: JavaScript
 layout: '../../../layouts/BaseLayout.astro'
 ---
  <style>{`
@@ -47,27 +47,18 @@ layout: '../../../layouts/BaseLayout.astro'
         
  `}</style>
 
-import CodeTitle from '../../../components/CodeTitle';
+import CodeTitle from    '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
+import {TimeStamp} from    '../../../components/TimeStamp';
 
 <TimeStamp fileUrl={import.meta.url} />
 
-## 前提
-- TypeScriptトランスパイルされる必要がある
-- トランスパイルのプロセスで型チェックが行われる
-  - scriptタグによる読み込みではTypeScriptは動かない
-  - インラインスクリプトはグローバルスコープで実行され、モジュール機能が使えない
-- モジュールシステムはES6以降の機能で、ファイルスコープを持つ
-
-## 分割代入
+## console.log variation
 
 ```javascript
-const printUser = ({ name, age }: { name: string; age: number }) => {
-  console.log(`Name: ${name}, Age: ${age}`);
-};
-
-const user = { name: 'Bob', age: 30 };
-printUser(user);
-// 出力: Name: Bob, Age: 30
+        console.group('Group Name');
+        console.log('%c This is a styled log', 'color: pink; font-weight: bold;');
+        console.table([{name: 'Alice', age: 25}, {name: 'Bob', age: 30}]);
+        console.groupEnd();
 ```
+

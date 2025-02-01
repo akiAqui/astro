@@ -49,20 +49,26 @@ layout: '../../../layouts/BaseLayout.astro'
 
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
-import {TimeStamp} from '../../../components/TimeStamp';
+import TimeStamp from '../../../components/TimeStamp';
 
 <TimeStamp fileUrl={import.meta.url} />
 
-# 点と線のためのアニメーションエンジン
+## 前提
 
-## 概要
-- 階層構造を持つ点と線の集合を扱いアニメーションさせることを実現したい。
-- 汎用的なアニメーションエンジン、スコア記述を検討し実際にサンプルを実装することを目指す
-
-
-## スコア・アーキテクチャ
-- csound的なscoreを手動生成(必要に応じてrubyで生成)
+### 概要
+- 階層構造を持つ点と線のオブジェクトの集合を扱いアニメーションさせる
+- 振舞いは今後も次々と追加する想定でそれを容易にする
+- 点や線は数百や数千のオーダーで扱うことを想定する
 - 
+- 音に合わせてアニメーションをシンクさせる
+- 指示に従ってその様子を録画することができる
+
+### アーキテクチャ概要
+- JSONに記載されたスコアを読み込むことで環境定義、デバッグ設定、オブジェクト定義、グループ定義、アニメーション定義を行う。
+- JSONの記載が困難を伴う場合は外部プログラムを別途開発する可能性もある
+
+### 採用技術
+- テクスチャはcanvasにプログラム生成することを想定し
 
 ## スコア要件
 
@@ -78,10 +84,8 @@ import {TimeStamp} from '../../../components/TimeStamp';
 ### ターゲット(tgt)
 - ターゲット(tgt)は以下に定義する、実オブジェクト、仮想オブジェクト、ディスプレイを総括してそう呼ぶ
   - 系に含まれるターゲットは配列で管理される
-
 - 点(point)もしくは線(line)であるところの３Dオブジェクトを実オブジェクト(obj)と呼ぶ
 　- objは配列として管理される
-
 - 複数のobjを含むまとまりを仮想オブジェクト(vir)と呼ぶ
 　- virは配列として管理される
 
@@ -98,11 +102,10 @@ function behavior(frame,target,prm1,prm2){
   position.x+=
 }
 ```
-- 
+
 
 ### スコアイメージ
 ``` text
-
 bpm:  120
 signature: 4/4
 +------+------+------+------+------+------+------+------+------+------+------+------+------+------+
@@ -125,8 +128,7 @@ signature: 4/4
 +------+------+------+------+------+------+------+------+------+------+------+------+------+------+
 | 6w   |  w   |  C   |  C   |  R   |  R   |  R   |  R   |  L   |  L   |  R   |  R   |  R   |  A6  |
 |      |      |      |      |      |      |      |      |      |      |      |      |      |      |
-+------+------+------+------+------+------+------+------+------+------+------+------+------+------+
- 
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+ 
 ```
 
 
@@ -134,20 +136,23 @@ signature: 4/4
 - そしてそれを解釈しなおして時間指定のViewで見えるようにすればいいのだろう。これがcsound/scoの+のようなものだ
 
 ### vir定義イメージ
-
+```text
 vir1 := obj1, obj2
 vir2 := obj3, obj4
 vir3 := obj5, obj6
 vir4 := obj1, obj2, obj3
 vir5 := obj4, obj5, obj6
 vir6 := obj1, obj2, obj3, obj4, obj5, obj6
+```
 
 ### アクション定義イメージ
+```text
 A1 := b1, b2
 A2 := b1, b3
 A3 := b2, b3, b4
 A4 := b1, b3, b5
 A5 := b4, b5, b6
+```
 
 ## シーンの構造
 想定するシーンを説明する。これは一例に過ぎない
@@ -194,142 +199,947 @@ A5 := b4, b5, b6
 
 ### 想定するプログラムアーキテクチャ概要
 
-#### スコアファイル(JSON)
-```json
+#### クラス図
+
+<MermaidChart code={`
+classDiagram
+    class IntegratedSystem {
+        -scene: THREE.Scene
+        -camera: THREE.PerspectiveCamera
+        -renderer: THREE.WebGLRenderer
+        -controls: OrbitControls
+        -objects: Map~string, Point|Line~
+        -groups: Map~string, string[]~
+        +loadFromJSON(data: SceneDefinition)
+        +animate()
+        -initRenderer()
+        -initCamera()
+        -configureEnvironment()
+        -updateObjects()
+        +getGroup(groupId: string)
+    }
+
+    class Point {
+        -behavior: Behavior
+        -geometry: THREE.BufferGeometry
+        -material: THREE.PointsMaterial
+        -points: THREE.Points
+        +constructor(position, size, color)
+        +static createFromDefinition()
+        -static createGrid()
+        -static createCircle()
+        -static createCube()
+        -static createSphere()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Line {
+        -geometry: THREE.BufferGeometry
+        -material: THREE.LineBasicMaterial
+        -line: THREE.Line
+        -behavior: Behavior
+        +constructor(position, width, length, color)
+        +static createFromDefinition()
+        -static createGrid()
+        -static createRadial()
+        -static createCubeFrame()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Behavior {
+        #protected initialPosition: THREE.Vector3
+        #protected currentPosition: THREE.Vector3
+        #protected time: number
+        +constructor(initialPosition)
+        +abstract update(deltaTime)
+        +getPosition()
+        #protected updateTime()
+    }
+
+    class RotationBehavior {
+        -rotationAxis: THREE.Vector3
+        -rotationSpeed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class TranslationBehavior {
+        -direction: THREE.Vector3
+        -distance: number
+        -speed: number
+        -initialDirection: THREE.Vector3
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class OrbitBehavior {
+        -radius: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class StaticBehavior {
+        +update(deltaTime)
+    }
+
+    class PointTexture {
+        +static create(color: string)
+    }
+
+    IntegratedSystem --> Point : contains
+    IntegratedSystem --> Line : contains
+    Point --> Behavior : uses
+    Line --> Behavior : uses
+    Point --> PointTexture : uses
+    Behavior <|-- RotationBehavior : extends
+    Behavior <|-- TranslationBehavior : extends
+    Behavior <|-- OrbitBehavior : extends
+    Behavior <|-- StaticBehavior : extends
+
+    note for IntegratedSystem "Manages the overall 3D scene<br />including objects, camera, and<br />rendering. Handles JSON loading<br />and scene updates."
+    
+    note for Point "Represents a point in 3D space.<br />Supports various pattern-based<br />generation methods and<br />behaviors."
+    
+    note for Line "Represents a line in 3D space.<br />Supports various pattern-based<br />generation methods and<br />custom behaviors."
+    
+    note for Behavior "Abstract base class for<br />object behaviors. Defines<br />common movement patterns."
+
+`} />
+
+#### シーケンス図
+<MermaidChart code={`
+
+sequenceDiagram
+    participant Main
+    participant System as IntegratedSystem
+    participant Scene as THREE.Scene
+    participant Point
+    participant Line
+    participant Behavior
+
+    Main->>System: new IntegratedSystem()
+    activate System
+    System->>Scene: new THREE.Scene()
+    System->>System: initRenderer()
+    System->>System: initCamera()
+    System->>System: setupEventListeners()
+    deactivate System
+
+    Main->>System: loadFromJSON(sceneData)
+    activate System
+    System->>System: configureEnvironment(data)
+    Note over System: Configure camera position<br/>and axis helper if specified
+
+    loop For each objectDefinition
+        alt type is "point"
+            System->>Point: createFromDefinition(def)
+            activate Point
+            
+            alt pattern is "grid"
+                Point->>Point: createGrid(params)
+            else pattern is "circle"
+                Point->>Point: createCircle(params)
+            else pattern is "cube"
+                Point->>Point: createCube(params)
+            else pattern is "sphere"
+                Point->>Point: createSphere(params)
+            end
+            
+            Point-->>System: return Point[]
+            deactivate Point
+            
+        else type is "line"
+            System->>Line: createFromDefinition(def)
+            activate Line
+            
+            alt pattern is "grid"
+                Line->>Line: createGrid(params)
+            else pattern is "circle"
+                Line->>Line: createRadial(params)
+            else pattern is "cube"
+                Line->>Line: createCubeFrame(params)
+            end
+            
+            Line-->>System: return Line[]
+            deactivate Line
+        end
+        
+        System->>Scene: add(mesh)
+    end
+
+    loop For each group definition
+        alt type is "index"
+            System->>System: resolveIndexBasedGroup()
+        else type is "spatial"
+            System->>System: resolveSpatialGroup()
+        end
+    end
+    deactivate System
+
+    Main->>System: animate()
+    activate System
+    loop Animation Frame
+        System->>System: updateObjects()
+        loop For each object
+            System->>Point: update(deltaTime)
+            Point->>Behavior: update(deltaTime)
+            System->>Line: update(deltaTime)
+            Line->>Behavior: update(deltaTime)
+        end
+        System->>Scene: render()
+    end
+    deactivate System
+
+    Note over Main,Behavior: System supports extensible patterns<br/>for object generation and grouping.<br/>Behaviors can be dynamically<br/>assigned to objects.
+
+`} />
+
+#### アニメーション追加後の想定クラス図
+
+
+
+- GSAPManager: GSAP自体の管理
+- AnimationController: アニメーション全体の制御
+- SceneAnimation: 個別アニメーションの管理
+- AnimationTarget: アニメーション対象のラッパー
+- AnimationConfig/StartCondition: アニメーション設定
+- IntegratedSystem: AnimationControllerとの連携追加
+
+
+<MermaidChart code={`
+classDiagram
+    class 更IntegratedSystem {
+        -scene: THREE.Scene
+        -camera: THREE.PerspectiveCamera
+        -renderer: THREE.WebGLRenderer
+        -controls: OrbitControls
+        -objects: Map~string, Point|Line~
+        -groups: Map~string, string[]~
+        -animationController: AnimationController
+        +loadFromJSON(data: SceneDefinition)
+        +loadAnimationsFromJSON(data: AnimationDefinition[])
+        -configureEnvironment(data)
+        -generateObjectId(baseId, index)
+        -resolveIndexBasedGroup(generator, range)
+        -resolveSpatialGroup(generator, condition)
+        +getGroup(groupId: string)
+        -updateObjects()
+        +animate()
+    }
+
+    class 新GSAPManager {
+        -plugins: Map~string, boolean~
+        -defaultEasing: string
+        -defaultDuration: number
+        -registeredEffects: Map~string, Function~
+        +initialize()
+        +registerPlugin(plugin: string)
+        +createTimeline(options: object)
+        +createTween(target: object, props: object)
+        +getRegisteredEffects()
+        +cleanup()
+    }
+
+    class 新AnimationController {
+        -gsapManager: GSAPManager
+        -animations: Map~string, SceneAnimation~
+        -dependencies: Map~string, string[]~
+        +loadAnimations(data: AnimationDefinition[])
+        +playAnimation(id: string)
+        +stopAnimation(id: string)
+        -resolveDependencies()
+        -handleAnimationComplete(id: string)
+    }
+
+    class 新SceneAnimation {
+        -id: string
+        -timeline: gsap.timeline
+        -targets: AnimationTarget[]
+        -config: AnimationConfig
+        -gsapManager: GSAPManager
+        +initialize()
+        +play()
+        +stop()
+        -setupTimeline()
+        -handleComplete()
+    }
+
+    class Point {
+        -behavior: Behavior
+        -geometry: THREE.BufferGeometry
+        -material: THREE.PointsMaterial
+        -points: THREE.Points
+        +constructor(position, size, color)
+        +static createFromDefinition()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Line {
+        -geometry: THREE.BufferGeometry
+        -material: THREE.LineBasicMaterial
+        -line: THREE.Line
+        -behavior: Behavior
+        +constructor(position, width, length, color)
+        +static createFromDefinition()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Behavior {
+        <<abstract>>
+        #initialPosition: THREE.Vector3
+        #currentPosition: THREE.Vector3
+        #time: number
+        +constructor(initialPosition)
+        +abstract update(deltaTime)
+        +getPosition()
+    }
+
+    class RotationBehavior {
+        -rotationAxis: THREE.Vector3
+        -rotationSpeed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class TranslationBehavior {
+        -direction: THREE.Vector3
+        -distance: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class OrbitBehavior {
+        -radius: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class StaticBehavior {
+        +update(deltaTime)
+    }
+
+    class PointTexture {
+        +static create(color: string)
+    }
+
+    class 新AnimationConfig {
+        +duration: number
+        +delay: number
+        +ease: string
+        +repeat: number
+        +properties: object
+        +startCondition: AnimationStartCondition
+    }
+
+    class 新AnimationStartCondition {
+        +type: string
+        +targetAnimation: string
+        +delay: number
+    }
+
+    class 新AnimationTarget {
+        -object: Point | Line
+        -initialState: object
+        +getGSAPTarget()
+        +resetToInitialState()
+    }
+
+    更IntegratedSystem --> 新AnimationController
+    新AnimationController --> 新GSAPManager
+    新AnimationController --> 新SceneAnimation
+    新SceneAnimation --> 新AnimationConfig
+    新SceneAnimation --> 新AnimationTarget
+    新AnimationTarget --> Point
+    新AnimationTarget --> Line
+    Point --> Behavior
+    Line --> Behavior
+    Point --> PointTexture
+    Behavior <|-- RotationBehavior
+    Behavior <|-- TranslationBehavior
+    Behavior <|-- OrbitBehavior
+    Behavior <|-- StaticBehavior
+    更IntegratedSystem --> Point
+    更IntegratedSystem --> Line
+    新AnimationConfig --> 新AnimationStartCondition
+
+    note for 新GSAPManager "Manages GSAP initialization<br/>and configuration globally"
+    
+    note for Behavior "Base class for all<br/>physical behaviors"
+    
+    note for 新AnimationController "Orchestrates all animations<br/>and their dependencies"
+
+
+`} />
+
+#### アニメーション追加後の想定シーケンス図
+
+<MermaidChart code={`
+
+sequenceDiagram
+    participant Main
+    participant System as IntegratedSystem
+    participant GSAPMgr as GSAPManager
+    participant Controller as AnimationController
+    participant Animation as SceneAnimation
+    participant Target as AnimationTarget
+    participant Point
+    participant Line
+    participant Behavior
+
+    Main->>System: new IntegratedSystem()
+    activate System
+    System->>System: initRenderer()
+    System->>System: initCamera()
+    System->>System: setupEventListeners()
+    deactivate System
+
+    Main->>System: loadFromJSON(sceneData)
+    activate System
+    loop For each objectDefinition
+        alt type is point
+            System->>Point: createFromDefinition(def)
+            Point-->>System: return Point[]
+        else type is line
+            System->>Line: createFromDefinition(def)
+            Line-->>System: return Line[]
+        end
+    end
+    deactivate System
+
+    Main->>System: loadAnimationsFromJSON(animData)
+    activate System
+    System->>GSAPMgr: initialize()
+    activate GSAPMgr
+    GSAPMgr->>GSAPMgr: registerPlugin("timeline")
+    GSAPMgr-->>System: initialized
+    deactivate GSAPMgr
+
+    System->>Controller: loadAnimations(animData)
+    activate Controller
+    
+    loop For each animation definition
+        Controller->>Animation: new SceneAnimation(def)
+        activate Animation
+        
+        Animation->>Target: new AnimationTarget(object)
+        Target->>Point: getMesh()
+        Point-->>Target: THREE.Points
+        
+        Animation->>GSAPMgr: createTimeline()
+        GSAPMgr-->>Animation: gsap.timeline
+        
+        alt has startCondition
+            Animation->>Animation: registerDependency()
+            Note over Animation: Store reference to<br/>dependent animation
+        end
+        
+        Animation-->>Controller: return animation
+        deactivate Animation
+    end
+
+    Controller->>Controller: resolveDependencies()
+    Controller-->>System: animations loaded
+    deactivate Controller
+    deactivate System
+
+    Main->>System: animate()
+    activate System
+    loop Animation Frame
+        System->>Controller: update()
+        Controller->>Animation: updateAnimations()
+        
+        par Update Physical Behaviors
+            System->>Point: update(deltaTime)
+            Point->>Behavior: update(deltaTime)
+        and Update GSAP Animations
+            Animation->>Target: applyGSAPValues()
+            Target->>Point: updatePosition()
+        end
+    end
+    deactivate System
+
+    Note over Main,Behavior: Animation system combines:<br/>1. Physical behaviors (Behavior)<br/>2. GSAP animations<br/>3. Dependency management<br/>4. Sequential execution
+
+
+`} />
+
+### アニメーション検討時の想定する変更点
+
+#### 1. JSONのanimation部の変更
+
+```typescript
 {
-  "objects": {
-    "box1": { "type": "BoxGeometry", "color": 16711680, "position": { "x": 0, "y": 0, "z": 0 } },
-    "box2": { "type": "BoxGeometry", "color": 65280, "position": { "x": 1, "y": 0, "z": 0 } },
-    "box3": { "type": "BoxGeometry", "color": 255, "position": { "x": -1, "y": 0, "z": 0 } }
+  "metadata": {
+    "version": "1.0",
+    "description": "Test scene with GSAP animations"
   },
+  "environment": {
+    // 既存の環境設定
+  },
+  "objectDefinitions": [
+    // 既存のオブジェクト定義
+  ],
   "groups": {
-    "group1": ["box1", "box2"],
-    "group2": ["box3"]
+    // 既存のグループ定義
   },
   "animations": [
     {
-      "target": "box1",
-      "type": "translation",
-      "properties": { "x": 2 },
-      "duration": 1,
-      "startTime": 0
+      "id": "rotation-anim",
+      "targets": {
+        "type": "group",
+        "id": "circle_points"
+      },
+      "config": {
+        "duration": 2,
+        "repeat": -1,
+        "ease": "power2.inOut",
+        "properties": {
+          "rotation": 360,
+          "scale": {
+            "from": 1,
+            "to": 1.5,
+            "yoyo": true
+          }
+        }
+      }
     },
     {
-      "target": "group1",
-      "type": "rotation",
-      "properties": { "y": Math.PI },
-      "duration": 2,
-      "startTime": 1
+      "id": "translation-anim",
+      "targets": {
+        "type": "single",
+        "id": "points/cube/0"
+      },
+      "config": {
+        "duration": 1.5,
+        "ease": "elastic.out(1, 0.3)",
+        "properties": {
+          "position": {
+            "y": "+= 2"
+          }
+        },
+        "startCondition": {
+          "type": "afterComplete",
+          "targetAnimation": "rotation-anim",
+          "delay": 0.5
+        }
+      }
     },
     {
-      "target": "box3",
-      "type": "translation",
-      "properties": { "z": 3 },
-      "duration": 1.5,
-      "startTime": 2
+      "id": "wave-anim",
+      "targets": {
+        "type": "pattern",
+        "pattern": "stagger",
+        "ids": ["points/grid/0/*"],
+        "stagger": {
+          "amount": 1,
+          "from": "center"
+        }
+      },
+      "config": {
+        "duration": 0.5,
+        "properties": {
+          "position": {
+            "y": "+= 1",
+            "yoyo": true,
+            "repeat": -1
+          }
+        }
+      }
     }
   ]
 }
 ```
 
-#### プログラム
-- アニメーション開始の遅延をdelayとしてGSAP.to()に渡す
+#### JSON変更点
+
+1. トップレベルに `animations` 配列を追加
+   - 各アニメーションの定義を格納
+   - アニメーション間の依存関係を定義可能
+   - 複数のアニメーションを並行して定義可能
+
+2. アニメーション定義の新規プロパティ
+   - `id`: アニメーション識別子（一意）
+   - `targets`: アニメーション対象の指定方法
+   - `config`: アニメーション設定
+   - `properties`: 変更するプロパティとその値
+
+3. ターゲット指定の種類
+   - `single`: 単一オブジェクト指定
+   - `group`: 定義済みグループ指定
+   - `pattern`: パターンベースの選択
+   - ワイルドカード（*）による複数オブジェクト指定
+
+4. アニメーション設定の拡張
+   - GSAP固有のプロパティ
+     - ease: イージング関数
+     - repeat: 繰り返し回数
+     - yoyo: 往復アニメーション
+   - 依存関係の定義（startCondition）
+     - afterComplete: アニメーション完了後
+     - afterStart: アニメーション開始後
+   - stagger効果の設定
+     - amount: 遅延時間
+     - from: 開始位置
+
+### 想定するアニメーション実装コード
+
+#### SceneAnimation.ts
+```typescript
+export class SceneAnimation {
+  private id: string;
+  private timeline: gsap.timeline;
+  private targets: AnimationTarget[];
+  private config: AnimationConfig;
+  private gsapManager: GSAPManager;
+
+  constructor(definition: AnimationDefinition, gsapManager: GSAPManager) {
+    this.id = definition.id;
+    this.gsapManager = gsapManager;
+    this.config = definition.config;
+    this.initialize();
+  }
+
+  private initialize(): void {
+    // タイムライン作成
+    this.timeline = this.gsapManager.createTimeline({
+      paused: true,
+      repeat: this.config.repeat,
+      onComplete: () => this.handleComplete()
+    });
+
+    // ターゲットの処理
+    if (this.config.properties.position) {
+      this.timeline.to(this.targets.map(t => t.getMesh().position), {
+        ...this.config.properties.position,
+        duration: this.config.duration,
+        ease: this.config.ease,
+        stagger: this.config.stagger
+      });
+    }
+
+    if (this.config.properties.rotation) {
+      this.timeline.to(this.targets.map(t => t.getMesh().rotation), {
+        ...this.config.properties.rotation,
+        duration: this.config.duration,
+        ease: this.config.ease,
+        stagger: this.config.stagger
+      });
+    }
+  }
+
+  public play(): void {
+    this.timeline.play();
+  }
+
+  public pause(): void {
+    this.timeline.pause();
+  }
+
+  private handleComplete(): void {
+    // アニメーション完了時の処理
+    if (this.config.onComplete) {
+      this.config.onComplete();
+    }
+  }
+}
+```
+
+#### AnimationController.ts
+```typescript
+export class AnimationController {
+  private animations: Map<string, SceneAnimation> = new Map();
+  private gsapManager: GSAPManager;
+
+  constructor(gsapManager: GSAPManager) {
+    this.gsapManager = gsapManager;
+  }
+
+  public loadAnimations(definitions: AnimationDefinition[]): void {
+    definitions.forEach(def => {
+      const animation = new SceneAnimation(def, this.gsapManager);
+      this.animations.set(def.id, animation);
+    });
+
+    // 依存関係の解決
+    this.resolveDependencies();
+  }
+
+  private resolveDependencies(): void {
+    this.animations.forEach(anim => {
+      const condition = anim.getStartCondition();
+      if (condition?.type === 'afterComplete') {
+        const targetAnim = this.animations.get(condition.targetAnimation);
+        targetAnim?.onComplete(() => {
+          setTimeout(() => anim.play(), (condition.delay || 0) * 1000);
+        });
+      }
+    });
+  }
+}
+```
+
+#### アニメーション設定の型定義
+```typescript
+interface AnimationDefinition {
+  id: string;
+  targets: AnimationTarget;
+  config: AnimationConfig;
+}
+
+interface AnimationTarget {
+  type: 'single' | 'group' | 'pattern';
+  id?: string;
+  ids?: string[];
+  pattern?: string;
+  stagger?: StaggerConfig;
+}
+
+interface AnimationConfig {
+  duration: number;
+  ease?: string;
+  repeat?: number;
+  properties: {
+    position?: PositionConfig;
+    rotation?: RotationConfig;
+    scale?: ScaleConfig;
+  };
+  startCondition?: StartCondition;
+}
+
+interface StartCondition {
+  type: 'afterComplete' | 'afterStart';
+  targetAnimation: string;
+  delay?: number;
+}
+```
+
+
+### 線分のテクスチャ検討
+
+#### 要件
+- canvasベースでテクスチャを生成できること
+- 外部ファイルのテクスチャを取り込めること
+- shaderでテクスチャを生成できること
+- パフォーマンス（GPUメモリ、テクスチャ切り替えコストなど）を想定すること
+
+#### 結論
 - 
 
-```javascript
-import * as THREE from 'three';
-import { gsap } from 'gsap';
-import animationData from './animations.json';
 
-// Three.jsのセットアップ
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+#### 選択肢
+| Material Type | Shader生成テクスチャ | 外部テクスチャ | Canvas動的生成 | データ保持形式 | 備考 |
+|--------------|-------------------|--------------|--------------|------------|------|
+| LineBasicMaterial | × | × | × | - | 色のみ設定可能 |
+| LineMaterial | △ | ○ | ○ | THREE.Texture | mapプロパティで設定 |
+| ShaderMaterial | ○ | ○ | ○ | uniform経由でTHREE.Texture | フラグメントシェーダーで自由に制御可能 |
+| RawShaderMaterial | ○ | ○ | ○ | uniform経由でTHREE.Texture | 完全なカスタムシェーダーが必要 |
+| LayerMaterial | ○ | ○ | ○ | 各レイヤーごとにTHREE.Texture | 複数のレイヤーを合成可能 |
 
-// オブジェクトとグループの作成
-const objects: Record<string, THREE.Object3D> = {};
-const groups: Record<string, THREE.Group> = {};
+### マテリアルの特徴と制限
 
-// JSONからオブジェクトを作成
-Object.entries(animationData.objects).forEach(([name, config]) => {
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial({ color: config.color });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(config.position.x, config.position.y, config.position.z);
-  objects[name] = mesh;
-  scene.add(mesh);
-});
+#### LineBasicMaterial
+* 最も基本的なライン用マテリアル
+* テクスチャ非対応
+* 単色のみの設定が可能
+* パフォーマンスが最も優れている
 
-// JSONからグループを作成
-Object.entries(animationData.groups).forEach(([groupName, memberNames]) => {
-  const group = new THREE.Group();
-  memberNames.forEach((memberName) => {
-    if (objects[memberName]) {
-      group.add(objects[memberName]);
-    }
-  });
-  groups[groupName] = group;
-  scene.add(group);
-});
-
-// GSAPアニメーションの適用
-const timeline = gsap.timeline();
-animationData.animations.forEach((anim) => {
-  const target =
-    groups[anim.target] || // グループの場合
-    objects[anim.target]; // 単一オブジェクトの場合
-
-  if (target) {
-    // アニメーションタイプに応じた適用
-    const propertyTarget = anim.type === 'rotation' ? target.rotation : target.position;
-
-    timeline.to(propertyTarget, {
-      ...anim.properties,
-      duration: anim.duration,
-      delay: anim.startTime // 開始時間を指定
-    });
-  }
-});
-
-// アニメーションループ
-const animate = () => {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-};
-animate();
-```
-
-もしくは全てのグループ挙動を一旦個別挙動に解釈しなおしてからアニメーションを実行するという方法もある。こちらの方がいいかもしれない。テキストなどでいいフォーマットを考え付けば一つ一つでの挙動も事前に観察できるだろう。
+#### LineMaterial
+* LineBasicMaterialの拡張
+* THREE.Texture系すべてに対応
+* シェーダーのカスタマイズは限定的
+* 一般的な用途に適している
 
 ```javascript
-const animationsByObject: Record<string, any[]> = {};
-
-// グループを展開し、オブジェクト単位のアニメーションを生成
-animationData.animations.forEach((anim) => {
-  const targets = groups[anim.target] || [anim.target]; // グループか個別オブジェクトかを判定
-  targets.forEach((targetName) => {
-    if (!animationsByObject[targetName]) {
-      animationsByObject[targetName] = [];
-    }
-    animationsByObject[targetName].push({
-      type: anim.type,
-      properties: anim.properties,
-      duration: anim.duration,
-      startTime: anim.startTime,
-    });
-  });
+const lineMaterial = new THREE.LineMaterial({
+    map: texture,
+    linewidth: 1,
+    color: 0xffffff
 });
-
-// 競合検出の例
-Object.entries(animationsByObject).forEach(([objectName, objectAnimations]) => {
-  if (objectAnimations.length > 1) {
-    console.warn(`競合検出: ${objectName} に複数のアニメーションが同時実行されます`, objectAnimations);
-  }
-});
-
 ```
+
+#### ShaderMaterial
+* 最も柔軟なテクスチャ制御が可能
+* 独自のシェーダーコードが必要
+* パフォーマンスのチューニングが可能
+* Three.jsの組み込み変数が利用可能
+
+```javascript
+const shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        map: { value: texture }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D(map, vUv);
+        }
+    `
+});
+```
+
+#### RawShaderMaterial
+* 完全なカスタムシェーダーが必要
+* Three.jsの組み込み変数も自前で定義
+* 最も低レベルな制御が可能
+* パフォーマンスの最適化が可能
+
+```javascript
+const rawShaderMaterial = new THREE.RawShaderMaterial({
+    uniforms: {
+        map: { value: texture }
+    },
+    vertexShader: `
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        attribute vec3 position;
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        precision highp float;
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D(map, vUv);
+        }
+    `
+});
+```
+
+#### LayerMaterial
+* 複数のレイヤーを合成可能
+* 各レイヤーで異なるテクスチャタイプを使用可能
+* レイヤーごとに独立した制御が可能
+* ブレンドモードの指定が可能
+
+```javascript
+const layerMaterial = new THREE.LayerMaterial({
+    layers: [
+        new THREE.ShaderLayer({
+            fragmentShader: customShader,
+            uniforms: {
+                customTexture: { value: texture1 }
+            }
+        }),
+        new THREE.TextureLayer({
+            texture: texture2,
+            blendMode: 'add'
+        }),
+        new THREE.CanvasLayer({
+            texture: canvasTexture,
+            opacity: 0.5
+        })
+    ]
+});
+```
+
+### テクスチャの種類と利用パターン
+
+#### 基本テクスチャ
+* THREE.Texture: 基本クラス
+* THREE.CanvasTexture: Canvas要素から生成
+* THREE.DataTexture: バイナリデータから生成
+* THREE.CompressedTexture: 圧縮テクスチャ用
+
+```javascript
+// 基本的なテクスチャ生成
+const texture = new THREE.Texture(image);
+const canvasTexture = new THREE.CanvasTexture(canvas);
+const dataTexture = new THREE.DataTexture(data, width, height, format);
+```
+
+#### テクスチャアトラス
+* 複数のテクスチャを1枚のテクスチャとして管理
+* UVマッピングで部分的に使用
+* メモリ効率とドローコールの最適化に有効
+
+```javascript
+const atlasTexture = new THREE.Texture(atlasImage);
+// UVを適切に設定して部分使用
+geometry.setAttribute('uv', new THREE.BufferAttribute(uvData, 2));
+```
+
+#### データテクスチャ
+* バイナリデータを直接テクスチャとして利用
+* パフォーマンスが重要な場合に有効
+* カスタムデータの格納に適している
+
+```javascript
+const data = new Uint8Array([/* データ */]);
+const dataTexture = new THREE.DataTexture(
+    data,
+    width,
+    height,
+    THREE.RGBAFormat
+);
+dataTexture.needsUpdate = true;
+```
+
+#### 動的レンダーテクスチャ
+* レンダリング結果をテクスチャとして利用
+* リアルタイムの反射や影の計算に使用
+* パフォーマンスコストが高い
+
+```javascript
+const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType
+});
+renderer.setRenderTarget(renderTarget);
+renderer.render(scene, camera);
+material.map = renderTarget.texture;
+```
+
+### その他
+#### パフォーマンスの考慮事項
+
+* テクスチャサイズは2のべき乗を使用
+* 不要なテクスチャはdisposeを呼び出してメモリ解放
+* ミップマップは必要な場合のみ生成
+* テクスチャの更新頻度を最適化
+* 適切なテクスチャフォーマットを選択
+
+#### デバッグとトラブルシューティング
+
+* THREE.Textureのプロパティで状態確認
+* needsUpdateフラグの適切な使用
+* WebGLRendererのinfo機能でメモリ使用量確認
+* テクスチャ読み込みエラーのハンドリング
+* UVマッピングの視覚的デバッグ
+
+#### 補足事項
+
+* テクスチャのメモリ管理は重要
+* 適切なマテリアルとテクスチャの組み合わせを選択
+* 更新頻度とパフォーマンスのバランスを考慮
+* デバッグツールの活用
+
+
+
+
 
 ### オーディオ解析
 - Tone.jsを利用して周波数解析と、波形解析から始める

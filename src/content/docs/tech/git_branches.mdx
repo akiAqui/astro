@@ -1,0 +1,260 @@
+---
+title: ＊）gitでのテスト運用
+description: branch, multi, 
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## はじめに
+一つのリポジトリで開発を進めるとリポジトリは変化を積み重ねてゆくが、
+Three.jsの各種テストをする場合、master.tsをAIで生成して、
+ファイルごと書き換えて更新し技術的な確認ができれば終了する。
+
+この資料では、
+一つのリポジトリで、
+説明付きの複数のブランチで複数のテストを運用するときの方法を記載する
+
+## 運用プロセス概要
+初期化後は、実験ごとに実験開始のプロセスを実行する。実験中に他の実験ソースを見たいときは、
+
+- 初期化
+  - test運用リモート・リポジトリの作成(github.comで作業)
+  - ローカルファイル環境の作成(npm create)
+  - README.mdファイル作成(touch README.md)
+  - git init,
+  - .gitignoreを確認
+  - git add,commit remote add originでローカルmasterブランチの作成
+  - git push -u origin masterしてリモートにmasterブランチを作成
+  - master branchは中身のない綺麗な状態としておく
+- 実験開始(misc/exp1というブランと想定）
+  - 実験準備
+    - git branch -aして既存ブランチを確認（名前の重なりを避けるなど）  
+    - 実験用ブランチの作成(git switch -c misc/exp1)
+    - ブランチの説明を追加(これはどのブランチにいても変更可能)
+    - ブランチの説明文を表示確認
+    - 現在いるブランチを確認 git branch --show-current
+  - 共通ブランチ"resource"からのリソース取得
+    - 現ブランチでcommit
+    - git switch resource
+    - ファイルの中身を確認ファイル名を確定
+    - 戻る。git switch exp1　　#現ブランチの名前がexp1だったとして
+    - git checkout 
+  - 実験開始
+    - 編集して実験コード、リソース等の挿入
+    - git add, commit, push -s origin exp1
+    - その後commit/pushで更新し実験終了
+  - 実験終了
+    - README.mdを更新、必要に応じて他のドキュメントも更新
+    - 最終のpushをして実験終了
+  - 実験初期状態に戻す
+    - git swich masterして元の状態に戻しておく
+
+
+### 実験準備
+
+- ブランチ名はスラッシュで区切って分類を行う
+  - three/: three.js関連の実験
+  - glsl/:  glsl関連の実験
+  - anime/: 特定のプロジェクトに向けた実験
+  - csound/: csound関連の実験
+  - misc/: それ以外いろいろなテスト用
+- 特に
+　- resource: リソースは共通ブランチという形で管理する
+
+```text
+> git branch -a
+> git switch -c three/boofoo　# 新しいテストブランチの作成とswitch
+                              # スラッシュで階層的な命名にしている
+                              ```
+### リソースの取得、保存
+- Gitはファイルの内容をハッシュ化して保存するので、ブランチ間で同じファイルがあってもディスクは喰わない
+
+#### ファイルのリストを見る
+```text
+> git ls-tree -r resource:public/images/
+> または、git ls-tree -r --name-only resource
+```
+
+#### 特定のファイルの中身をcatする
+```text
+git show resource:public/images/icon.png
+```
+
+#### 向こうのブランチに行って確認してディレクトリ構造を保ちながらcheckout
+```text
+> git commit -m "作業中の変更"  # 1. 未コミットの変更があれば保存
+> git switch resource           # 2. リソースブランチに移動
+> git switch exp1               # 3. 確認後、作業ブランチに戻る
+> git checkout resource -- public/images/icon.png # 4. 必要なリソースを取得
+```
+
+stashで一時退避もあるが、多用のリスクを鑑みて行わない
+
+### 実験開始
+```text
+> git config branch.test/boofoo.description "メッセージ"  # ブランチの説明を追加
+> git add .
+> git commit -m "first boofoo experiment"
+> git push origin test/boofoo
+```
+
+### 便利）過去の実験を基に新しい実験を始める場合
+
+```text
+git switch -c test/new-experiment test/old-experiment　　# 過去の実験ブランチから新しいブランチを作成
+git add master.ts　　　　　　　　　　　　　　　　　　　　# 必要な修正を加えてコミット
+git commit -m "Modify experiment for new test"
+git push -u origin test/new-experiment
+```
+
+### 実験終了
+
+#### branchのdescriptionを編集・確認（複数行の説明を書きたい場合）
+```text
+> git config branch.test/boofoo.description "新しい説明文"　# 説明の上書き変更(.git/configの手動書き換えはしない）
+> git config branch.$(git rev-parse --abbrev-ref HEAD).description　　# 現在のブランチの説明を確認
+
+
+> echo $EDITOR # エディタを確認
+> 例）export EDITOR=cat #シェル上で書き換える
+> git branch --edit-description
+```
+
+### 実験初期状態に戻す
+```text
+> git swtich master
+> git branch  # 現在のブランチがmasterになっていればmasterに*がついていることを確認
+```
+
+## トラブルシューティング
+
+### 1.間違ったブランチ名を作ったときの、ブランチ名の変更
+```text
+# ローカルブランチ名の変更(リモートには何の影響も与えない)
+> git branch -m old-name new-name
+```
+### 2.間違ったコミットをプッシュしてしまった場合
+
+1. 直前のコミットを取り消す場合（安全な方法）:
+```text
+# 取り消すためのコミットを新たに作成
+git revert HEAD
+git push origin branch-name
+```
+
+2. プッシュ自体を取り消す場合（?? 危険な操作）:
+```text
+# 強制的にプッシュを巻き戻す
+git push -f origin HEAD^:branch-name
+```
+
+#### 重要な注意事項:
+- `git push -f`（force push）は、リモートの履歴を強制的に上書きします
+- チーム開発では他の開発者の作業に影響を与える可能性があるため、使用を避けてください
+- 個人の開発ブランチでのみ、十分な注意を払って使用してください
+- force pushを行う前に、必ず変更内容を別ブランチにバックアップしてください
+
+## 参考情報
+### 参考　初期セットアップ
+
+```text
+（リモートリポジトリ作成）
+> git config --global --list   # 全てのグローバル設定を表示
+> git config --global core.quotepath  # 特定の設定値を確認
+> git config --global core.quotepath false　# 日本語の文字化け防止の設定
+
+> git init tester　# ローカルリポジトリの作成
+> cd tester
+> git remote add origin git@github.com:yourusername/tester.git　# リモートリポジトリの設定
+
+> touch README.md # README.mdに各テストの暫定記述
+> git add README.md
+> git commit -m "Initial commit"
+> git push -u origin master
+```
+
+### 参考　リモートリポジトリの操作
+
+```text
+# リモートの確認
+git remote -v
+
+# ローカルの.git/configのremote "origin"にあるエントリがすべて削除される
+git remote remove origin
+
+# ローカルの.git/configのremote "origin"にあるurlエントリの情報が追加される
+git remote add origin git@github.com:yourusername/new-repo.git
+
+```
+### 参考 便利なエイリアスの設定と使用
+
+GitConfigでエイリアスを設定することで、長いコマンドを短縮できます。
+
+```text
+# .gitconfigに追加
+[alias]
+    # 現在のブランチに説明を追加するエイリアス
+    bdesc = "!f() { git config branch.$(git rev-parse --abbrev-ref HEAD).description \"$1\"; }; f"
+    # 現在のブランチの説明を表示するエイリアス
+    bshow = "!git config branch.$(git rev-parse --abbrev-ref HEAD).description"
+```
+
+使用例：
+```text
+# エイリアスを使用しない場合
+git config branch.$(git rev-parse --abbrev-ref HEAD).description "新しいテスト機能の説明"
+git config branch.$(git rev-parse --abbrev-ref HEAD).description
+
+# エイリアスを使用する場合
+git bdesc "新しいテスト機能の説明"
+git bshow
+```

@@ -1,5 +1,5 @@
 ---
-title: f) 液滴
+title: f) ekiteki/液滴
 description: 液滴の形状を計算する
 layout: '../../../layouts/BaseLayout.astro'
 ---
@@ -11,7 +11,7 @@ layout: '../../../layouts/BaseLayout.astro'
            font-size:15px;
         }
         .sl-markdown-content h1 {
-           font-size:  30px;
+           font-size:  27px;
            text-decoration: underline;
            font-weight: bold
         }
@@ -47,9 +47,19 @@ layout: '../../../layouts/BaseLayout.astro'
         
  `}</style>
 
+import CodeTitle from    '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from    '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
 
 <center><img src="/ekiteki.png" width="60%"/></center>
 
+## ステイタス
+- このプログラム自体は完成したがこの結果をどう適用するのかまだ不明
+
+
+## はじめに
 - 曲線を描くことを目的とする
 - 生成するjavascriptはp5jsを利用する
 - 数学的処理は全てMathの関数を利用

@@ -1,0 +1,237 @@
+---
+title: ＊) Flickの拡散の法則
+description: 生理学者の提唱する拡散の法則
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+ドイツの生理学者Adolf Eugen Fick (1829-1901)によって1855年に提唱された拡散の法則。
+だめだ。式の導き方が分からない。。。
+
+
+## Fick's Laws of Diffusion（フィックの拡散法則）
+
+1. 第一法則：断面の粒子数で考えたときに、濃度が高い方から低い方に粒子が移動し一次微分に比例する
+2. 第二法則：濃度分布が線形分布であると定常に達して変化が起こらないということを示している
+
+### Fickの第一法則
+
+$$
+\vec{J} = -D\nabla c
+$$
+
+### Fickの第二法則
+
+$$
+\frac{\partial c}{\partial t} = D\nabla^2 c
+$$
+
+- $J$ : 拡散フラックス $[mol/(m^2\cdot s)]$
+- $D$ : 拡散係数 $[m^2/s]$
+- $c$ : 濃度 $[mol/m^3]$
+- $\nabla$ :  勾配演算子(gradient)
+- $\nabla^2$ : ラプラシアン演算子
+
+
+
+フィックの第一法則の3次元表現を展開すると、
+$$
+\vec{J} = -D\nabla c
+$$
+
+これは成分表示で書くと：
+
+$$
+\begin{aligned}
+J_x = -D\frac{ \partial c}{ \partial x} \\
+J_y = -D\frac{ \partial c}{ \partial y} \\
+J_z = -D\frac{ \partial c}{ \partial z}
+\end{aligned}
+$$
+
+あるいはベクトル形式で：
+$$
+\mathbb{J} = -D
+\begin{pmatrix}
+\frac{\partial c}{\partial x} ,\
+\frac{\partial c}{\partial y} ,\
+\frac{\partial c}{\partial z}
+\end{pmatrix}
+$$
+
+球座標系では：
+$$
+\mathbb{J} = -D
+\begin{pmatrix}
+\frac{\partial c}{\partial r} ,\
+\frac{1}{r}\frac{\partial c}{\partial \theta} ,\
+\frac{1}{r\sin\theta}\frac{\partial c}{\partial \phi}
+\end{pmatrix}
+$$
+
+
+
+フィックの第二法則の3次元表現は、
+$$
+\frac{\partial c}{\partial t} =
+D\left(\frac{\partial^2 c}{\partial x^2} + \frac{\partial^2 c}{\partial y^2} + \frac{\partial^2 c}{\partial z^2}\right)
+$$
+
+球座標系では、
+$$
+\frac{\partial c}{\partial t} =
+ D\left(\frac{1}{r^2}\frac{\partial}{\partial r}\left(r^2\frac{\partial c}{\partial r}\right) + \frac{1}{r^2\sin\theta}\frac{\partial }{\partial\theta}\left(\sin\theta\frac{\partial c}{\partial\theta}\right) + \frac{1}{r^2\sin^2\theta}\frac{\partial^2 c}{\partial\phi^2} \right)
+$$
+
+
+
+
+
+
+### 応用例
+
+- 生体膜を通じての物質輸送
+- 半導体のドーピングプロセス
+- 熱伝導（温度勾配による熱の拡散）
+- 気体の混合過程
+
+## 導出
+３次元の系においてｘ方向の粒子フラックスを考える。
+
+まず一つの粒子に注目すると、$J_R$の右側のフラックスは、
+
+(粒子が右方向に動く確率) x ()
+
+
+
+
+濃度勾配による正味の
+
+$x$ 方向の微小区間 $dx$ での粒子数の時間変化を表現
+
+単位時間あたりの粒子の移動確率 $P$ は濃度 $c$ に比例:
+
+$P \propto c$
+
+位置 $x$ での右向きフラックス $J_R$ は:
+
+$J_R = \frac{1}{2}c(x)\lambda\nu$
+ここで、$\lambda$ は平均自由行程、$\nu$ は衝突頻度
+
+同様に左向きフラックス $J_L$ は:
+
+$J_L = \frac{1}{2}c(x+dx)\lambda\nu$
+
+正味のフラックス $J$ は:
+
+$J = J_R - J_L = \frac{1}{2}\lambda\nu[c(x) - c(x+dx)]$
+
+Taylor展開により:
+
+$c(x+dx) = c(x) + \frac{\partial c}{\partial x}dx$
+
+これを代入:
+
+$J = -\frac{1}{2}\lambda\nu\frac{\partial c}{\partial x}dx$
+
+拡散係数 $D$ を導入:
+
+$D = \frac{1}{2}\lambda\nu dx$
+
+最終的にFickの第一法則:
+
+$J = -D\frac{\partial c}{\partial x}$
+負号は濃度の高い方から低い方向への流れを示す。
+
+
+### 補足
+
+$J_R = \frac{1}{2}c(x)\lambda\nu$ の導出を詳しく説明します。
+
+まず、$\frac{1}{2}$ の由来:
+
+
+3次元空間での分子の運動を考えると、x方向正方向に動く確率は全方向の1/6
+1次元問題に帰着させると、右方向は1/2の確率
+
+
+$c(x)$ の意味:
+
+
+位置xでの粒子濃度
+単位体積当たりの粒子数を表す
+
+
+$\lambda$ (平均自由行程)の意味:
+
+
+分子が衝突するまでに進む平均距離
+この距離が粒子の1回の移動距離を決定
+
+
+$\nu$ (衝突頻度)の意味:
+
+
+単位時間当たりの衝突回数
+1秒間に何回移動できるかを決定
+
+
+これらを組み合わせると:
+
+
+$c(x)$: 位置xでの粒子数
+$\frac{1}{2}$: 右方向に動く確率
+$\lambda$: 1回の移動距離
+$\nu$: 単位時間当たりの移動回数
+
+よって、単位時間・単位面積当たりの右向きフラックス:
+$J_R = \frac{1}{2}c(x)\lambda\nu$
+これは、「位置xにある粒子が右方向に動く確率×1回の移動距離×単位時間当たりの移動回数」を表現しています。

@@ -1,0 +1,230 @@
+---
+title: ＊）ランダムウォーク
+description: 一般的なランダムウォークの性質
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## 1. 基本的な確率の定義
+
+### 期待値と分散
+期待値$E[X]$は確率変数の平均値を表し、分散$Var(X)$はそのばらつきを表します。
+
+分散の定義：
+
+$$
+\begin{aligned}
+Var(X) &= E[(X - E[X])^2]\\
+       &= E[X^2] - (E[X])^2
+\end{aligned}
+$$
+
+
+### 物理での表記
+物理学では期待値を$\langle X \rangle$と表記することが多く、これは$E[X]$と同じ意味です。
+
+
+## ランダムウォークで平均二乗変位が時間に比例する理由
+
+ランダムウォークで平均二乗変位（Mean Squared Displacement, MSD）、$\mathbb{E}[\Delta X_t^2] $が時間に比例する理由は、各ステップの移動が独立しており、分散が時間ごとに積み重なっていくためです。以下に詳細を説明します。
+
+### 0. 定義
+- ランダムウォークしたtステップ後の位置は$X_t$とする
+- ランダムウォークする点が最初は原点にいて$X_0=0$とする
+- ステップ毎に$\Delta x$だけ確率$p$で右に移動する
+- 1次元ランダムウォークでは、時間 $t$ における位置 $X_t$ は次のように表現できる。
+$$
+\begin{align}
+X_t
+=& X_0+\sum_{i=1}^t \Delta X_i\\
+=& \sum_{i=1}^t \Delta X_i\\
+\end{align}
+$$
+ここで：
+- $\Delta X_i$ は $i$-番目のステップでの移動量。
+  - 確率 $p$ で $+\Delta x$
+  - 確率 $1-p$ で $-\Delta x$
+  - ただし左右に同じ確率で移動するなら$p=\frac{1}{2}$
+- 各 $\Delta X_i$ は独立かつ同一の確率分布に従う。
+- $\mathbb{E}\left[{\Delta X_i}\right]=0$ (なぜなら、左右に同確率で移動するので)
+
+### 2. 位置の期待値
+
+位置$X_t$の期待値を計算する
+$$
+\begin{align}
+\mathbb{E} [X_t]
+=& \mathbb{E} [\sum_{i=1}^t \Delta X_i]\\
+=& \mathbb{E} [\Delta X_0+\Delta X_1+\Delta X_2+...]\\
+=&0
+\end{align}
+$$
+
+### 1. 位置の二乗期待値
+二乗期待値の計算を試みる。(2)を使って、二乗を式展開すると、
+
+$$
+\begin{align}
+\mathbb{E}[X_t^2]
+=& \mathbb{E}\left[\left(\sum_{i=1}^t \Delta X_i\right)^2\right]\\
+=& \mathbb{E}\left[\sum_{i=1}^t (\Delta X_i)^2 + 2 \sum_{i<j} \Delta X_i \Delta X_j\right]
+\end{align}
+$$
+
+
+各 $\Delta X_i$ は独立しているため、異なる $i \neq j$ については、
+
+$$
+\mathbb{E}[\Delta X_i \Delta X_j] = \mathbb{E}[\Delta X_i] \cdot \mathbb{E}[\Delta X_j]
+$$
+$\mathbb{E}[\Delta X_i] = 0$ より、交差項 $2 \sum_{i<j} \Delta X_i \Delta X_j$ は消える。
+
+残りは各ステップの二乗の和のみが残り、
+
+$$
+\begin{align}
+\mathbb{E}[X_t^2] = \sum_{i=1}^t \mathbb{E}[(\Delta X_i)^2]
+\end{align}
+$$
+
+以上より位置の二乗の期待値は、各ステップの変異量の二乗の期待値の合算値であることが分かった。
+次に、$\mathbb{E}[(\Delta X_i)^2]$を求める
+
+### 3. 変異量の二乗期待値
+
+$\mathbb{E}[(\Delta X_t)^2]$の算出をするために、$\Delta X_i$ の確率分布を考える。
+
+$$
+\Delta X_i =
+\begin{cases}
++\Delta x & \text{確率 } p, \\
+-\Delta x & \text{確率 } 1-p
+\end{cases}
+$$
+その二乗期待値は：
+$$
+\begin{aligned}
+\mathbb{E}[(\Delta X_i)^2]
+
+=& (+\Delta x)^2 \cdot p + (-\Delta x)^2 \cdot (1-p)\\
+=& (\Delta x)^2 \cdot p + (\Delta x)^2 -p\cdot (\Delta x)^2\\
+=& (\Delta x)^2
+\end{aligned}
+$$
+
+上記より、
+$$
+\begin{aligned}
+\mathbb{E}[X_t^2]
+= & \sum_{i=1}^t \mathbb{E}[(\Delta X_i)^2]\\
+= & \sum_{i=1}^t (\Delta x)^2\\
+= & t\cdot(\Delta x)^2\\
+\end{aligned}
+$$
+
+
+### 4. 変異量の分散
+
+変異量の分散は二乗平均から平均の二乗の差であるため、変位$\Delta X_t$の分散を計算してみる。
+$$
+\mathrm{Var}[\Delta X_t] = \mathbb{E}[(\Delta X_t)^2] - (\mathbb{E}[\Delta X_t])^2
+$$
+
+任意のステップ$t$での変異量は平均値として0なので、$\mathbb{E}[\Delta X_t] = 0$ のため、
+
+$$
+\begin{aligned}
+\mathrm{Var}[\Delta X_t]
+=& \mathbb{E}[(\Delta X_t)^2]\\
+=& (\Delta x)^2
+\end{aligned}
+$$
+
+### 5.位置の分散
+
+$$
+\begin{aligned}
+\mathrm{Var}[X_t]
+& =\mathbb{E}[X_t^2]-(\mathbb{E}[X_t])^2\\
+& =t \cdot (\Delta x)^2 - 0\\
+& =t \cdot (\Delta x)^2
+\end{aligned}
+$$
+
+
+#### 4. 分散の積み重ね
+各ステップの分散が独立しているため、時間 $t$ にわたる分散は次のように加算されます：
+$$
+\mathbb{E}[X_t^2] = t \cdot \mathrm{Var}[\Delta X_i] = t \cdot (\Delta x)^2
+$$
+
+---
+
+#### 5. 平均二乗変位と時間の関係
+最終的に：
+$$
+\mathbb{E}[X_t^2] = t \cdot (\Delta x)^2
+$$
+
+この結果から、**平均二乗変位が時間 $t$ に比例する**ことが示されます。
+
+---
+
+### 結論
+ランダムウォークで平均二乗変位が時間に比例する理由は、
+1. 各ステップの移動が独立している。
+2. 分散がステップごとに積み重なる。
+3. 各ステップの二乗期待値が分散と等しい。
+
+これにより、時間に比例して広がりが大きくなる特性が得られます。
+
+
+## ランダムウォークと拡散係数の理論的導出
