@@ -1,0 +1,200 @@
+---
+title: emacs ショートカット入力
+description: markdown, cdlatex, yasnippet
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## サマリー ##
+
+
+| command入力　 | 何ができるか                   |表示内容|
+|:--------------|:-------------------------------|:-------------------------------|
+|               |                                ||
+| C-c C-s t     | 表挿入                         ||
+| C-c shift-↓   | 表に一行挿入                   ||
+| lbr+TAB       | 中カッコで式をまとめるmath入力 ||
+| ova+TAB       | 上に矢印のベクトル             |$\overrightharpoon{AB}$|
+| dot+TAB       | 一階微分                       |$\dot{x}$|
+| ddt+TAB       | 二階微分                       |$\ddot{x}$|
+| C-c ` f       | ファイ                         |$\phi$  |
+| C-c ` l       | ラムダ                         |$\lambda$  |
+| C-c ` p       | パイ                           |$\pi$        |
+| C-c ` q       | シータ                         |$\theta$|
+| C-c ` o       | オメガ                         |$\omega$|
+| C-c `` d      | 偏微分                         |$\partial$  |
+| C-c `` D      | ナブラ                         |$\nabla$  |
+|               |                                |                 |
+
+
+
+
+
+
+
+## はじめに
+- matrixや左中カッコで式を複数書いてそろえるようなalignの入力を
+すべてキー入力するのは面倒なので、
+cdlatexのショートカット入力を使えるように、
+majorモードをmarkdown-mode, miniorモードに
+cdlatex-modeを指定した。
+```text
+C-c `           cdlatex-math-symbol
+C-c {           cdlatex-environment
+```
+- cdlatex-modeは完璧でない、pmatrix等は結局カスタマイズして加える必要がある。.emacsでカスタマイズする。pma+TABで以下のようにショートカット入力
+```text
+\begin{pmatrix}
+
+\end{pmatrix}
+```
+- こういうまとめたのも、lbr+TABで入力
+```text
+$$
+\left\{ \, \begin{aligned}
+ &=
+   
+\end{aligned}\right.
+$$
+- 
+```
+
+## yasunippet
+
+- ~/.emacsにyasnippet設定したがまだ使っていない
+- ~/.emacs.d/snippet/markdown-mode/*に設定
+
+
+#### aaa ####
+
+## .emacsの設定例
+
+```text
+;; パッケージのインストール
+(package-install 'markdown-mode)
+(package-install 'cdlatex)
+
+;; mdxファイルの設定
+(add-to-list 'auto-mode-alist '("\\.mdx\\'" . markdown-mode))
+
+;; 通常は`の入力3回でmath symbolのショートカットだが
+;; markdownモードではコードブロックやmermaidを```で入力するので
+;; C-c `でmath-symbolにした
+;; cdlatexの`キーバインディングを完全に解除
+(with-eval-after-load 'cdlatex
+  (define-key cdlatex-mode-map (kbd "`") nil))
+
+;; markdown-modeでcdlatexを有効化（.mdと.mdx両方に適用）
+(add-hook 'markdown-mode-hook 'turn-on-cdlatex)
+
+;; 再度定義
+(with-eval-after-load 'cdlatex
+  (define-key cdlatex-mode-map (kbd "C-c `") 'cdlatex-math-symbol))
+
+
+
+(with-eval-after-load 'cdlatex
+  (setq cdlatex-command-alist
+        '(
+          ("pma" "Insert a PMATRIX environment template" ""
+           cdlatex-environment ("pmatrix") t t)
+          ("bma" "Insert a BMATRIX environment template" ""
+           cdlatex-environment ("bmatrix") t t)
+          ("vma" "Insert a VMATRIX environment template" ""
+           cdlatex-environment ("vmatrix") t t)
+          ("ali" "Insert a alignment environment template" ""
+           cdlatex-environment ("alignment") t t)
+          ("cas" "Insert a cases environment template" ""
+           cdlatex-environment ("cases") t t)
+          ("ova" "Insert a \\overrightharpoon{} statement" "\\overrightharpoon{?}"
+           cdlatex-position-cursor nil t nil)
+          ("dot" "Insert a \\dot{} statement" "\\dot{?}"
+           cdlatex-position-cursor nil t nil)
+          ("ddt" "Insert a \\ddot{} statement" "\\ddot{?}"
+           cdlatex-position-cursor nil t nil)
+          ("lrb" "Insert left brace with aligned" "\\left\\{ \\, \\begin{aligned}\n  ? \n\\end{aligned}\\right."
+           cdlatex-position-cursor nil t nil)
+          )))
+```
+

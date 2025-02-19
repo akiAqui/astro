@@ -1,0 +1,248 @@
+---
+title: スコア考察
+description: 説明
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+仕様指示書
+
+楽器とスコアの定義
+
+
+
+# 楽器の構成
+楽器は一つの関数に集約されていること
+もう少しスマートな解決方法はないの？例えば、スコアの一行の解釈の仕方はそれぞれ異なるはずなので、最初の楽器、開始時間、durationなどは一括で処理して、楽器に従って残りのパラメータを解釈させて確認をしてから演奏を始めるという方がいい。そうすると楽器によってバリエーションも作れる。エフェクターの効果とかね。csoundであることを考えるとどこを共通部分にするべき？
+
+
+# リミッター
+その時点で発音している楽器は複数あるはずなので。
+
+# スコア例
+```text
+{
+ "part1":
+ [
+  i(tempo), s(0),     b(120)
+  i(piano), s(1),     f(440), d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(piano), s(0.25),  f(540), d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(piano), s(0.26),  f(240), d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(piano), s(0.26),  f(340), d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(drum),  s(1),     f(420), d(0),  a(0.2), p(1.0), e1(0.2)
+  i(drum),  s(1),     f(410), d(0),  a(0.2), p(1.0), e1(0.2)
+ ]
+ "part2": ; should be played twice
+ [
+  i(tempo),  s(0),     b(120)
+  i(piano),  s(1),     f(440), d(3), a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(piano),  s(0.25),  f(420), d(3), a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(violin), s(1),     f(430), d(3), a(0.2), p(1.0), e1(0.2), e2(0.5), e3(1.0)
+  i(violin), s(0.26),  f(440), d(3), a(0.2), p(1.0), e1(0.2), e2(0.5), e3(1.0)　
+  i(drum),   s(0),     f(444), d(0),  a(0.2), p(1.0), e1(0.2)
+  i(drum),   s(1),     f(412), d(0),  a(0.2), p(1.0), e1(0.2)
+ ]
+ "part3": ; should be played once
+ [
+  t(just_intonation),  s(0)
+  i(tempo),  s(0),     b(120)  
+  i(piano),  s(1),     m(C#1),  d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(piano),  s(0.25),  m(C4),   d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5)
+  i(violin), s(1),     m(B#3),  d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5), e3(1.0)
+  i(violin), s(0.26),  m(D#2),  d(3),  a(0.2), p(1.0), e1(0.2), e2(0.5), e3(1.0)　
+  i(drum),   s(0),     m(F3),   d(0),  a(0.2), p(1.0), e1(0.2)
+  i(drum),   s(1),     m(F2),   d(0),  a(0.2), p(1.0), e1(0.2)
+  
+ ]
+ "play": ["part1": 1, "part2": 2, "part1": 1]
+}
+```
+
+
+# スコア
+- ;以降はコメントを表す
+- スコアはセクションの定義要素が複数と一つの演奏要素から構成される
+- 例ではセクションが"part1", "part2"が定義されている
+- セクションの内部は複数行のnoteから構成されている
+- noteはカンマ区切りでパラメータが定義されている
+- 0個もしくは1個のi,s,d,a,fもしくはm,pのパラメータと0個以上のeN(Nは1以上の整数)のパラメータを持つ
+- 各パラメータの出現順番は決まっていない
+- iはinstrument, 楽器単位を表す。カッコ内は楽器名、これは楽器関数名と一致する
+  - ただし楽器名の例外としてtempo, tuningがある
+  - tempoはテンポの変更を表す
+  - tuningは平均律、純正律、ピタゴラス律を表し音階をpで表記したときに影響する
+- sはstartTime, 発音開始時間を表す。０以上のfloat。
+- dはduration, 音の継続時間を表す。
+  - durationは各楽器内部でこの時間を参考に継続時間を決定する
+- aはamplitude, 音の強さを表す。0.0から1.0の間のfloat。
+- 音階
+  - fもしくはmで表す
+  - fはfrequency, 音の周波数を表す。0以上のfloat
+  - mは国際式のC0からB7までの音で表す、半音を含み C#1などと記述する。musical noteの意。
+  - mで記述するときは音律が影響するが、楽器tuningにて定義がない場合にはデフォルトとして平均律とする
+    - 記述例としては
+      - tuning(temparament), s(10), 
+  - tuningのパラメータは下記とする
+    - 平均律をtemperament
+    - 純正律をjust_intonation
+    - ピタゴラス音律をPythagorean_tuning
+    - 中全音律をmeantone_temparament
+- pはpan, パンニングを表す。-1.0から1.0の間のfloat。
+- eNは各楽器で発音するときに付与するeffect、追加効果のパラメータを示し楽器ごとに個数が異なる。
+- eNの保持する値は追加効果を表現するので、floatであること以外は制限を設けない
+- bはbpmで、楽器tempoでのみ利用する。beat per minutesを示す
+- 
+- noteは時間単位では並んでいると限らない
+- 同じ時間で同時に発音されることがありうる
+- 同時発音は同じ楽器かもしれないし、異なる楽器かもしれない
+
+
+## スコアの解釈と実装
+- scoreという変数で発音を管理する
+- scoreはnotesという要素からなる配列である
+- notesはある時間に発音するnoteすべてを含むため一つもしくはそれ以上のnoteを配列として持つ
+- notesはnoteという要素からなる配列である
+- noteはinstrument, startTime, duration, amplitude, panの要素を必ず保持する
+- notesの発音だけを指示し、音の継続時間は管理しない
+
+#時間管理と発音
+- 楽器の発音時間は極めて厳密にスコアに従う
+- 複数の発音管理の方法を実装し関数名を変えて手動で関数を選べる
+- それぞれの性能比較ができるよう
+- 実際の発音予定時間をスコア解釈した時点で計算保存する
+- デバッグモードの時は予定発音時間と実発音時間を保存
+- デバッグモードの時は予実の差を統計値として出力
+
+
+# 楽器
+- 楽器は広義の楽器として入力音、出力音を持つ
+- 狭義の楽器は出力音だけを持つ
+- 広義の楽器の入力とは別にリレーション部で定義する
+
+
+## 楽器間の接続
+- DOT言語を利用して楽器間の接続を記述する\
+- 接続時の属性として出力するAmplitudeを定義する
+- Amplitudeは０以上１以下のfloatとする
+- outputは出力として予約語とする
+- inputは入力として予約語とする
+- https://viz-js.com/で見れる
+
+例)
+```text
+digraph music  {
+  piano -> effector1 [amp=”0.5”]
+  effector1 -> effector2 [amp=”0.8”]
+  effector1 -> effector3 [amp=”0.8”]
+  effector2 -> output  [amp=”0.0”]
+  effector3 -> output [amp=”0.8”]
+}
+```
+
+## Oscilator
+
+例）
+```text
+osc/sin(1.00)
+osc/sin(1.00, 0.50, 0.30, 0.25, 0.20, 0.167, 0.140, 0.125, 0.111)
+osc/sin(1.00, 0.00, 0.30, 0.00, 0.20, 0.000, 0.140, 0.000, 0.111)
+osc/sin(1.00, 1.00, 1.00, 1.00, 0.70, 0.500, 0.300, 0.100)
+```
+
+デフォルトで用意する楽器は以下の通り
+
+## piano
+- 5つのsin波を持つ
+- panningをパラメータに取れる
+-
+
+## berere
+- 
+
+
+コード修正時の出力方法
+- 一つ、または、二つの関数だけの修正にとどまる場合は関数単位で省略なしに出力する
+- それ以上の関数に修正が必要な場合、sketch.jsコード全文を省略なしに出力する
+
+

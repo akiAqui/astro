@@ -1,0 +1,90 @@
+---
+title: 液体
+description: 説明
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+https://github.com/haxiomic/GPU-Fluid-Experiments?tab=readme-ov-file
+https://github.com/PavelDoGreat/WebGL-Fluid-Simulation?tab=readme-ov-file

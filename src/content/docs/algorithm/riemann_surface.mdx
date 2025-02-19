@@ -1,0 +1,814 @@
+---
+title: Riemann Surface
+description: 複素平面、リーマン面
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## はじめに
+この文章は、
+- リーマン球体上へのステレオ投影、
+- メビウス変換
+- メビウス変換の可視化
+
+について議論する。
+
+
+## ステレオ投影による、複素平面とリーマン球体の関連
+複素平面と単位球であるリーマン球体（リーマン面とも呼ばれる）の間は単射の関係で関連付けることができる。
+極点から、与えられたリーマン球体上の点は、反対の極点に接する平面上の特定の点に、
+同一の線上に属するという意味で関連付けられる。
+
+これをステレオ投影と呼び、球面上の点と平面上の点を対応させる写像である。
+
+
+## 定義
+
+単位球面上の点 $P(X,Y,Z)$ を考えます。単位球面上の点なので、
+
+$$
+X^2 + Y^2 + Z^2 = 1
+$$
+
+南極点 $S(0,0,-1)$ と点 $P(X,Y,Z)$ を通る直線は
+
+直線は2点を通るので、パラメータ $t$ を用いて、
+
+$$
+\begin{pmatrix}
+  x \\ y \\ z
+\end{pmatrix}
+
+=
+
+\begin{pmatrix}
+0 \\ 0 \\ -1
+\end{pmatrix}
+
++
+
+t \cdot \left(
+\begin{pmatrix} X \\ Y \\ Z \end{pmatrix} - 
+\begin{pmatrix} 0 \\ 0 \\ -1 \end{pmatrix} \right)
+$$
+
+これを成分ごとに書き、
+
+$$
+ \begin{pmatrix} x\\y\\z \end{pmatrix}
+ =
+ \begin{pmatrix} tX\\tY\\-1+t(Z+1) \end{pmatrix}
+$$
+平面z=1との交点で、tの値は
+$$
+ t = \frac{2}{Z+1}\\
+$$
+なので、
+
+$$
+ \begin{pmatrix} x\\y\\z \end{pmatrix}
+ =
+ \begin{pmatrix}
+  \dfrac{2X}{Z+1}\\
+ \vphantom{}\\  
+  \dfrac{2Y}{Z+1}\\
+ \vphantom{}\\  
+  1 \end{pmatrix}
+
+$$
+
+となる。
+
+次に、$z=1$ 平面上の点(x,y,1)を複素数 $z = x + iy$ として表すと、
+
+$$
+  \begin{aligned}
+    z =& \frac{2X}{Z+1} + i\frac{2Y}{Z+1}\\
+ \vphantom{}\\    
+      =& \frac{2(X+iY)}{Z+1}
+ \end{aligned}
+$$
+
+以上より整理して、与えられた複素数 $z$ に対して、
+球面上の点 $(X,Y,Z)$ は以下のように表されます：
+
+$$
+\begin{pmatrix}
+  X\\
+  Y\\
+  Z
+\end{pmatrix}
+=
+\begin{pmatrix}
+ \dfrac{2 Re(z)}{|z|^2+1}\\
+ \vphantom{}\\
+ \dfrac{2 Im(z)}{|z|^2+1}\\
+ \vphantom{}\\ 
+ \dfrac{|z|^2-1}{|z|^2+1}
+\end{pmatrix}
+$$
+
+なお、これが実際に単位球面上の点になっていることは、
+$X^2 + Y^2 + Z^2 = 1$ が成立することを確認できる。
+
+## 
+
+という対応関係があることが分かりました。この写像には以下のような性質があります：
+
+1. 球面の北極点 $(0,0,1)$ は複素平面の無限遠点に対応
+2. 球面の赤道上の点は複素平面上の単位円周上の点に対応
+3. 南半球の点は複素平面の単位円の内部に対応
+4. 北半球の点は複素平面の単位円の外部に対応
+
+この対応は等角写像となっており、球面上の角度が複素平面上でも保存されるという重要な性質を持っています。
+
+
+### 複素対数関数
+
+## 基本定義
+
+複素数 $z$ を極形式で表現すると：
+
+$$
+z = re^{iθ} = r(\cos θ + i\sin θ)
+$$
+
+このとき、複素対数関数は：
+
+$$
+\log(z) = \ln|z| + iθ = \ln r + iθ
+$$
+
+## 虚部を固定したときの絶対値
+
+虚部 $\text{Im}(z) = b$ を固定すると、任意の点 $z$ は以下の形で表される：
+
+$$
+z = x + bi \quad (x \in \mathbb{R})
+$$
+
+このとき、$z$ の絶対値は：
+
+$$
+|z| = \sqrt{x^2 + b^2}
+$$
+
+## 絶対値の最小値
+
+固定された虚部 $b$ に対して、$|z|$ は $x = 0$ のとき最小値を取る：
+
+$$
+\min|z| = |b|
+$$
+
+これは $x = 0$ のとき、$z = bi$ となり、その絶対値が $|b|$ となることを意味する。
+
+## グラフの特徴
+
+1. 各曲線は $x = 0$ （実部が0）で最小値を取る
+2. 最小値は、その曲線の固定された虚部の絶対値に等しい
+3. $|x| \to \infty$ のとき、曲線は放物線的に増加する
+4. 虚部の値が異なる複数の曲線は、$x = 0$ での高さが異なる
+5. すべての曲線は $x$ の偶関数となる（原点に関して対称）
+
+## 具体例
+
+代表的な虚部の値：
+- $\text{Im}(z) = \pi$
+- $\text{Im}(z) = \frac{3\pi}{4}$
+- $\text{Im}(z) = \frac{\pi}{2}$
+- $\text{Im}(z) = \frac{\pi}{4}$
+- $\text{Im}(z) = \frac{\pi}{8}$
+
+これらの曲線は、それぞれ $x = 0$ において $\pi, \frac{3\pi}{4}, \frac{\pi}{2}, \frac{\pi}{4}, \frac{\pi}{8}$ という最小値を持つ。
+
+
+
+### 複素対数関数の導出
+複素対数関数 $w = log(z)$を定義する。
+
+$z$の極座標表現を用いれば
+
+$$
+\begin{aligned}
+ w  & = \log (z)\\
+    & = \log (r \cdot e^{i \theta})\\
+    & = \log (r) + log (e^{i \theta})\\
+    & = \log (r) + i \theta\\
+\end{aligned}    
+$$
+
+となり、$\log (r)$ は実部であり、$i \theta$は虚部である。
+
+$\theta = \arg(z)$ は偏角を表しているので、
+$\theta + 2\pi k$（$k \in \mathbb{Z}$）の形をとるため、複素対数関数は多価関数となる。
+
+
+### ステレオ投影
+
+ステレオ投影とは、球面と平面を対応付ける変換の一種であり、リーマン球面の構築に利用される。
+
+単位球面上の点 $(X, Y, Z)$ を、$Z=1$ の平面に投影する方法として定義される。
+複素平面上の点 $z$ を単位球面上の点 $(X, Y, Z)$ に対応付ける式は、
+
+$$
+X = \frac{2\text{Re}(z)}{1 + |z|^2}, \quad Y = \frac{2\text{Im}(z)}{1 + |z|^2}, \quad Z = \frac{|z|^2 - 1}{1 + |z|^2}
+$$
+
+この変換によって、$z \to \infty$ の極限が球面の北極点 $(0,0,1)$ に対応することが分かる。
+
+### リーマン曲面の式の導出
+
+リーマン曲面は、複素関数が多価性を持つ場合に、関数を一意的に定義するための曲面である。
+例えば、$w^2 = z$ のリーマン曲面は、
+
+$$
+w = \pm \sqrt{z}
+$$
+
+の二つの値を持つため、2つの層を持つ曲面として表現される。
+
+リーマン曲面を形式的に表現すると、
+
+$$
+F(w, z) = 0
+$$
+
+の形を持つ方程式として定義できる。
+
+### 共形成の証明
+
+共形写像とは、局所的に角度を保存する写像である。
+
+複素関数 $f(z) = u(x,y) + iv(x,y)$ が共形である条件は、コーシー・リーマン方程式
+
+$$
+\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \quad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}
+$$
+
+を満たすことである。
+
+これは、$f(z)$ のヤコビ行列が回転行列の形を持つことから、局所的に角度を保存することを意味する。
+
+### 解析的拡張の例
+
+1. **対数関数**
+   $$
+   \ln(z) = \ln |z| + i \arg(z)
+   $$
+   分岐点 $z=0$ を避けるため、異なる枝を定義する。
+
+2. **平方根関数**
+   $$
+   \sqrt{z} = e^{\frac{1}{2} \ln z}
+   $$
+   異なる $\arg(z)$ に応じて異なる枝を取る。
+
+3. **ガンマ関数**
+   $$
+   \Gamma(z) = \int_0^{\infty} t^{z-1} e^{-t} dt
+   $$
+   負の整数で極を持ち、解析接続により拡張可能。
+
+### 分岐点の取り扱い
+
+分岐点とは、複素関数の値が連続的に変化しない点である。
+
+例えば、$f(z) = \sqrt{z}$ において、
+
+$$
+f(e^{i\theta}) = e^{i\theta/2}
+$$
+
+は、$\theta = 2\pi$ のとき $f(z)$ の値が不連続に変化するため、$z=0$ は分岐点である。
+
+リーマン面上では、複数の枝を考慮し、関数を一意に定義することで、分岐点の影響を除去できる。
+
+### まとめ
+
+リーマン面は、複素関数の解析的拡張、多価関数の整理、共形写像の適用などに利用される。
+リーマン球面を導入することで、無限遠点を含む解析が可能となり、射影幾何や物理学にも応用される。
+
+----------------------------------------------------------------------------------------------
+
+# claud
+
+
+## 等角写像
+
+等角写像とは、曲面や平面上の2つの曲線が交わる角度を保存する写像である。ステレオ投影は、球面上の曲線が交わる角度と、その像である平面上の曲線が交わる角度が等しくなる性質を持つ。
+
+## 準備：球面上の点と接ベクトル
+
+単位球面上の点 $P(X,Y,Z)$ の位置ベクトルは
+$$
+\begin{pmatrix} X\\Y\\Z \end{pmatrix}
+$$
+
+
+
+この点から南極点 $S(0,0,-1)$ への方向ベクトルは
+$$
+\begin{pmatrix} X\\Y\\Z+1 \end{pmatrix}
+$$
+
+球面上の点 $P$ における接ベクトル $v$ を考える。
+これは点 $P$ を通る球面上の曲線の接ベクトルであり、
+接ベクトルは球面に接するため
+$$
+X\frac{dx}{dt} + Y\frac{dy}{dt} + Z\frac{dz}{dt} = 0
+$$
+
+ステレオ投影による像を複素数 $w = u + iv$ とすると
+$$
+w = \frac{2(X+iY)}{Z+1}
+$$
+
+## 接ベクトルの変換と複素微分
+
+球面上の曲線が複素平面上の曲線に写像されるとき、その変換の様子を以下のように解析する。
+
+球面上のパラメータ表示された曲線 $c(t) = (X(t), Y(t), Z(t))$ の接ベクトルは
+
+
+
+$$
+v(t) =
+   \begin{pmatrix}
+     \dfrac{dx}{dt}\\[-1.5ex]
+     \rule{0pt}{10px}\\
+     \dfrac{dy}{dt}\\[-1.5ex]
+     \rule{0pt}{10px}\\     
+     \dfrac{dz}{dt}
+   \end{pmatrix}
+$$
+
+
+
+2. この曲線がステレオ投影で写像され、複素平面上の曲線 $w(t)$ となる
+   $$
+   w(t) = \frac{2(X(t)+iY(t))}{Z(t)+1}
+   $$
+
+3. 複素平面上での接ベクトルは、$w(t)$ を $t$ で微分して得られる
+   $$
+   \frac{dw}{dt} = \frac{2}{Z+1}\left(\frac{dx}{dt}+i\frac{dy}{dt}\right) - \frac{2(X+iY)}{(Z+1)^2}\frac{dz}{dt}
+   $$
+
+この式が「接ベクトルの変換は、この複素関数の微分として表される」ことを示す。すなわち：
+
+- 球面上の接ベクトル $v(t)$ はステレオ投影によって
+- 複素平面上の複素数値関数 $w(t)$ の導関数 $\frac{dw}{dt}$ に変換される
+
+このとき、$\frac{dw}{dt}$ は複素数として表され、大きさと偏角（方向）の情報を持つ。
+
+## 微分の計算過程
+
+上記の式は、合成関数の微分法から以下のように導出する：
+
+1. $w = \frac{2(X+iY)}{Z+1}$ の微分を考える
+
+2. 分数の微分の公式を適用
+   $$
+   \frac{d}{dt}\left(\frac{f}{g}\right) = \frac{g\frac{df}{dt} - f\frac{dg}{dt}}{g^2}
+   $$
+
+3. ここで
+   - $f = 2(X+iY)$
+   - $g = Z+1$
+   である
+
+4. これにより先の式が得られる
+
+## この表現の重要性
+
+この複素微分による表現は、以下の点で重要である：
+
+1. 角度の保存を示すのに適している（複素数の積の偏角は加法的）
+
+2. 局所的な拡大率を計算できる（$|\frac{dw}{dt}|$ の値として）
+
+3. 写像の性質を解析的に調べることができる
+
+これを用いて、次の段階で角度の保存（等角性）を証明する。
+
+
+---
+## 書き直し
+
+
+単位球面 $S^2$ 上の点 $P$ の位置ベクトルを
+$$
+
+P(X,Y,Z) = \begin{pmatrix} X\\Y\\Z \end{pmatrix}\\
+\quad X^2 + Y^2 + Z^2 = 1
+$$
+と定義する。
+
+球面上の曲線 $c: [a,b] \to S^2$ を実パラメータ $t \in [a,b]$ を用いて
+$$
+c(t) = \begin{pmatrix} X(t)\\Y(t)\\Z(t) \end{pmatrix}, \quad X(t)^2 + Y(t)^2 + Z(t)^2 = 1
+$$
+と定義する。ここで $X(t), Y(t), Z(t)$ は $t$ について微分可能である。
+
+この曲線の接ベクトル $v(t)$ は
+$$
+v(t) = \frac{d}{dt}c(t) = \begin{pmatrix} \frac{dX}{dt}\\\frac{dY}{dt}\\\frac{dZ}{dt} \end{pmatrix}
+$$
+で定義される。
+
+球面に接するという条件から、任意の $t$ について
+$$
+X(t)\frac{dX}{dt} + Y(t)\frac{dY}{dt} + Z(t)\frac{dZ}{dt} = 0
+$$
+が成り立つ。
+
+## ステレオ投影の定義
+
+南極点 $S = (0,0,-1)$ から点 $P(X,Y,Z)$ を通る直線と赤道平面 $z=1$ との交点を $w$ とするステレオ投影 $f: S^2\setminus\{S\} \to \mathbb{C}$ を
+$$
+f(X,Y,Z) = w = \frac{2(X+iY)}{Z+1}
+$$
+と定義する。
+
+## 接ベクトルの変換
+
+曲線 $c(t)$ のステレオ投影による像 $w(t)$ は
+$$
+w(t) = f(c(t)) = \frac{2(X(t)+iY(t))}{Z(t)+1}
+$$
+である。
+
+この複素数値関数 $w(t)$ の導関数は合成関数の微分により
+$$
+\frac{dw}{dt} = \frac{2}{Z+1}\left(\frac{dX}{dt}+i\frac{dY}{dt}\right) - \frac{2(X+iY)}{(Z+1)^2}\frac{dZ}{dt}
+$$
+となる。
+
+## ステレオ投影の局所的性質
+
+ステレオ投影 $f$ による球面上の点 $P(X,Y,Z)$ における接ベクトル $v(t)$ の変換は、複素平面上の点 $w$ における接ベクトル $\frac{dw}{dt}$ として表される。
+
+この変換の局所的な性質は：
+
+1. 曲線 $c_1(t), c_2(t)$ が点 $P$ で角度 $\theta$ で交わるとき、その像 $w_1(t), w_2(t)$ も点 $w$ で角度 $\theta$ で交わる。
+
+2. 点 $P$ における局所的な拡大率は $\frac{2}{Z+1}$ である。
+
+この等角性の証明は次の段階で示す。
+
+
+
+## メビウス変換のリーマン球体を利用した可視化
+
+### メビウス変換とは、
+複素数から複素数への単射の写像であるメビウス変換は以下の複素関数で定義される
+
+$$
+f(z) = \frac{az + b}{cz + d} \quad (a,b,c,d \in \mathbb{C}, ad-bc \neq 0)
+$$
+この変換は次の性質があります：
+
+- $ad-bc \neq 0$ は変換が退化しないための条件
+- $c = 0$ のとき、線形変換 $f(z) = \frac{a}{d}z + \frac{b}{d}$ となる
+- 無限遠点について、$\lim_{z \to \infty} f(z) = \frac{a}{c}$ （$c \neq 0$ のとき）
+- $c \neq 0$ のとき、$z = -\frac{d}{c}$ で極をもつ
+
+
+### 概要
+
+- 複素数から複素数への単射であるメビウス変換の理解は簡単ではない
+そこで、直観的な理解を得るために、それをリーマン曲面上で可視化することで理解を得ることを目標とする
+- 変換前の図形を描画する曲面と変換後の図形を描画する曲面の二つのリーマン球面を用いる
+- TypeScriptにてviteの動作を前提に作成。
+
+### 可視化の概要
+* 二つのリーマン球体を使用し、メビウス変換前、メビウス変換後を表示
+* 二つのリーマン球体を重ね合わせて比較可能
+
+### 視覚的要素
+* 変更前の図形をNxNのグリッド点からなる図形とする
+* メビウス変換前の図形をグリッド点上で以下の図形を選択可能
+   * 円形（に近い多角形図形）
+   * 直線
+   * 複数の平行に並んだ直線
+      * 縦
+      * 横
+      * 斜め
+   * 一つの三角形
+   * 単一の四角形
+   * グリッド状の図形
+* 点は順番に沿ってグラデーションで色付け
+* 各点の絶対値量の等高線を追加可能、等高線はグリッド点の間を線形補完
+
+### インタラクティブな調整機能
+* UIはHTML上とThree.js上の両方で作成
+* 二つの球体は、半透明の赤色と青色
+* 一つになったときの球体は半透明の紫色
+* GUI で メビウス変換の定数調整
+$$
+a, b, c, d \text{ の範囲: } -10 \text{ から } 10\text{, ステップ } 0.1
+$$
+* GUI で gridSize（Nの数: 10 〜 1000, ステップ 1）
+* GUI で「比較モード」と「重ね合わせモード」の切り替え。トグルボタンで実装
+* 重ね合わせとの行き来は0.5秒間のスライドして一つの球になるアニメーション
+* GUI で等高線の ON/OFF を切り替え
+* マウスで3次元世界内を移動して視点を変化
+* 変換する図形はプルダウンで選択。初期値はグリッド状の図形
+
+### ファイル構成
+
+- `index.html`: エントリーポイント
+- `src/types.ts`: 型定義
+- `src/ComplexOperations.ts`: 複素数演算
+- `src/MoebiusTransform.ts`: メビウス変換のコアロジック
+- `src/StereoProjection.ts`: ステレオ投影の変換
+- `src/Scene.ts`: Three.jsのシーン管理
+- `src/GridGenerator.ts`: グリッドと図形生成
+- `src/ContourGenerator.ts`: 等高線生成
+- `src/GUI.ts`: GUIコントロール
+- `src/Animation.ts`: アニメーション制御
+- `src/main.ts`: アプリケーションのエントリーポイント
+
+
+
+
+
+$$
+ \left\{
+ \begin{aligned}
+  r &=3\\
+  b &=233
+ \end{aligned}
+
+ \right.\\
+ 
+\left\{ \, \begin{aligned}
+  r &=888\\
+  b &=2
+   
+\end{aligned}\right. 
+ 
+$$
+head
+$$
+$$
+aay
+| a  |gggg   |
+|:--|:--|
+| s20  | ss  |
+
+## （参考）複素平面の基礎
+
+複素数zは、複素平面上の$x$ 軸を実部、$y$ 軸を虚部として直交座標系上に表現される。
+
+$$
+z = x + iy \quad (x,y \in \mathbb{R})
+$$
+
+極座標表現は
+
+$$
+\begin{cases}
+    r      &= \sqrt{x^2+y^2} = |z|\\
+    \theta &= atan(\frac{x}{y})= \arg(z) 
+\end{cases}
+$$
+
+$$
+ \left\{ \,
+  \begin{aligned}
+    r      &= \sqrt{x^2+y^2} = |z|\\
+    \theta &= atan(\frac{x}{y})= \arg(z) 
+  \end{aligned}
+ \right.
+$$
+
+
+と表せる。
+
+## （参考）対数の基礎
+
+### 対数の基本性質
+
+対数関数は、指数関数の逆関数として定義される。
+
+$$
+\log_b x = y \quad \text{ならば} \quad b^y = x
+$$
+
+ここで、$b$ は底、$x$ は対数を取る対象、$y$ は対数の値である。
+
+対数には以下の基本的な性質がある。
+
+1. **積の法則**
+   $$
+   \log_b (xy) = \log_b x + \log_b y
+   $$
+2. **商の法則**
+   $$
+   \log_b \left(\frac{x}{y}\right) = \log_b x - \log_b y
+   $$
+3. **累乗の法則**
+   $$
+   \log_b (x^n) = n \log_b x
+   $$
+4. **底の変換公式**
+   $$
+   \log_b x = \frac{\log_c x}{\log_c b}
+   $$
+
+### 各法則の証明
+
+#### (1) 積の法則の証明
+
+対数の定義より、
+
+$$
+\log_b x = a, \quad \log_b y = c
+$$
+
+とおくと、
+
+$$
+b^a = x, \quad b^c = y
+$$
+
+この両辺を掛けると、
+
+$$
+b^a \cdot b^c = xy
+$$
+
+指数法則 $b^a \cdot b^c = b^{a+c}$ より、
+
+$$
+b^{a+c} = xy
+$$
+
+両辺の対数を取ると、
+
+$$
+\log_b (xy) = a + c = \log_b x + \log_b y
+$$
+
+#### (2) 商の法則の証明
+
+対数の定義より、
+
+$$
+\log_b x = a, \quad \log_b y = c
+$$
+
+とおくと、
+
+$$
+b^a = x, \quad b^c = y
+$$
+
+これらの比を取ると、
+
+$$
+\frac{x}{y} = \frac{b^a}{b^c} = b^{a-c}
+$$
+
+両辺の対数を取ると、
+
+$$
+\log_b \left( \frac{x}{y} \right) = a - c = \log_b x - \log_b y
+$$
+
+#### (3) 累乗の法則の証明
+
+対数の定義より、
+
+$$
+\log_b x = a \quad \text{ならば} \quad b^a = x
+$$
+
+$x^n$ を考えると、
+
+$$
+x^n = (b^a)^n = b^{an}
+$$
+
+両辺の対数を取ると、
+
+$$
+\log_b (x^n) = an = n \log_b x
+$$
+
+#### (4) 底の変換公式の証明
+
+$x$ の対数を異なる底 $c$ で表すために、
+
+$$
+\log_c x = p, \quad \log_c b = q
+$$
+
+とおくと、
+
+$$
+c^p = x, \quad c^q = b
+$$
+
+$x$ の対数を $b$ の対数に変換するために、
+
+$$
+\log_b x = \frac{p}{q} = \frac{\log_c x}{\log_c b}
+$$
+
+これにより、底の変換公式が示される。
+
+### まとめ
+
+- 積の法則：対数の加法に変換できる。
+- 商の法則：対数の減法に変換できる。
+- 累乗の法則：指数を前に出せる。
+- 底の変換公式：異なる底で対数を計算可能。
+
+これらの性質を用いることで、複雑な対数計算を簡単に扱うことができる。
+
+
+---

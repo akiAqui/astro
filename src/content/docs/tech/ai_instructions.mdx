@@ -1,0 +1,122 @@
+---
+title: AI用指示文
+description: 説明
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:15px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;
+           font-weight: bold;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       }
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        .sl-markdown-content  {
+           font-size:25px;
+        }
+        
+ `}</style>
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:16px;
+        }
+ `}</style>
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+### 一般的
+```text
+要求以外の説明、私に自明な説明、重複説明、以上すべて禁止
+詳細を求められない限りYes/Noなどの簡素な回答
+提案があるときは「提案あり」と添えればあとで聴く
+```
+
+------------------------------------
+
+```text
+vite/typescript/three.js/lil-gui/vite-plugin-glsl環境で動くコード出力
+main.ts, fragment.glsl, vertex.glsl, index.html
+生成コードについてはセッションでlimit制限を受けないよう１ファイルずつ
+次以降のファイルの生成はこちらが承知したときのみ
+```
+
+------------------------------------
+
+```text
+markdownでファイル出力
+数式は$$と改行でブロックの形で生成
+インラインの数式は$で囲う
+セクションはトップレベルで##以下で
+セクション名に数字を使わないこと
+```
+

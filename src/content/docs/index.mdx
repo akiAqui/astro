@@ -1,9 +1,166 @@
 ---
-title: トップページ
-description: メモ
+title: top page
+description: top
 ---
-```text
-    d/* : まだドキュメント執筆中
-    r/+ : 一旦書き終わって、レビューが必要
-    f/  : レビュー終了し、一旦完成
-```
+ <style>{`
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 0em !important;
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+
+
+ `}</style>
+
+import CodeTitle from '../../components/CodeTitle';
+import MermaidChart from '../../components/MermaidChart.astro';
+import TimeStamp from '../../components/TimeStamp';
+import Box from '../../components/Box';
+import RedBox from '../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+
+
+ このページの更新には、update_indexを実行してください
+
+
+| file name | last modified | time |
+|------|------|------|
+| [mdx/template.mdx](http://localhost:4321/mdx/template/) | Feb 17 | 16:28 |
+| [mdx/cdlatex.mdx](http://localhost:4321/mdx/cdlatex/) | Feb 17 | 16:26 |
+| [mdx/style.mdx](http://localhost:4321/mdx/style/) | Feb 17 | 16:25 |
+| [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 | 14:39 |
+| [three/webgl_renderer.mdx](http://localhost:4321/three/webgl_renderer/) | Feb 17 | 00:02 |
+| [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 16 | 21:56 |
+| [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 15 | 22:46 |
+| [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 | 08:02 |
+| [glsl/double_spiral.mdx](http://localhost:4321/glsl/double_spiral/) | Feb 13 | 01:46 |
+| [algorithm/waveTerrainSynthesis.mdx](http://localhost:4321/algorithm/waveterrainsynthesis/) | Feb 12 | 20:08 |
+| [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 | 01:57 |
+| [art/score.mdx](http://localhost:4321/art/score/) | Feb 12 | 01:56 |
+| [tech/git_branches.mdx](http://localhost:4321/tech/git_branches/) | Feb 11 | 03:47 |
+| [algorithm/perlin.mdx](http://localhost:4321/algorithm/perlin/) | Feb 11 | 01:48 |
+| [algorithm/fluid.mdx](http://localhost:4321/algorithm/fluid/) | Feb 11 | 01:46 |
+| [tech/home-netowork.mdx](http://localhost:4321/tech/home-netowork/) | Feb 4 | 15:55 |
+| [tech/pullRequest.mdx](http://localhost:4321/tech/pullrequest/) | Feb 4 | 06:47 |
+| [art/anime.mdx](http://localhost:4321/art/anime/) | Feb 1 | 17:34 |
+| [algorithm/fBM.mdx](http://localhost:4321/algorithm/fbm/) | Feb 1 | 14:36 |
+| [dev/anime.mdx](http://localhost:4321/dev/anime/) | Jan 28 | 22:35 |
+| [algorithm/flick.mdx](http://localhost:4321/algorithm/flick/) | Jan 28 | 22:31 |
+| [algorithm/nabla.mdx](http://localhost:4321/algorithm/nabla/) | Jan 28 | 16:47 |
+| [algorithm/kellerSegel.mdx](http://localhost:4321/algorithm/kellersegel/) | Jan 28 | 16:09 |
+| [algorithm/randomWalk.mdx](http://localhost:4321/algorithm/randomwalk/) | Jan 28 | 09:29 |
+| [algorithm/interpolation.mdx](http://localhost:4321/algorithm/interpolation/) | Jan 27 | 10:37 |
+| [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Jan 26 | 16:35 |
+| [tech/typescript.mdx](http://localhost:4321/tech/typescript/) | Jan 26 | 15:51 |
+| [tech/javascript.mdx](http://localhost:4321/tech/javascript/) | Jan 26 | 01:22 |
+| [tech/performance_test.mdx](http://localhost:4321/tech/performance_test/) | Jan 26 | 01:07 |
+| [three/double_buffering.mdx](http://localhost:4321/three/double_buffering/) | Jan 25 | 19:10 |
+| [three/record.mdx](http://localhost:4321/three/record/) | Jan 22 | 22:42 |
+| [three/glsl_performance.mdx](http://localhost:4321/three/glsl_performance/) | Jan 22 | 22:11 |
+| [three/gen_texture.mdx](http://localhost:4321/three/gen_texture/) | Jan 22 | 03:39 |
+| [three/texture.mdx](http://localhost:4321/three/texture/) | Jan 22 | 03:37 |
+| [tech/vite_conf_ts.mdx](http://localhost:4321/tech/vite_conf_ts/) | Jan 17 | 02:27 |
+| [tech/pc_env.mdx](http://localhost:4321/tech/pc_env/) | Jan 16 | 22:27 |
+| [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Jan 15 | 09:53 |
+| [algorithm/vrender.mdx](http://localhost:4321/algorithm/vrender/) | Jan 14 | 01:49 |
+| [algorithm/morphing.mdx](http://localhost:4321/algorithm/morphing/) | Jan 14 | 01:49 |
+| [algorithm/nint.mdx](http://localhost:4321/algorithm/nint/) | Jan 14 | 01:49 |
+| [algorithm/quaternion.mdx](http://localhost:4321/algorithm/quaternion/) | Jan 14 | 01:49 |
+| [three/particle.mdx](http://localhost:4321/three/particle/) | Jan 14 | 01:49 |
+| [three/shader.mdx](http://localhost:4321/three/shader/) | Jan 14 | 01:49 |
+| [three/threejs+quaternion.mdx](http://localhost:4321/three/threejs+quaternion/) | Jan 14 | 01:49 |
+| [tech/pjsetup.mdx](http://localhost:4321/tech/pjsetup/) | Jan 14 | 01:49 |
+| [tech/tsconfig_json.mdx](http://localhost:4321/tech/tsconfig_json/) | Jan 14 | 01:49 |
+| [dev/dual_quaternion.mdx](http://localhost:4321/dev/dual_quaternion/) | Jan 14 | 01:49 |
+| [dev/epnis.mdx](http://localhost:4321/dev/epnis/) | Jan 14 | 01:49 |

@@ -1,0 +1,796 @@
+---
+title: ＊）ホームネットワーク管理
+description: 自分のうちは、把握しないと
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+## ＴＯＤＯ
+- ホームネットワーク内の実際のデバイスとＩＰを確定させる
+
+
+## astroをホームネットワーク内で見せる
+1. ポートフォワードしてwsl2を外に出す
+2. windowsのファイアウォールで被接続の方向で許諾する
+3. astroはデフォルトで127.0.0.1からの接続しか受け付けないので(windowsからの接続はありがたくイケるみたいなのだが）、0.0.0.0で（任意のアドレス）の接続を許諾する
+4. その設定を常に許諾する設定を行う
+
+### 要約結論
+- PS> netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+- PS> netsh advfirewall firewall add rule name="WSL2 Astro" dir=in action=allow protocol=TCP localport=4321
+- vite.confかastro.config.mjsへ設定
+- firewall設定はwindowsの再起動後も設定が持続されるが、portフォワードは一過性の設定である
+
+### 1. Windowsへ、WSL2からポートフォワードする設定
+
+- windowsのWAN側のアドレスは192.168.1.234
+- wsl2側で確認したeth0のアドレスは172.20.172.145
+- wsl2/astroでwebサーバが動いているポートは4321
+- windows側(192.168.1.234)のポート4321にアクセスると、WSL2側(172.20.172.145)のポート4321にポートフォワード
+
+```text
+PS C:\Users\aquis> netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+
+PS C:\Users\aquis> netsh interface portproxy show all  ### 確認している
+
+ipv4 をリッスンする:         ipv4 に接続する:
+
+Address         Port        Address         Port
+--------------- ----------  --------------- ----------
+192.168.1.234   80          172.20.172.143  80
+192.168.1.234   4321        172.20.172.143  4321
+```
+### 2. Windowsのファイアウォール設定を変更
+- TCP(httpがTCPなので)で、4321ポートにアクセス許可(allow)するルールを追加
+
+```text
+PS C:\Users\aquis> netsh advfirewall firewall add rule name="WSL2 Astro" dir=in action=allow protocol=TCP localport=4321
+OK
+
+PS C:\Users\aquis> netsh advfirewall firewall show rule name="WSL2 Astro"
+
+規則名:                               WSL2 Astro
+----------------------------------------------------------------------
+有効:                                 はい
+方向:                                 入力
+プロファイル:                         ドメイン,プライベート,パブリック
+グループ:
+ローカル IP:                          任意
+リモート IP:                          任意
+プロトコル:                           TCP
+ローカル ポート:                      4321
+リモート ポート:                      任意
+エッジ トラバーサル:                  いいえ
+操作:                                 許可
+OK
+```
+
+
+### astroの受付けるアドレスを設定
+
+- npm run devだと、127.0.0.1:4321、すなわちローカルホストアクセスでのみ受け付けるという設定だった
+
+```text
+> [02/04 10:26] ~/astro %netstat -tulnp
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 127.0.0.1:4321          0.0.0.0:*               LISTEN      1909/node
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -
+tcp        0      0 10.255.255.254:53       0.0.0.0:*               LISTEN      -
+udp        0      0 127.0.0.53:53           0.0.0.0:*                           -
+udp        0      0 10.255.255.254:53       0.0.0.0:*                           -
+udp        0      0 127.0.0.1:323           0.0.0.0:*                           -
+udp6       0      0 ::1:323                 :::*                                -
+```
+
+- 暫定的にどこからでも接続できるようにすると
+
+```text
+> ~/astro %npm run dev -- --host 0.0.0.0 --port 4321
+```
+
+- 0 0.0.0.0:4321、すなわちどこからでも受け付けるという設定に変わった
+
+```text
+[02/04 10:26] ~/astro %netstat -tulnp
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:4321            0.0.0.0:*               LISTEN      1953/node
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -
+tcp        0      0 10.255.255.254:53       0.0.0.0:*               LISTEN      -
+udp        0      0 127.0.0.53:53           0.0.0.0:*                           -
+udp        0      0 10.255.255.254:53       0.0.0.0:*                           -
+udp        0      0 127.0.0.1:323           0.0.0.0:*                           -
+udp6       0      0 ::1:323                 :::*                                -
+[02/04 10:29] ~/astro %
+```
+
+- これを持続的にいつもアクセス可能にするためには、astro.config.mjsにserverを加えて、host設定をする
+- ポートは設定しないなぜなら、three.js等がそのポートで動いている可能性もあるから自動設定にする
+- そ、そうか、three.jsを動かすのもポートさえ分かれば、いつもスマホからも確認できるのか！
+
+```javascript
+export default defineConfig({
+    server: {
+      host: true, // または '0.0.0.0'
+    },
+    integrations: [// ここを最初に配置
+        react(),
+        expressiveCode(),
+        mdx(), sitemap(), starlight({
+            title: 'ドキュメント',
+```
+
+- ちなみに、viteレベルでいつも0.0.0.0でアクセスさせるには下記のように記す
+```json
+"scripts": {
+  "dev": "vite --host"
+}
+```
+
+#### ポートフォワードの永続化
+- 起動タイミングでPSスクリプトを動かす
+- 4321でastro, 5172で3-sandboxとするとpower shellのスクリプトの内容は以下の通り。
+```text
+netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=5173 connectaddress=172.20.172.143 connectport=5173
+```
+- これをport.batとしてc:\に保存
+- 再度起動タイミングでのスクリプトの読み込みを設定
+```text
+schtasks /create /tn "WSL2 Startup Tasks" /sc onstart /ru System /tr "powershell -ExecutionPolicy Bypass -File C:\port
+.bat"
+```
+
+##### 注意！
+- ps1ファイルで保存する選択肢とbatで保存する選択肢がある
+- ps1は一行しか受け付けない。2行以上なら拡張子はbatを利用
+- もし間違ってスケジュールを登録してしまったら！
+  - schtasks /query | findstr "WSL2 PortProxy"としてまず削除対象のtaskの名前を確認して
+  - schtasks /delete /tn "WSL2 PortProxy" /f　で、タスクを削除
+
+### ファイアウォールルール
+- 一度netshで長大なファイアウォール一覧（インバウンドのみ）を出力
+- これは同じプロトコル、同じポートで許容しているものがオーバーラップしている。例えばmDNSからの応答をchromeもEdgeもほしいので、それぞれの名前で勝手に登録しているが実際には一つのエントリーでいいはず
+- なので、awkを使ってこの長大な出力をポート、ローカルポート、どの外部アクセスを許しているか、名称の順番で出力させる
+
+```text
+PowerShell> netsh advfirewall firewall show rule name=all > netsh.sjis
+
+bash> iconv -f shift_jis -t utf-8  netsh.sjis > netsh.txt
+bash>awk 'BEGIN {printf("IP / ポート / localIP / reoteIP / 名前\n");}
+     /規則名/ {pname=$0; sub(/^規則名: +/, "", pname)} 
+     /ローカル IP:/ {gsub("\r", "", $3); local_ip=$3} 
+     /リモート IP:/ {gsub("\r", "", $3); remote_ip=$3}      /プロトコル:/ {gsub("\r", "", $2); proto=$2} 
+     /ローカル ポート:/ {gsub("\r", "", $3); port=$3; printf("%s %s %s %s %s\n", proto, port, local_ip, remote_ip, pname)}' netsh.txt | sort -k1,1 -k2,2n > summary.txt
+```
+
+この結果、2025/02/04時点では下記の通り
+ポート、localIP,remoteIPがリモートのものがある。たくさん。気になる
+
+```text
+IP / ポート / localIP / reoteIP / 名前
+TCP IPHTTPS 任意 任意 コア ネットワーク - IPHTTPS (TCP-受信)
+TCP RPC 任意 LocalSubnet Windows Defender ファイアウォール リモート管理 (RPC)
+TCP RPC 任意 LocalSubnet スケジュールされたリモート タスク管理 (RPC)
+TCP RPC 任意 LocalSubnet ファイルとプリンターの共有 (Spooler Service - RPC)
+TCP RPC 任意 LocalSubnet ファイルとプリンターの共有 (Spooler Service - RPC)
+TCP RPC 任意 LocalSubnet リモート イベントのログ管理 (RPC)
+TCP RPC 任意 LocalSubnet リモート サービス管理 (RPC)
+TCP RPC 任意 LocalSubnet リモート ボリューム管理 - 仮想ディスク サービス (RPC)
+TCP RPC 任意 LocalSubnet リモート ボリューム管理 - 仮想ディスク サービス ローダー (RPC)
+TCP RPC 任意 LocalSubnet 分散トランザクション コーディネーター (RPC)
+TCP RPC 任意 任意 Netlogon サービス Authz (RPC)
+TCP RPC 任意 任意 Windows Defender ファイアウォール リモート管理 (RPC)
+TCP RPC 任意 任意 スケジュールされたリモート タスク管理 (RPC)
+TCP RPC 任意 任意 ファイルとプリンターの共有 (Spooler Service - RPC)
+TCP RPC 任意 任意 リモート イベント モニター (RPC)
+TCP RPC 任意 任意 リモート イベントのログ管理 (RPC)
+TCP RPC 任意 任意 リモート サービス管理 (RPC)
+TCP RPC 任意 任意 リモート シャットダウンの受信規則 (TCP 受信)
+TCP RPC 任意 任意 リモート ボリューム管理 - 仮想ディスク サービス (RPC)
+TCP RPC 任意 任意 リモート ボリューム管理 - 仮想ディスク サービス ローダー (RPC)
+TCP RPC 任意 任意 仮想マシンの監視 (RPC)
+TCP RPC 任意 任意 分散トランザクション コーディネーター (RPC)
+TCP RPC-EPMap 任意 LocalSubnet Windows Defender ファイアウォール リモート管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet スケジュールされたリモート タスク管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet ファイルとプリンターの共有 (スプーラー サービス - RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet ファイルとプリンターの共有 (スプーラー サービス - RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet リモート イベント ログ管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet リモート サービス管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet リモート ボリューム管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 LocalSubnet 分散トランザクション コーディネーター (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 Windows Defender ファイアウォール リモート管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 スケジュールされたリモート タスク管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 ファイルとプリンターの共有 (スプーラー サービス - RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 リモート イベント モニター (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 リモート イベント ログ管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 リモート サービス管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 リモート シャットダウンの受信規則 (RPC-EP 受信)
+TCP RPC-EPMap 任意 任意 リモート ボリューム管理 (RPC-EPMAP)
+TCP RPC-EPMap 任意 任意 分散トランザクション コーディネーター (RPC-EPMAP)
+TCP 任意 任意 LocalSubnet Media Center Extender - RTSP (TCP 送信)
+TCP 任意 任意 LocalSubnet Media Center Extender - qWave (TCP 送信)
+TCP 任意 任意 LocalSubnet Media Center Extender - サービス (TCP 送信)
+TCP 任意 任意 LocalSubnet Media Center Extenders - Media ストリーミング (TCP-Out)
+TCP 任意 任意 LocalSubnet Media Center Extenders - UPnP (TCP-Out)
+TCP 任意 任意 LocalSubnet Microsoft メディア ファンデーション ネットワーク ソース送信 [TCP ALL]
+TCP 任意 任意 LocalSubnet TPM 仮想スマートカード管理 (TCP 受信)
+TCP 任意 任意 LocalSubnet TPM 仮想スマートカード管理 (TCP 送信)
+TCP 任意 任意 LocalSubnet Windows Management Instrumentation (WMI 受信)
+TCP 任意 任意 LocalSubnet Windows Management Instrumentation (WMI 送信)
+TCP 任意 任意 LocalSubnet Windows Management Instrumentation (非同期受信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (HTTP ストリーミング送信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (TCP 受信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (TCP 送信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (UPnP 送信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (UPnPHost 送信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (qWave TCP 送信)
+TCP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (ストリーミング TCP 送信)
+TCP 任意 任意 LocalSubnet iSCSI サービス (TCP 受信)
+TCP 任意 任意 LocalSubnet iSCSI サービス (TCP 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (UPnP 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (UPnP 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (UPnPHost 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (UPnPHost 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (UPnPHost 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (WSD EventsSecure 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (WSD EventsSecure 送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (WSD イベント送信)
+TCP 任意 任意 LocalSubnet ネットワーク探索 (WSD イベント送信)
+TCP 任意 任意 LocalSubnet パフォーマンス ログと警告 (TCP 受信)
+TCP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB-Session 送信)
+TCP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB-Session 送信)
+TCP 任意 任意 LocalSubnet ファイルとプリンターの共有 (SMB 送信)
+TCP 任意 任意 LocalSubnet ファイルとプリンターの共有 (SMB 送信)
+TCP 任意 任意 LocalSubnet リモート アシスタンス (SSDP TCP-送信)
+TCP 任意 任意 LocalSubnet ワイヤレス ポータブル デバイス (TCP 送信)
+TCP 任意 任意 LocalSubnet ワイヤレス ポータブル デバイス (UPnP 送信)
+TCP 任意 任意 LocalSubnet ワイヤレス ポータブル デバイス (UPnPHost 送信)
+TCP 任意 任意 LocalSubnet 分散トランザクション コーディネーター (TCP 受信)
+TCP 任意 任意 LocalSubnet 分散トランザクション コーディネーター (TCP 送信)
+TCP 任意 任意 任意 ASUS Device Discovery Application
+TCP 任意 任意 任意 AllJoyn ルーター (TCP 送信)
+TCP 任意 任意 任意 BrPrintFinishNotice
+TCP 任意 任意 任意 Connected Devices Platform (TCP 受信)
+TCP 任意 任意 任意 Connected Devices Platform (TCP 送信)
+TCP 任意 任意 任意 Connected Devices Platform - Wi-Fi Direct トランスポート (TCP 受信)
+TCP 任意 任意 任意 Connected Devices Platform - Wi-Fi Direct トランスポート (TCP 送信)
+TCP 任意 任意 任意 Connected User Experiences and Telemetry
+TCP 任意 任意 任意 Creative Cloud UI Helper
+TCP 任意 任意 任意 Files
+TCP 任意 任意 任意 Media Center Extender - デバイス プロビジョニング (TCP 送信)
+TCP 任意 任意 任意 Media Center Extenders - デバイス評価 (TCP-Out)
+TCP 任意 任意 任意 Microsoft Teams
+TCP 任意 任意 任意 Node.js JavaScript Runtime
+TCP 任意 任意 任意 ScanSnap Home Monitor
+TCP 任意 任意 任意 ScanSnap Home Monitor
+TCP 任意 任意 任意 Skype
+TCP 任意 任意 任意 Skype
+TCP 任意 任意 任意 Skype
+TCP 任意 任意 任意 Skype
+TCP 任意 任意 任意 Steam
+TCP 任意 任意 任意 Steam Web Helper
+TCP 任意 任意 任意 TCP 上の近接通信共有 (TCP 共有)
+TCP 任意 任意 任意 TCP 上の近接通信共有 (TCP 配分)
+TCP 任意 任意 任意 TPM 仮想スマートカード管理 (TCP 受信)
+TCP 任意 任意 任意 TPM 仮想スマートカード管理 (TCP 送信)
+TCP 任意 任意 任意 Teredo のネットワーク探索 (UPnP 受信)
+TCP 任意 任意 任意 Visual Studio Code
+TCP 任意 任意 任意 Visual Studio Code
+TCP 任意 任意 任意 WFD ドライバーのみ (TCP 受信)
+TCP 任意 任意 任意 WFD ドライバーのみ (TCP 送信)
+TCP 任意 任意 任意 Windows Management Instrumentation (WMI 受信)
+TCP 任意 任意 任意 Windows Management Instrumentation (WMI 送信)
+TCP 任意 任意 任意 Windows Management Instrumentation (非同期受信)
+TCP 任意 任意 任意 Windows Media Player (TCP 送信)
+TCP 任意 任意 任意 Windows Media Player x86 (TCP 送信)
+TCP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (HTTP ストリーミング送信)
+TCP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (TCP 受信)
+TCP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (TCP 送信)
+TCP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (qWave TCP 送信)
+TCP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (ストリーミング TCP 送信)
+TCP 任意 任意 任意 Windows ピア ツー ピア共同作業ファンデーション (TCP 受信)
+TCP 任意 任意 任意 Windows ピア ツー ピア共同作業ファンデーション (TCP 送信)
+TCP 任意 任意 任意 evernote.exe
+TCP 任意 任意 任意 iSCSI サービス (TCP 受信)
+TCP 任意 任意 任意 iSCSI サービス (TCP 送信)
+TCP 任意 任意 任意 node.exe
+TCP 任意 任意 任意 node.exe
+TCP 任意 任意 任意 node.exe
+TCP 任意 任意 任意 sclang
+TCP 任意 任意 任意 teams.exe
+TCP 任意 任意 任意 らくらくアップデートツール
+TCP 任意 任意 任意 コア ネットワーク - IPHTTPS (TCP-送信)
+TCP 任意 任意 任意 コア ネットワーク - グループ ポリシー (LSASS 送信)
+TCP 任意 任意 任意 コア ネットワーク - グループ ポリシー (NP 送信)
+TCP 任意 任意 任意 コア ネットワーク - グループ ポリシー (TCP 送信)
+TCP 任意 任意 任意 デバイス キャスト機能 (qWave TCP 送信)
+TCP 任意 任意 任意 ネットワーク探索 (UPnP 送信)
+TCP 任意 任意 任意 ネットワーク探索 (WSD EventsSecure 送信)
+TCP 任意 任意 任意 ネットワーク探索 (WSD イベント送信)
+TCP 任意 任意 任意 パフォーマンス ログと警告 (TCP 受信)
+TCP 任意 任意 任意 ファイルとプリンターの共有 (NB-Session 送信)
+TCP 任意 任意 任意 ファイルとプリンターの共有 (SMB 送信)
+TCP 任意 任意 任意 リモート アシスタンス (RA サーバー TCP 受信)
+TCP 任意 任意 任意 リモート アシスタンス (RA サーバー TCP 送信)
+TCP 任意 任意 任意 リモート アシスタンス (TCP 受信)
+TCP 任意 任意 任意 リモート アシスタンス (TCP 受信)
+TCP 任意 任意 任意 リモート アシスタンス (TCP 送信)
+TCP 任意 任意 任意 リモート アシスタンス (TCP 送信)
+TCP 任意 任意 任意 ルーティングとリモート アクセス (PPTP 送信)
+TCP 任意 任意 任意 ワイヤレス ディスプレイ (TCP 入力)
+TCP 任意 任意 任意 ワイヤレス ディスプレイ (TCP 出力)
+TCP 任意 任意 任意 ワイヤレス ポータブル デバイス (TCP 送信)
+TCP 任意 任意 任意 分散トランザクション コーディネーター (TCP 受信)
+TCP 任意 任意 任意 分散トランザクション コーディネーター (TCP 送信)
+TCP 任意 任意 任意 推奨されるトラブルシューティングのクライアント (HTTP/HTTPS 送信)
+TCP 53 任意 任意 HNS Container Networking - ICS DNS (TCP-In) - 790E58B4-7939-4434-9358-89AE7DDBE87F - 0
+TCP 80 任意 LocalSubnet Windows リモート管理 - 互換モード (HTTP-In)
+TCP 80 任意 任意 Windows リモート管理 - 互換モード (HTTP-In)
+TCP 135 任意 LocalSubnet TPM 仮想スマートカード管理 (DCOM 受信)
+TCP 135 任意 LocalSubnet Windows Management Instrumentation (DCOM 受信)
+TCP 135 任意 LocalSubnet パフォーマンス ログと警告 (DCOM 受信)
+TCP 135 任意 任意 TPM 仮想スマートカード管理 (DCOM 受信)
+TCP 135 任意 任意 Windows Management Instrumentation (DCOM 受信)
+TCP 135 任意 任意 パフォーマンス ログと警告 (DCOM 受信)
+TCP 135 任意 任意 リモート アシスタンス (DCOM 受信)
+TCP 135 任意 任意 仮想マシンの監視 (DCOM 受信)
+TCP 139 任意 LocalSubnet ファイルとプリンターの共有 (NB セッション受信)
+TCP 139 任意 LocalSubnet ファイルとプリンターの共有 (NB セッション受信)
+TCP 139 任意 任意 ファイルとプリンターの共有 (NB セッション受信)
+TCP 139 任意 任意 仮想マシンの監視 (NB セッション受信)
+TCP 443 任意 任意 Secure Socket トンネリング プロトコル (SSTP 受信)
+TCP 445 任意 LocalSubnet ファイルとプリンターの共有 (SMB 受信)
+TCP 445 任意 LocalSubnet ファイルとプリンターの共有 (SMB 受信)
+TCP 445 任意 LocalSubnet リモート イベントのログ管理 (NP 受信)
+TCP 445 任意 LocalSubnet リモート サービス管理 (NP 受信)
+TCP 445 任意 任意 Netlogon サービス (NP 受信)
+TCP 445 任意 任意 ファイルとプリンターの共有 (SMB 受信)
+TCP 445 任意 任意 リモート イベントのログ管理 (NP 受信)
+TCP 445 任意 任意 リモート サービス管理 (NP 受信)
+TCP 554,8554,8555,8556,8557,8558 任意 LocalSubnet Media Center Extender - RTSP (TCP 受信)
+TCP 554,8554-8558 任意 LocalSubnet Microsoft メディア ファンデーション ネットワーク ソース受信 [TCP 554]
+TCP 1723 任意 任意 ルーティングとリモート アクセス (PPTP 受信)
+TCP 2177 任意 LocalSubnet Media Center Extender - qWave (TCP 受信)
+TCP 2177 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (qWave TCP 受信)
+TCP 2177 任意 任意 Windows Media Player ネットワーク共有サービス (qWave TCP 受信)
+TCP 2177 任意 任意 デバイス キャスト機能 (qWave TCP 受信)
+TCP 2869 任意 LocalSubnet Media Center Extenders - Media ストリーミング (TCP-In)
+TCP 2869 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (UPnP 受信)
+TCP 2869 任意 LocalSubnet ネットワーク探索 (UPnP 受信)
+TCP 2869 任意 LocalSubnet ネットワーク探索 (UPnP 受信)
+TCP 2869 任意 LocalSubnet リモート アシスタンス (SSDP TCP-受信)
+TCP 2869 任意 LocalSubnet ワイヤレス ポータブル デバイス (UPnP 受信)
+TCP 2869 任意 任意 デバイス キャスト UPnP イベント (TCP 受信)
+TCP 2869 任意 任意 ネットワーク探索 (UPnP 受信)
+TCP 3390 任意 LocalSubnet Media Center Extender - XSP (TCP 受信)
+TCP 4321 任意 任意 WSL2 Astro
+TCP 4713 任意 任意 PulseAudio (TCP-In)
+TCP 5000,7000,7100,50000,7200-17210,8888 任意 任意 Airhost service for Zoom Video Meetings
+TCP 5357 任意 LocalSubnet ネットワーク探索 (WSD イベント受信)
+TCP 5357 任意 LocalSubnet ネットワーク探索 (WSD イベント受信)
+TCP 5357 任意 任意 ネットワーク探索 (WSD イベント受信)
+TCP 5358 任意 LocalSubnet ネットワーク探索 (WSD EventsSecure 受信)
+TCP 5358 任意 LocalSubnet ネットワーク探索 (WSD EventsSecure 受信)
+TCP 5358 任意 任意 ネットワーク探索 (WSD EventsSecure 受信)
+TCP 5985 任意 LocalSubnet Windows リモート管理 (HTTP 受信)
+TCP 5985 任意 任意 Windows リモート管理 (HTTP 受信)
+TCP 7250 任意 任意 ワイヤレス ディスプレイ インフラストラクチャ バック チャネル (TCP 受信)
+TCP 7680 任意 任意 Delivery Optimization (TCP-In)
+TCP 9955 任意 任意 AllJoyn ルーター (TCP 受信)
+TCP 10243 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (HTTP ストリーミング受信)
+TCP 10243 任意 任意 Windows Media Player ネットワーク共有サービス (HTTP ストリーミング受信)
+TCP 10244 任意 LocalSubnet Media Center Extender - HTTP ストリーミング (TCP-In)
+TCP 10246 任意 LocalSubnet デバイス キャスト ストリーミング サーバー (HTTP ストリーミング受信)
+TCP 10246 任意 任意 デバイス キャスト ストリーミング サーバー (HTTP ストリーミング受信)
+TCP 10246 任意 任意 デバイス キャスト ストリーミング サーバー (HTTP ストリーミング受信)
+TCP 10247 任意 LocalSubnet DIAL プロトコル サーバー (HTTP 受信)
+TCP 10247 任意 任意 DIAL プロトコル サーバー (HTTP 受信)
+TCP 23554,23555,23556 任意 LocalSubnet デバイス キャスト ストリーミング サーバー (RTSP ストリーミング受信)
+TCP 23554,23555,23556 任意 任意 デバイス キャスト ストリーミング サーバー (RTSP ストリーミング受信)
+TCP 23554,23555,23556 任意 任意 デバイス キャスト ストリーミング サーバー (RTSP ストリーミング受信)
+TCP 49152-65535 任意 任意 Windows デバイス管理デバイス登録プログラム (TCP 送信)
+TCP 49152-65535 任意 任意 Windows デバイス管理同期クライアント (TCP 送信)
+TCP 49152-65535 任意 任意 Windows デバイス管理登録サービス (TCP 送信)
+TCP 49152-65535 任意 任意 Windows デバイス管理証明書インストーラー (TCP 送信)
+TCP 54950 任意 任意 Open Port for WorkflowAppControl
+UDP Ply2Disc 任意 任意 デバイス キャスト SSDP 探索 (UDP 受信)
+UDP Teredo 任意 任意 コア ネットワーク - Teredo (UDP 受信)
+UDP 任意 任意 LocalSubnet Media Center Extender - SSDP (UDP 送信)
+UDP 任意 任意 LocalSubnet Media Center Extender - WMDRM-ND/RTP/RTCP (UDP 送信)
+UDP 任意 任意 LocalSubnet Media Center Extender - qWave (UDP 送信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (SSDP 送信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (UDP 受信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (UDP 送信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (qWave UDP 送信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (ストリーミング UDP 受信)
+UDP 任意 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (ストリーミング UDP 送信)
+UDP 任意 任意 LocalSubnet Windows グループ作業ツール コンピューター名の登録サービス (SSDP 送信)
+UDP 任意 任意 LocalSubnet Windows ピア ツー ピア共同作業ファンデーション (SSDP 送信)
+UDP 任意 任意 LocalSubnet Windows ピア ツー ピア共同作業ファンデーション (WSD 送信)
+UDP 任意 任意 LocalSubnet mDNS (UDP 送信)
+UDP 任意 任意 LocalSubnet mDNS (UDP 送信)
+UDP 任意 任意 LocalSubnet デバイス キャスト ストリーミング サーバー (RTCP ストリーミング受信)
+UDP 任意 任意 LocalSubnet デバイス キャスト ストリーミング サーバー (RTP ストリーミング送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (NB データグラム送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (NB データグラム送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (NB 名送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (NB 名送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (Pub WSD 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (Pub WSD 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (Pub WSD 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (SSDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (SSDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (SSDP 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (WSD 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (WSD 送信)
+UDP 任意 任意 LocalSubnet ネットワーク探索 (WSD 送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (LLMNR UDP 送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (LLMNR UDP 送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB データグラム送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB データグラム送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB 名送信)
+UDP 任意 任意 LocalSubnet ファイルとプリンターの共有 (NB 名送信)
+UDP 任意 任意 LocalSubnet リモート アシスタンス (SSDP UDP-送信)
+UDP 任意 任意 LocalSubnet ワイヤレス ポータブル デバイス (SSDP 送信)
+UDP 任意 任意 任意 ASUS Device Discovery Application
+UDP 任意 任意 任意 AllJoyn ルーター (UDP 受信)
+UDP 任意 任意 任意 AllJoyn ルーター (UDP 送信)
+UDP 任意 任意 任意 BrPrintFinishNotice
+UDP 任意 任意 任意 Connected Devices Platform (UDP 受信)
+UDP 任意 任意 任意 Connected Devices Platform (UDP 送信)
+UDP 任意 任意 任意 Creative Cloud UI Helper
+UDP 任意 任意 任意 Files
+UDP 任意 任意 任意 Microsoft Teams
+UDP 任意 任意 任意 Node.js JavaScript Runtime
+UDP 任意 任意 任意 ScanSnap Home Monitor
+UDP 任意 任意 任意 ScanSnap Home Monitor
+UDP 任意 任意 任意 Skype
+UDP 任意 任意 任意 Skype
+UDP 任意 任意 任意 Skype
+UDP 任意 任意 任意 Skype
+UDP 任意 任意 任意 Steam
+UDP 任意 任意 任意 Steam Web Helper
+UDP 任意 任意 任意 Teredo のネットワーク探索 (SSDP 受信)
+UDP 任意 任意 任意 Visual Studio Code
+UDP 任意 任意 任意 Visual Studio Code
+UDP 任意 任意 任意 WFD ドライバーのみ (UDP 受信)
+UDP 任意 任意 任意 WFD ドライバーのみ (UDP 送信)
+UDP 任意 任意 任意 Windows Media Player (UDP 受信)
+UDP 任意 任意 任意 Windows Media Player (UDP 送信)
+UDP 任意 任意 任意 Windows Media Player x86 (UDP 受信)
+UDP 任意 任意 任意 Windows Media Player x86 (UDP 送信)
+UDP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (UDP 受信)
+UDP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (UDP 送信)
+UDP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (qWave UDP 送信)
+UDP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (ストリーミング UDP 受信)
+UDP 任意 任意 任意 Windows Media Player ネットワーク共有サービス (ストリーミング UDP 送信)
+UDP 任意 任意 任意 Windows グループ作業ツール コンピューター名の登録サービス (PNRP 送信)
+UDP 任意 任意 任意 Windows ピア ツー ピア共同作業ファンデーション (PNRP 送信)
+UDP 任意 任意 任意 evernote.exe
+UDP 任意 任意 任意 mDNS (UDP 送信)
+UDP 任意 任意 任意 node.exe
+UDP 任意 任意 任意 node.exe
+UDP 任意 任意 任意 node.exe
+UDP 任意 任意 任意 sclang
+UDP 任意 任意 任意 teams.exe
+UDP 任意 任意 任意 らくらくアップデートツール
+UDP 任意 任意 任意 コア ネットワーク - DNS (UDP 送信)
+UDP 任意 任意 任意 コア ネットワーク - Teredo (UDP 送信)
+UDP 任意 任意 任意 デバイス キャスト ストリーミング サーバー (RTCP ストリーミング受信)
+UDP 任意 任意 任意 デバイス キャスト ストリーミング サーバー (RTCP ストリーミング受信)
+UDP 任意 任意 任意 デバイス キャスト ストリーミング サーバー (RTP ストリーミング送信)
+UDP 任意 任意 任意 デバイス キャスト ストリーミング サーバー (RTP ストリーミング送信)
+UDP 任意 任意 任意 デバイス キャスト機能 (qWave UDP 送信)
+UDP 任意 任意 任意 ネットワーク探索 (NB データグラム送信)
+UDP 任意 任意 任意 ネットワーク探索 (NB 名送信)
+UDP 任意 任意 任意 ファイルとプリンターの共有 (NB データグラム送信)
+UDP 任意 任意 任意 ファイルとプリンターの共有 (NB 名送信)
+UDP 任意 任意 任意 リモート アシスタンス (PNRP-送信)
+UDP 任意 任意 任意 リモート アシスタンス (PNRP-送信)
+UDP 任意 任意 任意 ルーティングとリモート アクセス (L2TP 送信)
+UDP 任意 任意 任意 ワイヤレス ディスプレイ (UDP 出力)
+UDP 53 任意 任意 HNS Container Networking - DNS (UDP-In) - 790E58B4-7939-4434-9358-89AE7DDBE87F - 0
+UDP 68 任意 任意 コア ネットワーク - 動的ホスト構成プロトコル (DHCP 受信)
+UDP 68 任意 任意 コア ネットワーク - 動的ホスト構成プロトコル (DHCP 送信)
+UDP 137 任意 LocalSubnet ネットワーク探索 (NB 名受信)
+UDP 137 任意 LocalSubnet ネットワーク探索 (NB 名受信)
+UDP 137 任意 LocalSubnet ファイルとプリンターの共有 (NB 名受信)
+UDP 137 任意 LocalSubnet ファイルとプリンターの共有 (NB 名受信)
+UDP 137 任意 任意 ネットワーク探索 (NB 名受信)
+UDP 137 任意 任意 ファイルとプリンターの共有 (NB 名受信)
+UDP 138 任意 LocalSubnet ネットワーク探索 (NB データグラム受信)
+UDP 138 任意 LocalSubnet ネットワーク探索 (NB データグラム受信)
+UDP 138 任意 LocalSubnet ファイルとプリンターの共有 (NB データグラム受信)
+UDP 138 任意 LocalSubnet ファイルとプリンターの共有 (NB データグラム受信)
+UDP 138 任意 任意 ネットワーク探索 (NB データグラム受信)
+UDP 138 任意 任意 ファイルとプリンターの共有 (NB データグラム受信)
+UDP 162 任意 LocalSubnet SNMP トラップ サービス (UDP 受信)
+UDP 162 任意 任意 SNMP トラップ サービス (UDP 受信)
+UDP 546 任意 任意 コア ネットワーク - IPv6 用動的ホスト構成プロトコル (DHCPV6-受信)
+UDP 546 任意 任意 コア ネットワーク - IPv6 用動的ホスト構成プロトコル (DHCPV6-送信)
+UDP 1701 任意 任意 ルーティングとリモート アクセス (L2TP 受信)
+UDP 1900 任意 LocalSubnet Media Center Extender - SSDP (UDP 受信)
+UDP 1900 任意 LocalSubnet Media Center Extenders - Media ストリーミング (UDP-Out)
+UDP 1900 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (SSDP 受信)
+UDP 1900 任意 LocalSubnet Windows グループ作業ツール コンピューター名の登録サービス (SSDP 受信)
+UDP 1900 任意 LocalSubnet Windows ピア ツー ピア共同作業ファンデーション (SSDP 受信)
+UDP 1900 任意 LocalSubnet ネットワーク探索 (SSDP 受信)
+UDP 1900 任意 LocalSubnet ネットワーク探索 (SSDP 受信)
+UDP 1900 任意 LocalSubnet ネットワーク探索 (SSDP 受信)
+UDP 1900 任意 LocalSubnet リモート アシスタンス (SSDP UDP-受信)
+UDP 1900 任意 LocalSubnet ワイヤレス ポータブル デバイス (SSDP 受信)
+UDP 2177 任意 LocalSubnet Media Center Extender - qWave (UDP 受信)
+UDP 2177 任意 LocalSubnet Windows Media Player ネットワーク共有サービス (qWave UDP 受信)
+UDP 2177 任意 任意 Windows Media Player ネットワーク共有サービス (qWave UDP 受信)
+UDP 2177 任意 任意 デバイス キャスト機能 (qWave UDP 受信)
+UDP 3540 任意 任意 Windows グループ作業ツール コンピューター名の登録サービス (PNRP 受信)
+UDP 3540 任意 任意 Windows ピア ツー ピア共同作業ファンデーション (PNRP 受信)
+UDP 3540 任意 任意 リモート アシスタンス (PNRP-受信)
+UDP 3540 任意 任意 リモート アシスタンス (PNRP-受信)
+UDP 3702 任意 LocalSubnet Windows ピア ツー ピア共同作業ファンデーション (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (Pub WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (Pub WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (Pub WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 3702 任意 LocalSubnet ネットワーク探索 (WSD 受信)
+UDP 5000-5020 任意 LocalSubnet Microsoft メディア ファンデーション ネットワーク ソース受信 [UDP 5004-5009]
+UDP 5353 任意 LocalSubnet mDNS (UDP 受信)
+UDP 5353 任意 LocalSubnet mDNS (UDP 受信)
+UDP 5353 任意 任意 Google Chrome（mDNS インバウンド）
+UDP 5353 任意 任意 Microsoft Edge (mDNS-In)
+UDP 5353 任意 任意 Microsoft Edge (mDNS-In)
+UDP 5353 任意 任意 mDNS (UDP 受信)
+UDP 5353,7200-17210,8889 任意 任意 Airhost service for Zoom Video Meetings
+UDP 5355 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 受信)
+UDP 5355 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 受信)
+UDP 5355 任意 LocalSubnet ネットワーク探索 (LLMNR UDP 受信)
+UDP 5355 任意 LocalSubnet ファイルとプリンターの共有 (LLMNR UDP 受信)
+UDP 5355 任意 LocalSubnet ファイルとプリンターの共有 (LLMNR UDP 受信)
+UDP 6004 任意 任意 Microsoft Office Outlook
+UDP 7200-17210 任意 任意 Zoom Video Meeting
+UDP 7235 任意 LocalSubnet WFD ASP Coordination Protocol (UDP 受信)
+UDP 7235 任意 LocalSubnet WFD ASP Coordination Protocol (UDP 送信)
+UDP 7680 任意 任意 Delivery Optimization (UDP-In)
+UDP 7777,7778,7779,7780,7781,5004,5005,50004,50005,50006,50007,50008,50009,50010,50011,50012,50013 任意 LocalSubnet Media Center Extender - WMDRM-ND/RTP/RTCP (UDP 受信)
+UDP 54955 任意 任意 Open Broadcast Port for WorkflowAppControl
+
+```
+
+
+## ホームネットワークを管理
+```text
+ntu0.1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+[02/04 6:33] ~ %sudo sudo nmap -sP 192.168.1.0/24
+Starting Nmap 7.80 ( https://nmap.org ) at 2025-02-04 06:33 JST
+Nmap scan report for RT-AC68U-66C8 (192.168.1.1)
+Host is up (0.0014s latency).
+Nmap scan report for 192.168.1.3
+Host is up (0.087s latency).
+Nmap scan report for 192.168.1.46
+Host is up (0.0030s latency).
+Nmap scan report for 192.168.1.77
+Host is up (0.0043s latency).
+Nmap scan report for 192.168.1.99
+Host is up (0.090s latency).
+Nmap scan report for 192.168.1.111
+Host is up (0.0023s latency).
+Nmap scan report for amazon-dc55d5834 (192.168.1.154)
+Host is up (0.065s latency).
+Nmap scan report for 192.168.1.156
+Host is up (0.0013s latency).
+Nmap scan report for 192.168.1.183
+Host is up (0.0032s latency).
+Nmap scan report for 192.168.1.184
+Host is up (0.099s latency).
+Nmap scan report for macbookpro (192.168.1.197)
+Host is up (0.10s latency).
+Nmap scan report for Roomba-80B2841C01707770 (192.168.1.199)
+Host is up (0.086s latency).
+Nmap scan report for 192.168.1.234
+Host is up (0.00067s latency).
+Nmap scan report for iPhone (192.168.1.246)
+Host is up (0.025s latency).
+Nmap done: 256 IP addresses (14 hosts up) scanned in 102.52 seconds
+[02/04 6:35] ~ %sudo nmap -O 192.168.1.3
+[sudo] password for akihisa:
+Starting Nmap 7.80 ( https://nmap.org ) at 2025-02-04 06:59 JST
+Nmap scan report for 192.168.1.3
+Host is up (0.0044s latency).
+Not shown: 999 closed ports
+PORT     STATE SERVICE
+6668/tcp open  irc
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.80%E=4%D=2/4%OT=6668%CT=1%CU=31465%PV=Y%DS=2%DC=I%G=Y%TM=67A13C
+OS:44%P=x86_64-pc-linux-gnu)SEQ(SP=0%GCD=1990A0%ISR=C0%TI=I%CI=I%II=RI%SS=O
+OS:%TS=U)OPS(O1=M5B4%O2=M5B4%O3=M5B4%O4=M5B4%O5=M5B4%O6=M5B4)WIN(W1=111C%W2
+OS:=111C%W3=111C%W4=111C%W5=111C%W6=111C)ECN(R=Y%DF=N%T=FF%W=111C%O=M5B4%CC
+OS:=N%Q=)T1(R=Y%DF=N%T=FF%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=N%T
+OS:=FF%W=111C%S=A%A=S%F=AR%O=%RD=0%Q=)T5(R=Y%DF=N%T=FF%W=111C%S=A%A=S+%F=AR
+OS:%O=%RD=0%Q=)T6(R=Y%DF=N%T=FF%W=111C%S=A%A=S%F=AR%O=%RD=0%Q=)T7(R=Y%DF=N%
+OS:T=FF%W=111C%S=A%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=FF%IPL=38%UN=0%RIPL=G
+OS:%RID=G%RIPCK=G%RUCK=9E90%RUD=G)IE(R=Y%DFI=S%T=FF%CD=S)
+
+Network Distance: 2 hops
+
+OS detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 23.74 seconds
+[02/04 6:59] ~ %sudo nmap -sV 192.168.1.3
+Starting Nmap 7.80 ( https://nmap.org ) at 2025-02-04 07:00 JST
+Nmap scan report for 192.168.1.3
+Host is up (0.0039s latency).
+Not shown: 999 closed ports
+PORT     STATE SERVICE VERSION
+6668/tcp open  irc?
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 187.34 seconds
+[02/04 7:03] ~ %arp -a
+zsh: command not found: arp
+[02/04 7:04] ~ %arp -a
+pasokon.mshome.net (172.20.160.1) at 00:15:5d:d0:b9:49 [ether] on eth0
+[02/04 7:07] ~ %ping 192.168.1.3
+PING 192.168.1.3 (192.168.1.3) 56(84) bytes of data.
+64 bytes from 192.168.1.3: icmp_seq=1 ttl=254 time=72.5 ms
+64 bytes from 192.168.1.3: icmp_seq=2 ttl=254 time=96.6 ms
+^C
+--- 192.168.1.3 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 72.470/84.536/96.603/12.066 ms
+[02/04 7:07] ~ %arp -a
+pasokon.mshome.net (172.20.160.1) at 00:15:5d:d0:b9:49 [ether] on eth0
+[02/04 7:07] ~ %ping -c 3 192.168.1.3
+PING 192.168.1.3 (192.168.1.3) 56(84) bytes of data.
+64 bytes from 192.168.1.3: icmp_seq=1 ttl=254 time=71.6 ms
+64 bytes from 192.168.1.3: icmp_seq=2 ttl=254 time=92.7 ms
+64 bytes from 192.168.1.3: icmp_seq=3 ttl=254 time=116 ms
+
+--- 192.168.1.3 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 71.597/93.490/116.204/18.219 ms
+[02/04 7:08] ~ %arp -a
+pasokon.mshome.net (172.20.160.1) at 00:15:5d:d0:b9:49 [ether] on eth0
+[02/04 7:08] ~ %ip neigh show 192.168.1.3
+[02/04 7:08] ~ %ip neigh
+172.20.160.1 dev eth0 lladdr 00:15:5d:d0:b9:49 STALE
+[02/04 7:08] ~ %sudo nmap -sn 192.168.1.3
+Starting Nmap 7.80 ( https://nmap.org ) at 2025-02-04 07:09 JST
+Nmap scan report for 192.168.1.3
+Host is up (0.094s latency).
+Nmap done: 1 IP address (1 host up) scanned in 0.25 seconds
+[02/04 7:09] ~ %arp -a
+pasokon.mshome.net (172.20.160.1) at 00:15:5d:d0:b9:49 [ether] on eth0
+[02/04 7:09] ~ %sudo apt install iputils-arping
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  iputils-arping
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Need to get 16.3 kB of archives.
+After this operation, 61.4 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu jammy/main amd64 iputils-arping amd64 3:20211215-1 [16.3 kB]
+Fetched 16.3 kB in 1s (21.4 kB/s)
+Selecting previously unselected package iputils-arping.
+(Reading database ... 85351 files and directories currently installed.)
+Preparing to unpack .../iputils-arping_3%3a20211215-1_amd64.deb ...
+Unpacking iputils-arping (3:20211215-1) ...
+Setting up iputils-arping (3:20211215-1) ...
+Processing triggers for man-db (2.10.2-1) ...
+[02/04 7:09] ~ %sudo arping -c 3 -I eth0 192.168.1.3
+ARPING 192.168.1.3 from 172.20.172.143 eth0
+Sent 3 probes (3 broadcast(s))
+Received 0 response(s)
+[02/04 7:09] ~ %ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 10.255.255.254/32 brd 10.255.255.254 scope global lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:15:5d:d0:ba:51 brd ff:ff:ff:ff:ff:ff
+    inet 172.20.172.143/20 brd 172.20.175.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::215:5dff:fed0:ba51/64 scope link
+       valid_lft forever preferred_lft forever
+[02/04 7:09] ~ %curl -s https://api.macvendors.com/FC:67:1F:EE:33:86
+Tuya Smart Inc.%
+[02/04 7:12] ~ %Tuya Smart Inc.
+```
