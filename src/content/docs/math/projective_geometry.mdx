@@ -1,0 +1,570 @@
+---
+title: ＊）同次座標系の基礎
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+## 要約
+
+- 本レポートでは3D空間における同次座標系と行列表現の数学的基礎について解説する
+- 直交行列の性質、回転行列の表現方法、射影変換、クォータニオンなどの重要な数学的概念も体系的に解説する
+
+## 座標系の基礎
+
+### 線形代数と同次座標系
+
+同次座標系は線形代数の概念を拡張したものであり、射影幾何学の基礎をなす。
+
+- 線形代数との関係
+  - 通常の$n$次元ベクトル空間を$(n+1)$次元に拡張
+  - 射影変換を線形変換として表現可能に
+  - アフィン変換（平行移動を含む変換）を単一の行列乗算で表現
+
+- 射影幾何学的解釈
+  - 同次座標$(x, y, z, w)$は$(x/w, y/w, z/w)$という3次元空間の点を表す
+  - $w = 0$のケースは無限遠点（方向ベクトル）を表現可能
+  - 実質的に射影空間$\mathbb{P}^3$を表現
+
+- 射影幾何学と複素変換の関係
+  - 2次元の場合、射影変換はリーマン球面上の複素関数としても解釈可能
+  - 複素平面上のメビウス変換（分数一次変換）$f(z) = \frac{az + b}{cz + d}$は射影変換と同型
+  - 3D空間では四元数（クォータニオン）がこの役割を拡張し、回転を表現
+  - 共形写像の性質を持ち、角度を保存する変換として重要
+
+- 3Dグラフィックスへの応用
+  - 異なる種類の変換（回転、拡大縮小、平行移動、射影）を統一的に扱える
+  - GPU処理の最適化が可能
+  - 透視投影の数学的表現が簡潔になる
+
+### 3D座標系
+右手座標系で議論をする
+
+- 右手系座標系
+  - x軸: 右方向への単位ベクトル
+  - y軸: 上方向への単位ベクトル
+  - z軸: 奥行き逆方向への単位ベクトル
+  - 3つの軸は互いに直交し、右手の親指(x)、人差し指(y)、中指(z)の方向と一致
+
+### 同次座標系
+
+3D空間の点を表現する際、$(x, y, z)$の3成分に加えて第4成分$w$を追加した$(x, y, z, w)$という4次元ベクトルを用いる。これを同次座標系という。
+
+- 同次座標の特徴
+  - $w = 1$のとき: 空間上の点を表す（位置ベクトル）
+  - $w = 0$のとき: 方向のみを表す（方向ベクトル）
+  - 一般に、3D空間の点$(x, y, z)$は同次座標では$(x, y, z, 1)$
+  - スケーリングすると$(kx, ky, kz, k)$となり、これは$(x, y, z, 1)$と同値
+
+### 行列と変換
+
+3D空間における変換（回転、拡大縮小、平行移動、せん断）は行列を用いて表現できるが、
+その説明のために表記方法、計算方法の前提を明確にしておく
+
+
+#### 列規約と行規約
+行列とベクトルの乗算には2つの規約が存在するが、OpenGLでは列規約を用いるためこちらで今後説明する
+
+- 列規約（Column-major）
+  - ベクトルを列ベクトルとして扱う: $v' = M \cdot v$
+  - 変換行列を左から掛ける
+  - 列方向に読む（各列が一つの変換を表す）
+  - OpenGLで採用
+- 行規約（Row-major）
+  - ベクトルを行ベクトルとして扱う: $v' = v \cdot M$
+  - 変換行列を右から掛ける
+  - 行方向に読む（各行が一つの変換を表す）
+  - DirectXなどで採用
+
+
+### 回転行列
+同時座標を用いた表現に限ってもいくつかの表現がある
+
+#### 1.軸廻りの回転
+
+
+- X軸周りの回転行列（角度$\theta$）
+
+$$
+R_x(\theta) = \begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & \cos\theta & -\sin\theta & 0 \\
+0 & \sin\theta & \cos\theta & 0 \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$$
+
+- Y軸周りの回転行列（角度$\theta$）
+
+$$
+R_y(\theta) = \begin{pmatrix}
+\cos\theta & 0 & \sin\theta & 0 \\
+0 & 1 & 0 & 0 \\
+-\sin\theta & 0 & \cos\theta & 0 \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$$
+
+- Z軸周りの回転行列（角度$\theta$）
+
+$$
+R_z(\theta) = \begin{pmatrix}
+\cos\theta & -\sin\theta & 0 & 0 \\
+\sin\theta & \cos\theta & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$$
+
+#### 2.任意軸周りの回転
+
+任意の単位ベクトル$(u_x, u_y, u_z)$を軸とする角度$\theta$の回転は次の行列で表される。
+
+$$
+R(u, \theta) = \begin{pmatrix}
+c + u_x^2(1-c) & u_x u_y(1-c) - u_z s & u_x u_z(1-c) + u_y s & 0 \\
+u_y u_x(1-c) + u_z s & c + u_y^2(1-c) & u_y u_z(1-c) - u_x s & 0 \\
+u_z u_x(1-c) - u_y s & u_z u_y(1-c) + u_x s & c + u_z^2(1-c) & 0 \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$$
+
+ここで、$c = \cos\theta$、$s = \sin\theta$である。
+
+
+#### 3.回転後の軸ベクトルによる表現
+世界座標系からビュー座標系の変換で使われる
+
+$$
+V = \begin{bmatrix} 
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+-\mathbf{p} \cdot \mathbf{x} & -\mathbf{p} \cdot \mathbf{y} & -\mathbf{p} \cdot \mathbf{z} & 1
+\end{bmatrix}
+$$
+
+ここで、$\mathbf{x}=(x_x,y_x,z_x)$、$\mathbf{y}=(x_y,y_y,z_y)$、$\mathbf{z}=(x_z,y_z,z_z)$
+はカメラ座標系の各軸ベクトル、$\mathbf{p}$はカメラの位置ベクトルを表す。
+
+##### 軸ベクトルの同次座標表現
+
+3D空間における軸ベクトル（基底ベクトル）は、同次座標系では第4成分が0となる。
+
+- 標準基底ベクトル
+  - x軸: $(1, 0, 0, 0)$
+  - y軸: $(0, 1, 0, 0)$
+  - z軸: $(0, 0, 1, 0)$
+
+- 第4成分が0である理由
+  - 方向のみを表し、位置情報を持たないため
+  - 平行移動の影響を受けないようにするため
+  - ベクトルの長さや方向のみが重要な場合に使用
+
+
+#### 軸ベクトルによる表現
+
+回転変換は、軸ベクトルの方向を変えるが、その性質（方向ベクトルであること）は保持する。
+
+- 回転行列$R$の性質
+  - 直交行列: $R^T \cdot R = I$（単位行列）
+  - 行列式$\det(R) = 1$
+  - 軸ベクトルの第4成分は回転後も0のまま
+
+
+
+## 平行移動と軸ベクトル
+
+平行移動は点の位置を変えるが、方向ベクトルには影響しない。
+
+- 平行移動行列$T$
+  
+$$
+T = \begin{pmatrix}
+1 & 0 & 0 & t_x \\
+0 & 1 & 0 & t_y \\
+0 & 0 & 1 & t_z \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$$
+
+- 軸ベクトル$v = (v_x, v_y, v_z, 0)$に平行移動を適用
+  
+$$
+T \cdot v = \begin{pmatrix}
+1 & 0 & 0 & t_x \\
+0 & 1 & 0 & t_y \\
+0 & 0 & 1 & t_z \\
+0 & 0 & 0 & 1
+\end{pmatrix} \cdot \begin{pmatrix} v_x \\ v_y \\ v_z \\ 0 \end{pmatrix} = \begin{pmatrix} v_x \\ v_y \\ v_z \\ 0 \end{pmatrix}
+$$
+
+- 結果として、平行移動は方向ベクトルに影響しない
+- 第4成分が0であることで、平行移動の影響を受けない性質が保証される
+
+## 複合変換の表現
+
+複数の変換を組み合わせる場合、行列の乗算で表現される。
+
+- 変換$A$と$B$の合成
+  - 列規約: $(B \cdot A) \cdot v = B \cdot (A \cdot v)$
+  - 最初に$A$が適用され、次に$B$が適用される
+
+- 典型的な変換パイプライン（モデル・ビュー・プロジェクション）
+  - モデル変換: モデル座標系からワールド座標系への変換
+  - ビュー変換: ワールド座標系からカメラ座標系への変換
+  - プロジェクション変換: カメラ座標系からクリップ座標系への変換
+  - 最終的な変換行列: $M_{final} = M_{projection} \cdot M_{view} \cdot M_{model}$
+
+##### OpenGLにおける行列表現
+OpenGLでは列規約を採用している（ここではすべて列規約で議論する）
+
+- $4 \times 4$行列の表現
+  
+$$
+M = \begin{pmatrix}
+m_{00} & m_{01} & m_{02} & m_{03} \\
+m_{10} & m_{11} & m_{12} & m_{13} \\
+m_{20} & m_{21} & m_{22} & m_{23} \\
+m_{30} & m_{31} & m_{32} & m_{33}
+\end{pmatrix}
+$$
+
+- 各列の意味
+  - 第1列 $(m_{00}, m_{10}, m_{20}, m_{30})$: x軸の変換
+  - 第2列 $(m_{01}, m_{11}, m_{21}, m_{31})$: y軸の変換
+  - 第3列 $(m_{02}, m_{12}, m_{22}, m_{32})$: z軸の変換
+  - 第4列 $(m_{03}, m_{13}, m_{23}, m_{33})$: 平行移動成分
+
+
+### 転置行列の定義と性質
+
+行列$A$の転置行列$A^T$は、$A$の行と列を入れ替えた行列である。
+
+- 定義: $A$が$m \times n$行列のとき、$A^T$は$n \times m$行列となり、各要素は次のように対応する
+  - $A^T_{ij} = A_{ji}$（$i$行$j$列の要素が、転置後は$j$行$i$列になる）
+
+- 転置の性質
+  - $(A^T)^T = A$（二重転置は元に戻る）
+  - $(A + B)^T = A^T + B^T$（和の転置は転置の和）
+  - $(AB)^T = B^T A^T$（積の転置は転置の積の逆順）
+  - $\det(A^T) = \det(A)$（転置しても行列式は変わらない）
+
+### 直交行列の定義と性質
+
+直交行列は、その転置行列が逆行列と等しい行列である。
+
+- 定義: 行列$Q$が直交行列であるとは、$Q^T = Q^{-1}$が成り立つこと
+  - 同値な条件: $Q^T Q = Q Q^T = I$（$I$は単位行列）
+
+- 直交行列の性質
+  - 行列式の値は$\pm 1$
+  - 列ベクトル（または行ベクトル）は互いに直交する単位ベクトル
+  - 長さと角度を保存する（等長変換）
+  - 回転行列は常に直交行列である（ただし$\det(Q) = 1$の場合）
+
+- 3D空間での応用
+  - 座標系の回転を表現
+  - 基底ベクトルの変換
+  - 剛体変換（長さと角度を保存する変換）
+
+
+
+
+
+## 重要な数学的概念と公式
+
+### 行列式と逆行列
+
+- 行列式（Determinant）
+  - $n \times n$行列$A$の行列式は$\det(A)$または$|A|$と表記
+  - 行列が可逆であるための必要十分条件は$\det(A) \neq 0$
+  - 行列式の性質
+    - $\det(AB) = \det(A) \cdot \det(B)$
+    - $\det(A^T) = \det(A)$
+    - $\det(A^{-1}) = \frac{1}{\det(A)}$（$A$が可逆の場合）
+
+- 逆行列（Inverse matrix）
+  - 行列$A$の逆行列$A^{-1}$は$A \cdot A^{-1} = A^{-1} \cdot A = I$を満たす
+  - $n \times n$行列の逆行列は次の式で計算できる
+    - $A^{-1} = \frac{1}{\det(A)} \cdot \text{adj}(A)$
+    - ここで$\text{adj}(A)$は$A$の余因子行列の転置
+
+### クォータニオンと回転
+
+クォータニオンは3D回転を表現する別の方法で、オイラー角などに比べて特定の問題（ジンバルロック等）を回避できる。
+
+- クォータニオンの定義
+  - $q = w + xi + yj + zk$（$w$はスカラー部、$xi + yj + zk$はベクトル部）
+  - または$q = [w, \vec{v}]$（$\vec{v} = [x, y, z]$）
+
+- 単位クォータニオン
+  - $|q|^2 = w^2 + x^2 + y^2 + z^2 = 1$
+  - 回転を表すには単位クォータニオンを使用
+
+- クォータニオンと回転行列の変換
+  - クォータニオン$q = [w, x, y, z]$から回転行列への変換
+
+$
+R = \begin{pmatrix}
+1 - 2y^2 - 2z^2 & 2xy - 2wz & 2xz + 2wy & 0 \\
+2xy + 2wz & 1 - 2x^2 - 2z^2 & 2yz - 2wx & 0 \\
+2xz - 2wy & 2yz + 2wx & 1 - 2x^2 - 2y^2 & 0 \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$
+
+- クォータニオンの補間
+  - 球面線形補間（SLERP）を使うことで、二つの回転の間をスムーズに補間できる
+  - $\text{Slerp}(q_1, q_2, t) = q_1(q_1^{-1}q_2)^t$（$0 \leq t \leq 1$）
+
+### 射影変換とクリッピング
+
+3Dから2Dへの投影に使われる射影変換行列。
+
+- 透視投影行列（Perspective projection）
+  - 遠くのオブジェクトが小さく見える効果を生み出す
+  - $n$（近平面）、$f$（遠平面）、$r$（右）、$l$（左）、$t$（上）、$b$（下）を用いて
+
+$
+P_{persp} = \begin{pmatrix}
+\frac{2n}{r-l} & 0 & \frac{r+l}{r-l} & 0 \\
+0 & \frac{2n}{t-b} & \frac{t+b}{t-b} & 0 \\
+0 & 0 & -\frac{f+n}{f-n} & -\frac{2fn}{f-n} \\
+0 & 0 & -1 & 0
+\end{pmatrix}
+$
+
+- 正射影行列（Orthographic projection）
+  - 距離に関係なく大きさが一定
+  - CADや建築設計などで使用
+
+$
+P_{ortho} = \begin{pmatrix}
+\frac{2}{r-l} & 0 & 0 & -\frac{r+l}{r-l} \\
+0 & \frac{2}{t-b} & 0 & -\frac{t+b}{t-b} \\
+0 & 0 & -\frac{2}{f-n} & -\frac{f+n}{f-n} \\
+0 & 0 & 0 & 1
+\end{pmatrix}
+$
+
+## 規約と実装上の注意点
+
+### 座標系の選択
+
+- 右手系と左手系
+  - 右手系: OpenGL標準、z軸は画面奥向き
+  - 左手系: DirectX標準、z軸は画面手前向き
+
+### 行列格納形式
+
+- メモリ上の格納順序
+  - 行優先（Row-major order）: C/C++の2次元配列の標準的な格納方式
+  - 列優先（Column-major order）: FORTRAN由来、OpenGLの内部表現
+
+- OpenGLにおける行列の指定
+  - 列優先で要素を指定: `{m00, m10, m20, m30, m01, m11, ...}`
+  - 転置した行列を行優先で指定: 実装上の便宜
+
+
+### 歴史
+
+同次座標系と射影幾何学は長い数学的発展の歴史を持つ。
+
+- 射影幾何学の誕生
+  - 起源は15世紀のルネサンス期の芸術家による遠近法（パースペクティブ）の研究
+  - ブルネレスキ（Filippo Brunelleschi, 1377-1446）が遠近法の基本原理を発見
+  - アルベルティ（Leon Battista Alberti, 1404-1472）が「絵画論」で数学的基礎を提供
+  - デザルグ（Girard Desargues, 1591-1661）が1639年に射影幾何学の基礎定理を確立
+
+- 同次座標系の発展
+  - プリュッカー（Julius Plucker, 1801-1868）が1829年に同次座標を導入
+  - メビウス（August Ferdinand Mobius, 1790-1868）が1827年に同次座標系の基礎を構築
+  - ケイリー（Arthur Cayley, 1821-1895）とクライン（Felix Klein, 1849-1925）による射影幾何学の代数的定式化
+  - フォン・シュタウト（Karl Georg Christian von Staudt, 1798-1867）が射影幾何学を純粋に形式的な体系として確立
+
+- 現代的応用への発展
+  - 20世紀初頭、射影幾何学は代数幾何学と融合
+  - 1960年代、コンピュータグラフィックスの発展とともに同次座標系が実用化
+  - ロバーツ（Lawrence G. Roberts）が1965年に3D物体の射影のためにコンピュータグラフィックスに同次座標系を適用
+  - サザランド（Ivan Sutherland）の「Sketchpad」システムが同次座標の実用的応用を示す
+
+
+
+## 用語説明
+
+- 同次座標系（Homogeneous coordinates）
+  - 3次元座標に第4成分を追加した4次元座標系
+- 右手系（Right-handed coordinate system）
+  - 親指、人差し指、中指の向きがx, y, z軸の方向を表す座標系
+- 行規約（Row-major convention）
+  - ベクトルを行ベクトルとして扱う表記法
+- 列規約（Column-major convention）
+  - ベクトルを列ベクトルとして扱う表記法
+- 基底ベクトル（Basis vector）
+  - 座標系を定義する単位ベクトル
+- 直交行列（Orthogonal matrix）
+  - 転置行列が逆行列と等しい行列
+- モデル・ビュー・プロジェクション（MVP）
+  - 3Dグラフィックスにおける標準的な変換パイプライン
+- 転置行列（Transpose matrix）
+  - 行と列を入れ替えた行列
+- 行列式（Determinant）
+  - 正方行列から計算される値で、行列の可逆性や体積の拡大縮小率を表す
+- 逆行列（Inverse matrix）
+  - 元の行列と掛け合わせると単位行列になる行列
+- クォータニオン（Quaternion）
+  - 複素数を拡張した四元数で、3D回転を表現するのに適している
+- オイラー角（Euler angles）
+  - 3つの角度（ヨー、ピッチ、ロール）による回転表現
+- 射影変換（Projection transformation）
+  - 3D空間から2D平面への変換
+- クリッピング（Clipping）
+  - 視界の範囲外のオブジェクトを切り取る処理
+- 正規化デバイス座標（Normalized Device Coordinates, NDC）
+  - 射影変換後の標準化された座標系
+- ジンバルロック（Gimbal lock）
+  - オイラー角で表現した際に自由度が失われる現象
+- アフィン変換（Affine transformation）
+  - 平行線を保存する線形変換と平行移動の組み合わせ
+- 剛体変換（Rigid transformation）
+  - 距離と角度を保存する変換（回転と平行移動の組み合わせ）
+- メビウス変換（Mobius transformation）
+  - 複素平面上の分数一次変換で、射影変換と同型
+- リーマン球面（Riemann sphere）
+  - 複素平面に無限遠点を加えた球面表現
+- 共形写像（Conformal mapping）
+  - 角度を保存する変換
+- 射影幾何学（Projective geometry）
+  - 射影変換を扱う幾何学の分野で、無限遠点を含む
+
+## リファレンス
+
+- [OpenGL Documentation](https://www.opengl.org/documentation/)
+- [Learn OpenGL - Coordinate Systems](https://learnopengl.com/Getting-started/Coordinate-Systems)
+- [Mathematics for 3D Game Programming and Computer Graphics](https://www.mathfor3dgameprogramming.com/)
+- [Real-Time Rendering](https://www.realtimerendering.com/)
+- [Computer Graphics: Principles and Practice](https://www.pearson.com/us/higher-education/program/Hughes-Computer-Graphics-Principles-and-Practice-3rd-Edition/PGM29932.html)
+- [Essential Mathematics for Games and Interactive Applications](https://www.crcpress.com/Essential-Mathematics-for-Games-and-Interactive-Applications-A-Programmers/Van-Verth-Bishop/p/book/9781482250923)
+- [3D Math Primer for Graphics and Game Development](https://gamemath.com/)
+- [SIGGRAPH Course Notes - Quaternions](https://www.cs.cmu.edu/~kmcrane/Projects/QuaternionCalculus/paper.pdf)
+- [Matrix and Quaternion FAQ](http://www.j3d.org/matrix_faq/matrfaq_latest.html)
+- [Visual Complex Analysis - Needham](https://www.amazon.com/Visual-Complex-Analysis-Tristan-Needham/dp/0198534469) - 複素解析と射影幾何学の関係について
+- [Projective Geometry and Modern Algebra](https://www.ams.org/journals/bull/1940-46-07/S0002-9904-1940-07210-7/)
+- [Foundations of Projective Geometry - Hartshorne](https://www.maths.ed.ac.uk/~v1ranick/papers/hartshorne-foundations.pdf)

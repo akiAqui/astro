@@ -1,0 +1,276 @@
+---
+title: ベジェ曲線
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+
+### 要旨
+- ベジェ曲線は低次のベジェ曲線から順に構築して導出することができる概念である
+- 1次と2次のベジェ曲線を定式化し、それらの線形補間によって3次ベジェ曲線を数学的に導く過程を示す
+
+### 前提知識
+- ベジェ曲線は制御点によって形状が決定される曲線で、パラメータ $u \in [0,1]$ を用いて表現される
+- ベジェ曲線は低次の曲線を線形補間することで高次の曲線を構築できる
+
+### 1次ベジェ曲線
+- 1次ベジェ曲線は2つの制御点 $P_0$ と $P_1$ を結ぶ直線であり単純な線形補間である
+- パラメータ $u \in [0,1]$ を用いて以下のように表される：
+
+$$
+B(u) = (1-u)P_0 + uP_1
+$$
+
+### 2次ベジェ曲線
+2次ベジェ曲線は3つの制御点 $P_0$, $P_1$, $P_2$ を用いる。以下の手順で導出する：
+
+まず2つの1次ベジェ曲線を定義
+$$ 
+  \left\{
+   \begin{align*}
+     B_1(u) = (1-u)P_0 + uP_1\\
+     B_2(u) = (1-u)P_1 + uP_2
+   \end{align*}
+  \right.
+$$
+
+
+次に、これらの1次曲線自体を線形補間すると、
+$$ 
+　B(u) = (1-u)B_1(u) + uB_2(u)
+$$
+
+この式を展開して整理すると、
+   $$
+   \begin{align*}
+   B(u) &= (1-u)[(1-u)P_0 + uP_1] + u[(1-u)P_1 + uP_2] \\
+        &= (1-u)^2P_0 + 2u(1-u)P_1 + u^2P_2
+   \end{align*}
+   $$
+
+### 3次ベジェ曲線
+3次ベジェ曲線は4つの制御点 $B_0$, $B_1$, $B_2$, $B_3$ を用いる。
+
+まず2つの2次ベジェ曲線を定義すると、
+$$
+ \left\{
+  \begin{align*}
+   C_1(u) = (1-u)^2B_0 + 2u(1-u)B_1 + u^2B_2\\
+   C_2(u) = (1-u)^2B_1 + 2u(1-u)B_2 + u^2B_3
+  \end{align*}
+ \right.
+$$
+
+
+次に、これらの2次曲線を線形補間すると、
+$$
+ \begin{align*}
+     B(u) &= (1-u)C_1(u) + uC_2(u)\\
+          &= (1-u)[(1-u)^2B_0 + 2u(1-u)B_1 + u^2B_2] + u[(1-u)^2B_1 + 2u(1-u)B_2 + u^2B_3] \\
+          &= (1-u)^3B_0 + 2u(1-u)^2B_1 + (1-u)u^2B_2 + u(1-u)^2B_1 + 2u^2(1-u)B_2 + u^3B_3 \\
+          &= (1-u)^3B_0 + 3u(1-u)^2B_1 + 3u^2(1-u)B_2 + u^3B_3
+  \end{align*}
+$$
+
+-------
+
+## 参考
+- バーンスタイン多項式がベジェ曲線の基底関数として機能し、二項係数によって重み付けされることで任意の次数のベジェ曲線を統一的に表現できる
+
+
+## バーンスタイン多項式の定義
+n次のバーンスタイン多項式は二項係数を用いて以下のように定義される：
+
+$$
+B_{i,n}(u) = \binom{n}{i} u^i (1-u)^{n-i}, \quad i = 0, 1, \ldots, n
+$$
+
+ここで、
+
+二項係数 
+$$
+\binom{n}{i} = \frac{n!}{i!(n-i)!}\\
+$$ 
+$$ 
+ u \in [0,1]
+$$ 
+
+
+## ベジェ曲線との関係
+n次ベジェ曲線は、n+1個の制御点 $P_0, P_1, \ldots, P_n$ とバーンスタイン多項式の線形結合として表現される：
+
+$$
+B(u) = \sum_{i=0}^{n} B_{i,n}(u) P_i = \sum_{i=0}^{n} \binom{n}{i} u^i (1-u)^{n-i} P_i
+$$
+
+この表現の特徴：
+- 各制御点 $P_i$ はバーンスタイン多項式 $B_{i,n}(u)$ によって重み付けされる
+- $u=0$ のとき $B(0) = P_0$
+- $u=1$ のとき $B(1) = P_n$
+- $0 < u < 1$ のとき、曲線上の点は全制御点の重み付き平均となる
+
+## バーンスタイン多項式の特性
+バーンスタイン多項式には以下の重要な特性がある：
+- 非負性: 
+$$
+B_{i,n}(u) \geq 0, \forall u \in [0,1]
+$$
+- 和の一定性
+$$
+\sum_{i=0}^{n} B_{i,n}(u) = 1, \forall u \in [0,1]
+$$
+これによりベジェ曲線は制御点の凸結合となる
+
+- 対称性: 
+$$
+B_{i,n}(u) = B_{n-i,n}(1-u)
+$$
+- 再帰的定義
+$$
+B_{i,n}(u) = (1-u)B_{i,n-1}(u) + uB_{i-1,n-1}(u)
+$$
+ この性質がド・カステリョのアルゴリズムの基礎となる
+
+
+## ベジェ曲線の一般的特性
+バーンスタイン多項式の特性により、ベジェ曲線は以下の性質を持つ：
+- 端点補間: 曲線は最初と最後の制御点を通る
+- 凸包性: 曲線は制御点の凸包内に収まる
+- 変差縮小性: 曲線の変動は制御多角形の変動を超えない
+- アフィン不変性: アフィン変換は制御点に適用するだけでよい
+
+
+## 用語説明とリファレンス
+- ベジェ曲線: フランスの自動車技術者ピエール・ベジェにより考案された、制御点によって定義されるパラメトリック曲線
+- 制御点: 曲線の形状を決定する点。曲線は一般に制御点を通過するとは限らない
+- パラメータ: 曲線上の位置を決定する値。通常 $u \in [0,1]$ の範囲で表される
+- バーンスタイン多項式: Sergei Natanovich Bernstein によって導入された多項式族
+- 凸結合: 係数が非負で和が1となる線形結合
+- 凸包: 点集合を含む最小の凸集合
+- ド・カステリョのアルゴリズム: ベジェ曲線を効率的に描画するアルゴリズム
+
+リファレンス:
+- [The Bezier Game](https://bezier.method.ac/) - ベジェ曲線の概念を学ぶためのインタラクティブゲーム
+- [A Primer on Bezier Curves](https://pomax.github.io/bezierinfo/) - ベジェ曲線に関する包括的なウェブブック
+- [Bernstein polynomial - Wikipedia](https://en.wikipedia.org/wiki/Bernstein_polynomial)
+- [A Primer on Bezier Curves](https://pomax.github.io/bezierinfo/)
+- [The Bezier Curve - a mathematical approach](https://www.math.ubc.ca/~cass/graphics/manual/pdf/ch5.pdf)
+
+

@@ -3,6 +3,13 @@ title: top page
 description: top
 ---
  <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
 .sl-markdown-content div.ec-line {
 margin-top: 0 !important;
 font-size:10px;
@@ -46,7 +53,8 @@ content: ">>>> ";
 } 
 
 h1,h2,h3,h4,h5,h6 {
- margin-top: 0em !important;
+ margin-top: 1em !important;
+
 }
 
 figure pre {
@@ -97,34 +105,50 @@ figure pre {
 .sl-markdown-content td {
  font-size:13px;
 }
-
-
- `}</style>
+`}</style>
 
 import CodeTitle from '../../components/CodeTitle';
 import MermaidChart from '../../components/MermaidChart.astro';
 import TimeStamp from '../../components/TimeStamp';
 import Box from '../../components/Box';
 import RedBox from '../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
 
 <TimeStamp fileUrl={import.meta.url} />
 
+##### TODOs
 
-
- このページの更新には、update_indexを実行してください
-
-
+ - [x] nothing
+ - [ ] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する
+ - [ ] transform修正中
+<Box>
+- このページの更新には、update_indexを実行
+- TODOの追加は~/docs/todoを編集
+</Box>
 | file name | last modified | time |
 |------|------|------|
-| [mdx/template.mdx](http://localhost:4321/mdx/template/) | Feb 17 | 16:28 |
+| [math/tcb_spline_basic.mdx](http://localhost:4321/math/tcb_spline_basic/) | Mar 2 | 00:46 |
+| [math/bezier.mdx](http://localhost:4321/math/bezier/) | Mar 2 | 00:15 |
+| [math/hermite_spline_parameter.mdx](http://localhost:4321/math/hermite_spline_parameter/) | Mar 1 | 14:21 |
+| [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 1 | 14:20 |
+| [math/tcb_spline_parameter.mdx](http://localhost:4321/math/tcb_spline_parameter/) | Mar 1 | 05:21 |
+| [three/math.mdx](http://localhost:4321/three/math/) | Mar 1 | 03:24 |
+| [three/tcb_animation.mdx](http://localhost:4321/three/tcb_animation/) | Mar 1 | 03:08 |
+| [math/projective_geometry.mdx](http://localhost:4321/math/projective_geometry/) | Feb 27 | 02:00 |
+| [glsl/ndc.mdx](http://localhost:4321/glsl/ndc/) | Feb 27 | 02:00 |
+| [math/nabla.mdx](http://localhost:4321/math/nabla/) | Feb 27 | 01:58 |
+| [glsl/rendering_pipeline.mdx](http://localhost:4321/glsl/rendering_pipeline/) | Feb 26 | 22:43 |
+| [glsl/double_spiral.mdx](http://localhost:4321/glsl/double_spiral/) | Feb 26 | 17:58 |
+| [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 26 | 16:57 |
+| [three/3D+shader.mdx](http://localhost:4321/three/3d+shader/) | Feb 22 | 01:58 |
+| [mdx/template.mdx](http://localhost:4321/mdx/template/) | Feb 20 | 02:36 |
+| [algorithm/basic_functions.mdx](http://localhost:4321/algorithm/basic_functions/) | Feb 20 | 00:36 |
+| [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 18 | 16:54 |
+| [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 | 21:42 |
+| [three/webgl_renderer.mdx](http://localhost:4321/three/webgl_renderer/) | Feb 17 | 21:40 |
+| [mdx/style.mdx](http://localhost:4321/mdx/style/) | Feb 17 | 21:38 |
 | [mdx/cdlatex.mdx](http://localhost:4321/mdx/cdlatex/) | Feb 17 | 16:26 |
-| [mdx/style.mdx](http://localhost:4321/mdx/style/) | Feb 17 | 16:25 |
-| [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 | 14:39 |
-| [three/webgl_renderer.mdx](http://localhost:4321/three/webgl_renderer/) | Feb 17 | 00:02 |
-| [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 16 | 21:56 |
-| [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 15 | 22:46 |
 | [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 | 08:02 |
-| [glsl/double_spiral.mdx](http://localhost:4321/glsl/double_spiral/) | Feb 13 | 01:46 |
 | [algorithm/waveTerrainSynthesis.mdx](http://localhost:4321/algorithm/waveterrainsynthesis/) | Feb 12 | 20:08 |
 | [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 | 01:57 |
 | [art/score.mdx](http://localhost:4321/art/score/) | Feb 12 | 01:56 |
@@ -137,7 +161,6 @@ import RedBox from '../../components/RedBox';
 | [algorithm/fBM.mdx](http://localhost:4321/algorithm/fbm/) | Feb 1 | 14:36 |
 | [dev/anime.mdx](http://localhost:4321/dev/anime/) | Jan 28 | 22:35 |
 | [algorithm/flick.mdx](http://localhost:4321/algorithm/flick/) | Jan 28 | 22:31 |
-| [algorithm/nabla.mdx](http://localhost:4321/algorithm/nabla/) | Jan 28 | 16:47 |
 | [algorithm/kellerSegel.mdx](http://localhost:4321/algorithm/kellersegel/) | Jan 28 | 16:09 |
 | [algorithm/randomWalk.mdx](http://localhost:4321/algorithm/randomwalk/) | Jan 28 | 09:29 |
 | [algorithm/interpolation.mdx](http://localhost:4321/algorithm/interpolation/) | Jan 27 | 10:37 |
@@ -156,7 +179,7 @@ import RedBox from '../../components/RedBox';
 | [algorithm/vrender.mdx](http://localhost:4321/algorithm/vrender/) | Jan 14 | 01:49 |
 | [algorithm/morphing.mdx](http://localhost:4321/algorithm/morphing/) | Jan 14 | 01:49 |
 | [algorithm/nint.mdx](http://localhost:4321/algorithm/nint/) | Jan 14 | 01:49 |
-| [algorithm/quaternion.mdx](http://localhost:4321/algorithm/quaternion/) | Jan 14 | 01:49 |
+| [math/quaternion.mdx](http://localhost:4321/math/quaternion/) | Jan 14 | 01:49 |
 | [three/particle.mdx](http://localhost:4321/three/particle/) | Jan 14 | 01:49 |
 | [three/shader.mdx](http://localhost:4321/three/shader/) | Jan 14 | 01:49 |
 | [three/threejs+quaternion.mdx](http://localhost:4321/three/threejs+quaternion/) | Jan 14 | 01:49 |

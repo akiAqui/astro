@@ -4,6 +4,22 @@ description: 特にコードの書き方
 layout: '../../../layouts/BaseLayout.astro'
 ---
  <style>{`
+ 
+foreignObject div{
+ text-align:center !important;
+}
+
+foreignObject span.nodeLabel  p {
+ margin-left:0em !important;
+ text-align:center !important;
+}
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
 .sl-markdown-content div.ec-line {
 margin-top: 0 !important;
 font-size:10px;
@@ -47,7 +63,8 @@ content: ">>>> ";
 } 
 
 h1,h2,h3,h4,h5,h6 {
- margin-top: 0em !important;
+ margin-top: 1em !important;
+
 }
 
 figure pre {
@@ -98,102 +115,121 @@ figure pre {
 .sl-markdown-content td {
  font-size:13px;
 }
-
-
- `}</style>
+`}</style>
 
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
 import Box from '../../../components/Box';
 import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import WhiteBox from '../../../components/WhiteBox';
 
 <TimeStamp fileUrl={import.meta.url} />
 
+##### TODOs
 
-## 1.MDXでのstyleの変更
-- styleを作ってimportしても反映されないのでここに表記すると他で定義されたスタイルが上書きされる
-- コードの行間が空くので強制的にmargin-topを0にする
-- 各MDXファイルで個別に変更しているが、共通化してインポートは今のところできない
-- 表記方法も独特
+ - [ ] mermaidの状態遷移図のテキスト、フローチャートのテキストが右寄りになる
+ - [ ] 左右のコンテンツの分け方がいびつになる。これでいいのか。
 
-```css
- <style>{`
-        .sl-markdown-content   div.ec-line {
-            margin-top: 0 !important;
-        }
-        .sl-markdown-content  {
-           font-size:15px;
-        }
-        .sl-markdown-content h1 {
-           font-size:  27px;
-           text-decoration: underline;
-           font-weight: bold
-        }
-        .sl-markdown-content h2 {
-           font-weight: normal;
-           text-decoration: underline;
-           font-size:25px;
-        }
-        .sl-markdown-content h3 {
-           font-size:20px;
-           font-weight: normal;
-           font-style: italic;
-           text-decoration: underline;
-        }
-        .sl-markdown-content h4 {
-           font-size:15px;
-           font-weight: normal;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h5 {
-           font-size:12px;
-           font-weight: bold;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content th {
-           font-size:12px;
-        }
-        .sl-markdown-content td {
-           font-size:12px;
-        }
-        
- `}</style>
-```
-## 2.mdx内部でのhtmlの記載
+<TimeStamp fileUrl={import.meta.url} />
 
-### 2.1.iframeで、他のhtmlを含める
+## TwoColumnコンポーネント
+<TwoColumn>
+  <Left>左側のコンテンツああああああああああああああああああああああああああああああああああああああああ</Left>
+  <Right>右側のコンテンツ</Right>
+</TwoColumn>
+
+
+<TwoColumn>
+  <Left>左側のコンテンツああああああああああああああああああああああああああああああああああああああああ</Left>
+  <Right>右側のコンテンツ</Right>
+</TwoColumn>
+
+
+
+## image表示方法
+- htmlの場合は、~/astro/pubic配下に配置
+- markdownの場合はドキュメントのあるディレクトリが現ディレクトリになる
+<TwoColumn>
+  <Left>
+   ```markdown
+    <center><img src="/smoothstep.png" width="400" height="300" /></center>
+   ```
+   ```markdown
+     ![Smoothstep Function](./smoothstep.png)
+   ```
+  </Left>
+
+  <Right>
+   <center><img src="/smoothstep.png" width="400" height="300" /></center> 
+  </Right>
+</TwoColumn>
+
+
+
+## iframe表示方法
+<TwoColumn>
+ <Left>
 ```html
-<iframe 
-  src='/html/texture.html' 
-  style={{ height: '300px', width: '100%' }}
-/>
+<center>
+  <iframe 
+    src='/html/texture.html' 
+    style={{ height: '300px', width: '70%' }}
+  />
+</center>
 ```
-<iframe 
-  src='/html/texture.html' 
-  style={{ height: '300px', width: '100%' }}
-/>
+ </Left>
+ <Right>
+<center>
+  <iframe 
+    src='/html/texture.html' 
+    style={{ height: '300px', width: '70%' }}
+  />
+</center>
 
-### 2.2.style付きでhtmlを記述
+ </Right>
+</TwoColumn>
+
+## style付きでhtmlを記述
+<TwoColumn>
+<Left>
 ```html
 <div style={{backgroundColor: 'violet', padding: '1rem'}}>
   Try and change the background color to `tomato`.
 </div>
 ```
-
+</Left>
+<Right>
 <div style={{backgroundColor: 'violet', padding: '1rem'}}>
   Try and change the background color to `tomato`.
 </div>
+</Right>
+</TwoColumn>
 
 
-
-## 3.JavaScript
+## JavaScriptで表示
 - mdx内部で直にJavaScriptを記述できる
 - 中カッコで括る
 
+<TwoColumn>
+<Left>
 ```javascript
+{(function () {
+  const guess = Math.random()
+  if (guess > 0.66) {
+    return <span style={{color: 'tomato'}}>Look at us.</span>
+  }
+  if (guess > 0.33) {
+    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
+  }
+  return <span style={{color: 'goldenrod'}}>Not me.</span>
+})()}
+
+{2+232323}
+```
+</Left>
+<Right>
 {(function () {
   const guess = Math.random()
 
@@ -207,49 +243,203 @@ import RedBox from '../../../components/RedBox';
 
   return <span style={{color: 'goldenrod'}}>Not me.</span>
 })()}
-
 {2+232323}
+</Right>
+</TwoColumn>
+
+
+## Boxコンポーネント
+<TwoColumn>
+<Left>
 ```
-
-{(function () {
-  const guess = Math.random()
-
-  if (guess > 0.66) {
-    return <span style={{color: 'tomato'}}>Look at us.</span>
-  }
-
-  if (guess > 0.33) {
-    return <span style={{color: 'violet'}}>Who would have guessed?!</span>
-  }
-
-  return <span style={{color: 'goldenrod'}}>Not me.</span>
-})()}
-
-{2+232323}
-
-
-
-## 4.コンポーネント定義と利用方法
-
-### 4.1 コンポーネント定義
-TimeStamp.jsxとして、コンポーネントを定義する
-
-
-### 4.2 利用方法
-```javascript
-import { TimeStamp } from '../../../components/TimeStamp';
-
-
+<Box>
+- abc
+- def
+</Box>
 ```
+</Left>
+<Right>
+<Box>
+- abc
+- def
+</Box>
+</Right>
+</TwoColumn>
 
 
-コンポーネントの結果以下が表示される
+
+
+## RedBoxコンポーネント
+<TwoColumn>
+<Left>
+```
+<RedBox>
+- abc
+- def
+</RedBox>
+```
+</Left>
+<Right>
+<RedBox>
+- abc
+- def
+</RedBox>
+</Right>
+</TwoColumn>
+
+## WhiteBoxコンポーネント
+<TwoColumn>
+<Left>
+
+```text
+<WhiteBox>
+- a
+- b
+- c
+</WhiteBox>
+```
+</Left>
+<Right>
+<WhiteBox>
+- a
+- b
+- c
+</WhiteBox>
+</Right>
+</TwoColumn>
+
+
+## TimeStampコンポーネント
+<TwoColumn>
+<Left>
+```
 <TimeStamp fileUrl={import.meta.url} />
+```
+</Left>
+<Right>
+<TimeStamp fileUrl={import.meta.url} />
+</Right>
+</TwoColumn>
+
+
+## CodeTitleコンポーネント
+- ソースコード表示時にタイトルを下部に表示する
+
+<TwoColumn>
+<Left>
+````
+<CodeTitle title="テクスチャのロード" id="load" counter="01">
+```text
+ some texts
+```
+</CodeTitle>
+````
+</Left>
+<Right>
+<CodeTitle title="テクスチャのロード" id="load" counter="01">
+```text
+ some texts
+```
+</CodeTitle>
+</Right>
+</TwoColumn>
+
+
+## Mermaidコンポーネント
+
+<TwoColumn>
+<Left>
+```jsx
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+<MermaidChart code={`
+graph TD
+    A[Start] --> B[uuauau]
+    B --> C{Decision}
+    C -->|Yes| D[End]
+    C -->|No| E[Retry]
+`} />
+```
+</Left>
+<Right>
+<MermaidChart code={`
+graph TD
+    A[Start] --> B[uuauau]
+    B --> C{Decision}
+    C -->|Yes| D[End]
+    C -->|No| E[Retry]
+`} />
+
+</Right>
+</TwoColumn>
+
+### mermaidの表示例
+
+#### シーケンスダイアグラム
+<MermaidChart code={`
+sequenceDiagram
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    Alice-)John: See you later!
+`} />
+
+#### 状態遷移
+
+<MermaidChart code={`
+---
+title: Simple sample
+---
+stateDiagram
+    [*] --> Still
+    Still --> [*]
+
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]
+
+`} />
+
+<MermaidChart code={`
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaid
+`} />
 
 
 
+## MDXごとのstyleの変更
+- styleを作ってimportしても反映されなかった。mdxファイル冒頭に表記するとスタイルが反映される
+- 各MDXファイルで個別に変更しているが、共通化してインポートしたいが今のところできない
 
-## 5.コンポーネントの直接挿入
+```css
+ <style>{`
+   .sl-markdown-content   div.ec-line {
+       margin-top: 0 !important;
+   }
+   .sl-markdown-content  {
+      font-size:15px;
+   }
+ `}</style>
+```
+
+
+
+## コンポーネントの直接挿入
 mdxファイル内部でコンポーネントを記述し利用することも可能
 
 ```javascript
@@ -368,70 +558,7 @@ const { code } = Astro.props;
 ### 6-4.利用
 コンポーネントをインポートしmermaidを記述する
 
-```jsx
-import MermaidChart from '../../../components/MermaidChart.astro';
 
-<MermaidChart code={`
-graph TD
-    A[Start] --> B[uuauau]
-    B --> C{Decision}
-    C -->|Yes| D[End]
-    C -->|No| E[Retry]
-`} />
-```
-
-### 6-5.mermaidの表示例
-
-<MermaidChart code={`
-graph TD
-    A[Start] --> B[uuauau]
-    B --> C{Decision}
-    C -->|Yes| D[End]
-    C -->|No| E[Retry]
-`} />
-
-<MermaidChart code={`
-sequenceDiagram
-    Alice->>John: Hello John, how are you?
-    John-->>Alice: Great!
-    Alice-)John: See you later!
-`} />
-
-
-<MermaidChart code={`
----
-title: Simple sample
----
-stateDiagram-v2
-    [*] --> Still
-    Still --> [*]
-
-    Still --> Moving
-    Moving --> Still
-    Moving --> Crash
-    Crash --> [*]
-
-`} />
-
-<MermaidChart code={`
-mindmap
-  root((mindmap))
-    Origins
-      Long history
-      ::icon(fa fa-book)
-      Popularisation
-        British popular psychology author Tony Buzan
-    Research
-      On effectiveness<br/>and features
-      On Automatic creation
-        Uses
-            Creative techniques
-            Strategic planning
-            Argument mapping
-    Tools
-      Pen and paper
-      Mermaid
-`} />
 
 ## install, server設置
 - node.js

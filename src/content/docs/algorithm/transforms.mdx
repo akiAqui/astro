@@ -4,7 +4,6 @@ description: 色々な変換を集めた
 layout: '../../../layouts/BaseLayout.astro'
 ---
  <style>{`
-
 .sl-markdown-content > main > hr:not(:where(.not-content *)) {
   border: none !important;
   border-bottom: 4px double white !important;
@@ -120,8 +119,10 @@ import RedBox from '../../../components/RedBox';
 <TimeStamp fileUrl={import.meta.url} />
 
 ##### TODOs
-
+ - [ ] Ripple/Wave Distortionが理解できない
+ - [ ] multiの変数のマッピング方法などが理解できていない
  - [ ] 実装確認
+
    - [ ] 射影変換
    - [ ] 指数変換・対数変換
    - [ ] 円反転
@@ -149,8 +150,12 @@ import RedBox from '../../../components/RedBox';
    - [ ]
   
 --------------------------------------------------------
-## 興味深い変換
-
+## 極座標系変換
+<Box>
+- 実装あり
+  - repository = g-sandbox
+  - branch = multi
+</Box>
 GLSLで `uv` (2D座標) を原点からの距離と角度の値をもとに図形を歪ませる際に便利な変換を10種挙げる。
 
 極座標系での変換を念頭に現在の$r,\theta$を下記のように定義し、
@@ -199,26 +204,24 @@ $$
 ### Twirl / Swirl
 - 中心から離れるほど回転量を増やす渦巻き効果
 - `\beta` を調整すると非線形なねじれが生まれる
+- $f(t, \omega)$ の項を入れるとアニメーション可能($f(t,\omega)=sin(\omega t)$など)
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \\
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
-\theta' &= \theta + \mathrm{amount}\cdot r^\beta, \\
-\text{uv}' &= \bigl(r\cos\theta',\;r\sin\theta'\bigr)
+f(\theta,r) &= \theta' = \theta + \mathrm{amount}\cdot r^\beta \cdot f(t,\omega) \\
+g(\theta,r) &= r'=r
 \end{aligned}
 $$
 
 ### Pinch / Punch
 - 原点付近を引き絞る(Pinch)または膨らませる(Punch)
-- `\alpha>1` で中心付近縮小，`\alpha<1` で拡大
+- $\alpha>1$ で中心付近縮小，$\alpha<1$ で拡大
+- 例えば、$\alpha$を時間の関数にするとアニメーションになる
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \\
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
-r' &= r^\alpha, \\
-\text{uv}' &= \bigl(r'\cos\theta,\;r'\sin\theta\bigr)
+f(\theta,r) &= \theta' = \theta\\
+g(\theta,r) &= r' = r^\alpha
 \end{aligned}
 $$
 
@@ -229,9 +232,8 @@ $$
 
 $$
 \begin{aligned}
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
-\theta' &= \cos(\sin(\theta)\cdot \mathrm{freq1}) \cdot \mathrm{freq2}, \\
-\text{uv}' &= \bigl(\,uv.x,\; uv.y + \mathrm{amp}\cdot\theta'\bigr)
+f(\theta,r) &= \theta' = \cos(\sin(\theta)\cdot \mathrm{freq1}) \cdot \mathrm{freq2} \\
+g(\theta,r) &= r' = r^\alpha
 \end{aligned}
 $$
 
@@ -252,11 +254,8 @@ $$
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \\
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
-r' &= r + \alpha \sin(\beta\,\theta), \\
-\theta' &= \theta + k\,r, \\
-\text{uv}' &= \bigl(r'\cos\theta',\; r'\sin\theta'\bigr)
+r' &= r + \alpha \sin(\beta\,\theta) \\
+\theta' &= \theta + k\,r
 \end{aligned}
 $$
 
@@ -266,11 +265,8 @@ $$
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \quad
-\theta = \mathrm{atan2}(uv.y,\ uv.x), \\
-r' &= r \cdot (1 + \delta \, t), \\
-\theta' &= \theta + k \, t, \\
-\text{uv}' &= r' \bigl(\cos\theta',\,\sin\theta'\bigr)
+r' &= r \cdot (1 + \delta \, t) \\
+\theta' &= \theta + k \, t
 \end{aligned}
 $$
 
@@ -280,7 +276,7 @@ $$
 
 $$
 \begin{aligned}
-x' &= uv.x + \mathrm{ampX}\,\sin\bigl(\mathrm{freqX}\,uv.x\bigr), \\
+x' &= uv.x + \mathrm{ampX}\,\sin\bigl(\mathrm{freqX}\,uv.x\bigr) \\
 y' &= uv.y + \mathrm{ampY}\,\cos\bigl(\mathrm{freqY}\,uv.y\bigr)
 \end{aligned}
 $$
@@ -291,10 +287,7 @@ $$
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \quad
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
 \theta' &= \theta + \alpha \,\exp(-\,\beta\,r), \\
-\text{uv}' &= r \bigl(\cos\theta',\,\sin\theta'\bigr)
 \end{aligned}
 $$
 
@@ -305,11 +298,8 @@ $$
 
 $$
 \begin{aligned}
-r &= \sqrt{uv.x^2 + uv.y^2}, \quad
-\theta &= \mathrm{atan2}(uv.y,\ uv.x), \\
-\theta' &= \theta + k_1\,r + k_2\,\log(r + \epsilon), \\
-r' &= r\,\gamma, \\
-\text{uv}' &= \bigl(r'\cos\theta',\; r'\sin\theta'\bigr)
+\theta' &= \theta + k_1\,r + k_2\,\log(r + \epsilon) \\
+r' &= r\,\gamma \\
 \end{aligned}
 $$
 
@@ -335,7 +325,7 @@ y
 $$
 
 ### 射影変換
-同次座標を用いる2次元射影変換。遠近法などに利用
+斜めに写された写真を正面から写したように変換する
 
 $$
 \begin{pmatrix}

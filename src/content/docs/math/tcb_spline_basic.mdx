@@ -1,0 +1,577 @@
+---
+title: ＊）TCBスプライン基礎
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+ - [ ] 定式化
+ - [ ] 具体的な線の計算
+ - [ ] 他のAIに書かせて線の違いを確認
+
+## 要約
+本レポートでは
+<br/>
+
+- 最初にTCBスプラインの基礎となるエルミートスプライン補間の説明を行う
+- エルミート・スプライン補間が接線ベクトルを用いて定義することを示す
+- 接線ベクトルを拡張するTCBの考え方を適用して再定義する
+- 以上からTCBの定式化を行う
+- 
+- 具体的なTCBパラメータをあてはめた例を示す
+<br/>
+
+TCBスプラインの最も興味深い点は、一次微分が連続なエルミート・スプライン補間をベースに拡張しつつ、一次微分が不連続な曲線もカバーできるように拡張し、より多彩な曲線を扱うことができることである。
+<br/>
+
+TCBスプラインは、発明者の名前を取って、Kochanek-Bartelsスプラインと呼ばれることもある。
+
+## エルミート補間
+エルミート補間は位置と接線（導関数）を指定して曲線を生成する手法でありTCBスプラインの基礎となる。
+
+
+### 補間の基本原理
+- エルミート補間では、2つの端点とその接線ベクトルから3次多項式曲線を構築する
+- 高々3次の多項式である理由は以下の理由による
+  - 合計四つの条件式が成立すること（2点間の位置条件が2つの制約、2点での接線条件から2つの制約）
+  - 4つの係数から構成されるのは高々3次多項式であること
+
+### 3次エルミート多項式の標準形式
+$u \in [0,1]$で定義される正規化された区間での高々3次の多項式P(u)が
+曲線を補間するものであると仮定する。
+
+$$
+P(u) = au^3 + bu^2 + cu + d
+$$
+
+合計四つの境界条件が与えられたものとして、
+係数$a$, $b$, $c$, $d$の値を解く。
+
+実際に値を代入すると下記のとおりである
+
+
+$$
+\left\{
+\begin{align*}
+P(0) &= P_i \\
+P(1) &= P_{i+1} \\
+P'(0) &= D_{i,i+1}^- \\
+P'(1) &= D_{i+1,i}^+
+\end{align*}
+\right.
+$$
+
+
+### エルミート基底関数表現の根拠
+エルミート基底関数表現は、補間問題を解くための自然な形式として導出される：
+
+一般的な多項式表現から出発し、
+   $$
+   P(u) = au^3 + bu^2 + cu + d
+   $$
+
+境界条件を適用すると、
+
+$$
+\left\{
+\begin{align*}
+
+   &P(0) = d = P_i\\
+   &P(1) = a + b + c + d = P_{i+1}\\
+   &P'(0) = c = D_{i,i+1}^-\\
+   &P'(1) = 3a + 2b + c = D_{i+1,i}^+
+\end{align*}
+\right.
+$$
+
+さらに$a,b,c,d$について解くと、
+$$
+\left\{
+\begin{align*}
+a &=D_{i+1,i}^+ + D_{i,i+1}^- + 2( P_{i} -P_{i+1})\\
+b &=3(P_{i+1} - P_{i}) -2D_{i+1,i}^+ - D_{i,i+1}^-\\
+c &= D_{i,i+1}^-\\
+d &=P_{i}
+\end{align*}
+\right.
+$$
+
+最初の式に代入し、$P_{i},P_{i+1},D_{i+1,i}^+ + D_{i,i+1}^- $についてまとめると、
+
+$$
+\begin{align*}
+P(u) = &(2u^3 - 3u^2 + 1) \cdot P_{i}   + (u^3 - 2u^2 + u) \cdot D_{i,i+1}^-\\
+       &+ (-2u^3 + 3u^2 ) \cdot P_{i+1} + (u^3 - u^2)      \cdot D_{i,i+1}^+\\
+     = &h_{00} \cdot P_{i}   + h_{10} \cdot D_{i,i+1}^- + h_{01} \cdot P_{i+1} + h_{11} \cdot D_{i,i+1}^+\\
+\end{align*}
+$$
+
+ただし、
+
+   $$
+\left\{
+   \begin{align}
+   h_{00}(u) &= 2u^3 - 3u^2 + 1 \\
+   h_{10}(u) &= u^3 - 2u^2 + u \\
+   h_{01}(u) &= -2u^3 + 3u^2 \\
+   h_{11}(u) &= u^3 - u^2
+   \end{align}
+\right.
+   $$
+
+
+となる。
+<br/>
+検算をすると確かに、
+<br/>
+- $u = 0$のとき：$P(0) = P_i$
+- $u = 1$のとき：$P(1) = P_{i+1}$
+- $u = 0$での接線：$P'(0) = D_{i,i+1}^-$（出力接線）
+- $u = 1$での接線：$P'(1) = D_{i+1,i}^+$（入力接線）
+
+となる。
+
+#### 結論
+以上より、各接線の値を求めることによりエルミートスプライン曲線による補間が成立することが分かった
+
+
+
+## TCBスプラインにおける曲線方程式
+エルミート補間をするときに接線ベクトルを用いた式を前章で導いた。
+
+<br/>
+ここでは、接線ベクトルの一般的な定義から順に拡張してゆき、
+TCBスプライン曲線における接線ベクトルの考え方を導き
+TCBスプラインの定式化を行う。
+
+### 接線ベクトルの一般的定義
+
+一般的に2点間の傾きは隣接する制御点の差分に係数 $\alpha$ を乗じて定義できる。
+$\alpha$は制御点間の距離で正規化するとより傾きとして理解しやすい形式になるかもしれない。
+
+
+$$
+D_i = \alpha(P_{i+1} - P_{i-1})\\
+\left( \alpha = \frac{1}{||P_{i+1} - P_{i-1}||} \right)
+$$
+
+
+
+ここでより柔軟な制御のため、接線計算にパラメータを導入するように拡張する
+
+$$
+D_i = \alpha[(1-\beta)(P_{i+1} - P_i) + \beta(P_i - P_{i-1})]
+$$
+
+これにより、
+- $\alpha$は接線ベクトルの大きさを制御する係数とみなせる
+- $\beta$は前後の制御点の影響バランスを制御するようにみなせる
+<br/>
+
+$\beta = 0.5$ の場合、前後の影響が均等で、中心差分法に相当すると考えられる。
+<br/>
+
+次に、この2点間の傾きではなく、
+3点$P_{i-1},P_{i},P_{i+1}$を考えたときの真ん中の点$P_{i}$の傾きを考える。
+
+$P_{i}$に置ける傾きは、$P_{i-1}$側の傾きと、$P_{i+1}$側の傾きを別に定義し
+異なることを許した場合、$P_{i}$の一次微分が不連続であることを許容するように拡張する。
+<br/>
+
+この二つの傾きを先ほど導いた傾きの一般系をさらに重みづけの$w_{i}$を用いて下記のように書き下す。
+
+$$
+\left\{
+\begin{align*}
+D_{i,i+1}^- &= w_1(P_i - P_{i-1}) + w_2(P_{i+1} - P_i) \\
+D_{i,i+1}^+ &= w_3(P_i - P_{i-1}) + w_4(P_{i+1} - P_i)
+\end{align*}
+\right.
+$$
+
+この重みをt,c,bの3つのパラメータを用いて再定義する。
+
+$$
+\left\{
+\begin{align*}
+w_1 &= \frac{(1-t)(1+b)(1+c)}{2} \\
+w_2 &= \frac{(1-t)(1-b)(1-c)}{2} \\
+w_3 &= \frac{(1-t)(1+b)(1-c)}{2} \\
+w_4 &= \frac{(1-t)(1-b)(1+c)}{2}
+\end{align*}
+\right.
+$$
+
+
+下記の式をtcbスプラインの点$P_{i}$における$P_{i-1}$側と$P_{i+1}$側の傾きとして定義できる
+
+$$
+\left\{
+\begin{align*}
+D_{i,i+1}^- &= \frac{(1-t)(1+b)(1+c)}{2}(P_i - P_{i-1}) + \frac{(1-t)(1-b)(1-c)}{2}(P_{i+1} - P_i) \\
+D_{i,i+1}^+ &= \frac{(1-t)(1+b)(1-c)}{2}(P_i - P_{i-1}) + \frac{(1-t)(1-b)(1+c)}{2}(P_{i+1} - P_i)
+\end{align*}
+\right.
+$$
+
+ただし、$-1 \leq t \leq 1, -1 \leq c \leq 1,-1 \leq b \leq 1$
+<br/>
+
+
+この3つのパラメータにより、直観的な曲線の変形が可能になる
+
+
+- c はcontinuityであり、$c=0$の時に、$P_{i}$における左右の一次微分値が等しく連続である。$c=-1, c=1$の時に左右の微分値が非対称に近づいてゆく
+- t はtensionであり、$P_{i}$での直線性を表しており、$t=0$を標準値として、$t=1$の時に直線になり、$t=-1$の時により曲線的になる
+- b はbiasであり、$P_{i-1},P_{i+1}$のどちらの影響を受けた傾きを算出するかであり、$b=0$の時には均等な影響を受ける。
+
+
+### ベジェ曲線
+
+- [ベジェ曲線](http://localhost:4321/math/bezier/)は制御点の加重和として表現される曲線
+- 特に3次ベジェ曲線は4つの制御点 $B_0, B_1, B_2, B_3$ を用いて定義される
+- ３次のベジェ曲線はエルミートスプラインと同値である
+  - 同じ曲線を異なる方法でパラメータ化しているだけで、どちらも3次多項式で表される同じ曲線族を表現しています。
+- ３次ベジェ曲線はその多項式特性を利用して描画アルゴリズムを高速化できるため、OpenGL等で曲線描画として採用されている
+- また制御点による形状制御が直感的であるためUIとして優れた点もある。
+- エルミート曲線は端点と接線による制御が直感的である
+
+
+
+$$
+\begin{align*}
+B(u) &= (1-u)^3B_0 + 3u(1-u)^2B_1 + 3u^2(1-u)B_2 + u^3B_3
+\end{align*}
+$$
+
+
+### エルミート形式からベジェ形式への変換過程
+エルミート形式からベジェ形式への変換を詳細に導出する。
+<br/>
+
+エルミート形式は下記の通り
+   $$
+   \begin{align*}
+   P(u) &= h_{00}(u)P_i + h_{10}(u)D_{i,i+1}^- + h_{01}(u)P_{i+1} + h_{11}(u)D_{i+1,i}^+ \\
+        &= (2u^3 - 3u^2 + 1)P_i + (u^3 - 2u^2 + u)D_{i,i+1}^- + (-2u^3 + 3u^2)P_{i+1} + (u^3 - u^2)D_{i+1,i}^+
+   \end{align*}
+   $$
+
+一方、ベジェ形式は下記の通り
+   $$
+   \begin{align*}
+   B(u) &= (1-u)^3B_0 + 3u(1-u)^2B_1 + 3u^2(1-u)B_2 + u^3B_3
+   \end{align*}
+   $$
+
+両者が等価になるように係数を比較することを目的に端点の値を求めるとそれぞれ、
+
+   $$
+   \left\{
+   \begin{align*}
+     P(0) &= P_i\\
+     P(1) &= P_{i+1}\\
+    \end{align*}
+\right.
+   \left\{
+   \begin{align*}
+     B(0) &= B_0\\
+     B(1) &= B_3
+    \end{align*}
+\right.
+   $$
+   これより、
+$$
+ \left\{
+ \begin{equation}
+  \begin{align*}
+    B_0 &= P_i &\\
+    B_3 &= P_{i+1}&
+  \end{align*}
+ \end{equation}  
+ \right.
+$$
+
+<br/><br/>
+同様に端点での一次微分の値を求めると、
+
+   $$
+   \left\{
+    \begin{align*}
+      P'(u) &= 6( u^{2}-u)P_{0}+(3u^{2}-4u+1)D_{i,i+1}^{-}+6(-u^{2}+u)P_{i+1}+(3u^{2}-2u)D_{i+1,i}^{+}\\
+      B'(u) &= 3(1-u)^2(B_1-B_0) + 6u(1-u)(B_2-B_1) + 3u^2(B_3-B_2)   
+    \end{align*}
+   \right.
+   $$
+   $$
+\left\{
+   \begin{align*}
+     P'(0) & = D_{i,i+1}^-\\
+     P'(1) & = D_{i+1,i}^+
+    \end{align*}
+\right.
+
+\left\{
+   \begin{align*}
+     B'(0) = 3(B_1-B_0)\\
+     B'(1) = 3(B_3-B_2)
+    \end{align*}
+\right.
+   $$
+   
+
+係数を比較し、先ほどの結果を利用すると、
+$$
+ \left\{
+  \begin{equation}
+   \begin{align*}
+     D_{i,i+1}^- &= 3(B_1-B_0) &\\
+                 &= 3(B_1-P_i) &\\
+     D_{i+1,i}^+ &= 3(B_3-B_2) &\\
+                 &= 3(P_{i+1}-B_2)
+   \end{align*}
+  \end{equation}
+ \right.   
+$$
+   
+これを$B_1,B_2$について解くと、
+
+$$
+ \left\{
+  \begin{equation}
+   \begin{align*}
+    B_1 &= P_i + \frac{1}{3}D_{i,i+1}^- &\\
+    B_2 &= P_{i+1} - \frac{1}{3}D_{i+1,i}^+ &
+   \end{align*}
+  \end{equation}
+ \right.   
+$$
+
+
+よって、ベジェ形式は、エルミート形式の点や接線によって下記のように書き直すことができ、
+   $$
+   \begin{align*}
+   P(u) &= (1-u)^3P_i + 3u(1-u)^2(P_i + \frac{1}{3}D_{i,i+1}^-) + 3u^2(1-u)(P_{i+1} - \frac{1}{3}D_{i+1,i}^+) + u^3P_{i+1}
+   \end{align*}
+   $$
+
+この式の中間制御点は、元の点と接線ベクトルから計算されることが分かる。
+
+$$
+ \left\{
+  \begin{equation}
+   \begin{align*}
+     B_i^1       &= P_i + \frac{1}{3}D_{i,i+1}^-  & \\
+     B_{i+1}^{-1} &= P_{i+1} - \frac{1}{3}D_{i+1,i}^+
+   \end{align*}
+  \end{equation}
+ \right.
+$$
+
+
+
+
+### 最終的な曲線方程式の導出
+TCB接線ベクトル$D_{i,i+1}^-$と$D_{i+1,i}^+$を用いて、$P_i$と$P_{i+1}$の間のセグメントの曲線方程式は：
+
+$$
+P_{i,i+1}(u) = (1-u)^3P_i + 3u(1-u)^2(P_i + \frac{1}{3}D_{i,i+1}^-) + 3u^2(1-u)(P_{i+1} - \frac{1}{3}D_{i+1,i}^+) + u^3P_{i+1}
+$$
+
+これがTCBスプラインレポートで使用されている最終的な曲線方程式である。
+
+## エルミート形式とベジェ形式の関係
+
+### ベジェ曲線の幾何学的特性
+ベジェ曲線は以下の重要な特性を持つ：
+
+- 端点補間：曲線は最初と最後の制御点を通過する
+- 凸包性：曲線は制御点の凸包内に収まる
+- 変換不変性：アフィン変換を制御点に適用すると、曲線全体に同じ変換が適用される
+- 制御点の幾何学的影響：
+  - 端点 $B_0$, $B_3$ は曲線が通過する点
+  - 制御点 $B_1$ は $B_0$ から出る接線方向を決定
+  - 制御点 $B_2$ は $B_3$ に入る接線方向を決定
+
+### エルミート形式とベジェ形式の比較
+エルミート補間とベジェ表現は数学的に等価であり、変換が可能：
+
+- エルミート形式の特徴
+  - 2つの端点と2つの接線ベクトルで定義
+  - 曲線の形状が直感的に理解しやすい
+  - アニメーションや物理シミュレーションでの速度・加速度の指定に適している
+
+- ベジェ形式の特徴
+  - 4つの制御点で定義
+  - コンピュータグラフィックスでの標準的な表現
+  - 分割と結合操作が容易
+  - 多くのグラフィックスライブラリやフォーマットでサポートされている
+
+### 変換式と導出
+エルミート形式からベジェ形式への変換は、前節で導出した通り：
+
+$$
+\begin{align*}
+B_0^{Bezier} &= P_i^{Hermite} \\
+B_1^{Bezier} &= P_i^{Hermite} + \frac{1}{3}D_i^{Hermite} \\
+B_2^{Bezier} &= P_{i+1}^{Hermite} - \frac{1}{3}D_{i+1}^{Hermite} \\
+B_3^{Bezier} &= P_{i+1}^{Hermite}
+\end{align*}
+$$
+
+重要なのは、$\frac{1}{3}$ の係数が微分条件から直接導出されることである。これはベジェ曲線の特性に基づいており、曲線の端点での接線が端点と隣接制御点を結ぶベクトルに平行で、その大きさが3倍になっていることを表している。
+
+## TCBスプラインの実装上の考慮点
+
+### 計算効率
+- ベジェ形式は複数の曲線セグメントを結合する際に効率的
+- TCB計算は各制御点ごとに1回だけ行い、結果をキャッシュ可能
+
+### 幾何学的解釈
+- 接線ベクトルの長さを$\frac{1}{3}$倍するのは、ベジェ制御点が曲線の$\frac{1}{3}$の距離に配置されるため
+- この係数はベジェ曲線の性質から導出され、曲線の滑らかさを保証する
+
+### 特別なケース
+- Catmull-RomスプラインはTCBスプラインの特殊ケース（t=c=b=0）
+- Uniformパラメータ化は等間隔のパラメータ値を使用
+- Centripetalパラメータ化は弧長の平方根に比例したパラメータ値を使用
+
+## 用語説明
+- エルミート補間：位置と導関数を境界条件として使用する補間法
+- 基底関数：曲線を表現するための標準的な多項式関数のセット
+- ベジェ曲線：制御点の加重和として表現される滑らかな曲線で、バーンスタイン多項式を重み関数として使用
+- バーンスタイン多項式：ベジェ曲線の基本となる多項式で、二項係数と累乗の積として表現される
+- 凸包：集合に含まれる点を全て含む最小の凸集合
+- パラメータ空間：曲線上の点を特定するためのパラメータの範囲[0,1]
+- 接線ベクトル：曲線の各点における接線の方向と大きさを示すベクトル
+- アフィン変換：平行移動、回転、拡大縮小、せん断などの線形変換と平行移動の組み合わせ
+- **立方エルミートスプライン**: 3次多項式と接線ベクトルを使用した補間手法
+- **Kochanek-Bartelsスプライン**: テンション、バイアス、連続性のパラメータを導入した拡張カトマル-ロムスプライン
+- **カトマル-ロムスプライン**: 制御点を通過する補間スプライン
+
+## リファレンス
+- [Kochanek-Bartels スプライン原論文](https://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf)
+- [Interpolating Splines with Local Tension, Continuity, and Bias Control](https://dl.acm.org/doi/10.1145/325334.325242)
+- [エルミート曲線とベジェ曲線の関係](https://en.wikipedia.org/wiki/Cubic_Hermite_spline)
+- [ベジェ曲線の数学的特性](https://pomax.github.io/bezierinfo/)
+- [スプライン補間の数学的基礎](https://www.sciencedirect.com/topics/mathematics/cubic-spline-interpolation)
+
+- Kochanek, D. H. U., & Bartels, R. H. (1984). Interpolating splines with local tension, continuity, and bias control. ACM SIGGRAPH Computer Graphics, 18(3), 33-41. https://dl.acm.org/doi/10.1145/964965.808575
+- Bartels, R. H., Beatty, J. C., & Barsky, B. A. (1987). An introduction to splines for use in computer graphics and geometric modeling. Morgan Kaufmann.
+- Foley, J. D., van Dam, A., Feiner, S. K., & Hughes, J. F. (1995). Computer Graphics: Principles and Practice. Addison-Wesley.
+

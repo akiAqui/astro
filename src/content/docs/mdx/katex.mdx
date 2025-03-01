@@ -1,0 +1,472 @@
+---
+title: katex
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+
+#### align*　その１
+式を列挙
+
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{aligned}
+   x &= a\\
+  yy &= b\\
+ zzz &= c
+\end{aligned}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align*}
+  x &= a\\
+ yy &= b\\
+zzz &= c
+\end{align*}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### align*　その２
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{aligned}
+  & x   &= a\\
+  & yy  &= b\\
+  & zzz &= c
+\end{aligned}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align*}
+  & x   &= a\\
+  & yy  &= b\\
+  & zzz &= c
+\end{align*}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+#### align*　その３
+偶数個目の&はスペースを入れることを利用
+
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{aligned}
+  & x   &= &&a\\
+  & yy  &= &&b\\
+  & zzz &= &&c
+\end{aligned}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align*}
+  & x   &= &&a\\
+  & yy  &= &&b\\
+  & zzz &= &&c
+\end{align*}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### align
+式に番号付き列挙
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{align}
+  x &= a &\\
+  yy &= b &\\
+  zzz &= c &
+\end{align}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align}
+  x &= a &\\
+  yy &= b &\\
+  zzz &= c &
+\end{align}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### align + tag
+式番号を指定して列挙
+
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{align}
+  x &= a & \tag{12} \\
+  y &= b & \tag{23} \\
+  z &= c & \tag{33} \\
+\end{align}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align}
+  x &= a & \tag{12} \\
+  y &= b & \tag{23} \\
+  z &= c & \tag{33} \\
+\end{align}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### equation+aligned
+複数の式でも、まとめて一つの式として番号付け
+<TwoColumn>
+<Left>
+
+$$
+\begin{equation}
+\left\{
+\begin{aligned}
+  x &= a\\
+  y &= b\\
+  z &= c
+\end{aligned}
+\right.
+\end{equation}
+$$
+
+</Left>
+<Right>
+```text
+$$
+\begin{equation}
+\left\{
+\begin{aligned}
+  x &= a\\
+  y &= b\\
+  z &= c
+\end{aligned}
+\right.
+\end{equation}
+$$
+```
+</Right>
+</TwoColumn>
+
+
+
+式に番号付き列挙
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{align}
+  x &= a &\\
+  y &= b &\\
+  z &= c &
+\end{align}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align}
+  x &= a &\\
+  y &= b &\\
+  z &= c &
+\end{align}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### align + tag
+式番号を指定して列挙
+
+<TwoColumn>
+<Left>
+$$
+\left\{
+\begin{align}
+  x &= a & \tag{12} \\
+  y &= b & \tag{23} \\
+  z &= c & \tag{33} \\
+\end{align}
+\right.
+$$
+</Left>
+<Right>
+```text
+$$
+\left\{
+\begin{align}
+  x &= a & \tag{12} \\
+  y &= b & \tag{23} \\
+  z &= c & \tag{33} \\
+\end{align}
+\right.
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### equation+aligned
+複数の式でも、まとめて一つの式として番号付け
+<TwoColumn>
+<Left>
+
+$$
+\begin{equation}
+\left\{
+\begin{aligned}
+  x &= a\\
+  y &= b\\
+  z &= c
+\end{aligned}
+\right.
+\end{equation}
+$$
+
+</Left>
+<Right>
+```text
+$$
+\begin{equation}
+\left\{
+\begin{aligned}
+  x &= a\\
+  y &= b\\
+  z &= c
+\end{aligned}
+\right.
+\end{equation}
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### カッコ
+
+##### 分数には小さい
+<TwoColumn>
+<Left>
+$$
+(
+\frac{1}{x} + \frac{1}{y}
+)
+$$
+
+</Left>
+<Right>
+```text
+$$
+(
+\frac{1}{x} + \frac{1}{y}
+t)
+$$
+```
+</Right>
+</TwoColumn>
+
+##### 全体を覆う
+<TwoColumn>
+<Left>
+$$
+\left(
+\frac{1}{x} + \frac{1}{y}
+\right)
+$$
+</Left>
+<Right>
+```text
+$$
+\left(
+\frac{1}{x} + \frac{1}{y}
+\right)
+$$
+
+```
+</Right>
+</TwoColumn>
+
+
+
+
+#### rei 
+
+/*
+<TwoColumn>
+<Left>
+
+</Left>
+<Right>
+```text
+
+```
+</Right>
+</TwoColumn>
+*/
+
+
+

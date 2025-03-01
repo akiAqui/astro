@@ -1,0 +1,361 @@
+---
+title: ＊＊＊）Shader+3D
+description: Shaderの立体化
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+border: none !important;
+border-bottom: 4px double white !important;
+margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+text-indent: 0;
+margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+
+### 法線マッピング（Normal Mapping）
+
+#### 効果
+- 法線マップを使用してライティングの計算を変化させ、表面に凹凸があるように見せる。
+- 実際のジオメトリは変化しないため、シルエットは変わらない。
+- 高精細な凹凸表現が可能で、計算コストが低い。
+
+#### 方法とアルゴリズム
+1. [法線マップ](#normal-map)（RGB画像）を用意し、各ピクセルの法線情報を持たせる。
+2. フラグメントシェーダーでテクスチャのRGB値を取得し、法線空間（タンジェント空間）に変換する。
+3. 変換後の法線を用いてPhongシェーディングやPBR（物理ベースレンダリング）のライティング計算を行う。
+
+$$
+N = 2 \times \text{texture}(normalMap, uv).rgb - 1
+$$
+
+$$
+N_{world} = TBN \times N
+$$
+
+ここで $TBN$ はタンジェント空間からワールド空間への変換行列。
+
+#### 欠点
+- 実際のジオメトリは変化しないため、横から見ると凹凸がないことがわかる。
+- 法線マップの品質に依存する。
+
+#### さらなる強化
+- 視差マッピングと組み合わせる ことで、テクスチャの奥行きを強調できる。
+- アンビエントオクルージョン（AO）マップを追加 して影の表現を強化する。
+
+### 視差マッピング（Parallax Mapping）
+
+#### 効果
+- 視点に応じてテクスチャ座標を動かし、深さのある表面に見せる。
+- 単純な法線マッピングよりも立体感が強調される。
+
+#### 方法とアルゴリズム
+1. ディスプレイスメントマップ（高さ情報）を用意し、各ピクセルの高さ $h$ を格納する。
+2. フラグメントシェーダーで視線ベクトルと高さを使い、新しいテクスチャ座標を計算する。
+3. テクスチャ座標をシフトし、新しいテクスチャをサンプリングする。
+
+$$
+uv' = uv + \frac{(h - h_{ref}) \cdot V_{tangent}}{h_{scale}}
+$$
+
+#### 欠点
+- シルエットは変化しないため、エッジ部分では立体感が損なわれる。
+- 奥行きを増すほど計算負荷が高くなる。
+
+#### さらなる強化
+- Steep Parallax Mapping や Relief Mapping を使うと、よりリアルな視差効果が得られる。
+
+### ディスプレイスメントマッピング（Displacement Mapping）
+
+#### 効果
+- 実際に頂点を移動させ、物理的な凹凸を持たせる。
+- 視点の変化に対しても一貫した立体感が得られる。
+
+#### 方法とアルゴリズム
+1. 頂点シェーダーで高さマップを読み込み、各頂点の法線方向に応じたオフセットを計算する。
+2. 変位後の頂点位置を適用し、再度ライティングやシェーディングを行う。
+
+$$
+P' = P + N \cdot h
+$$
+
+#### 欠点
+- 高解像度のメッシュが必要で、低ポリゴンでは表現が不十分。
+- 計算コストが高く、リアルタイム処理では制限がある。
+
+#### さらなる強化
+- テッセレーションシェーダーを使用 し、動的にポリゴンを細分化することで、より詳細な凹凸表現が可能。
+
+## アニメーションによる高さの変化
+
+### 法線マッピングのアニメーション
+
+$$
+N = \text{mix}(N_0, N_1, 0.5 + 0.5 \times \sin(time))
+$$
+
+#### 欠点
+- 実際の高さ変化はなく、視点が変わると違和感がある。
+
+#### 強化方法
+- 視差マッピングと組み合わせる ことで、より立体感を出せる。
+
+### 視差マッピングのアニメーション
+
+$$
+h = \text{texture}(heightMap, uv).r \times (0.5 + 0.5 \times \sin(time))
+$$
+
+$$
+uv' = uv + \frac{(h - h_{ref}) \cdot V_{tangent}}{h_{scale}}
+$$
+
+#### 欠点
+- 高さ変化が大きくなると、破綻する可能性がある。
+- 過剰に変化させるとテクスチャのずれが目立つ。
+
+#### 強化方法
+- 法線マッピングと組み合わせる ことで、ライティングのリアルさを増す。
+
+### ディスプレイスメントマッピングのアニメーション
+
+$$
+h(t) = h_{base} \times (0.5 + 0.5 \times \sin(time))
+$$
+
+$$
+P' = P + N \cdot h(t)
+$$
+
+#### 欠点
+- メッシュの解像度が低いと、なめらかに変化しない。
+- 計算コストが高く、リアルタイム用途では制限がある。
+
+#### 強化方法
+- テッセレーションシェーダー を用いれば、頂点数を動的に増やして滑らかにできる。
+
+## 最適な選択と組み合わせ
+
+| 方法 | 見た目のリアルさ | 計算負荷 | 実装の容易さ | 適用シーン |
+|--------------------------|---------------|---------|-------------|-----------|
+| 法線マッピング | 中程度 | 低い| 容易| 軽量な表面効果 |
+| 視差マッピング | 高い | 中程度| 中程度| 地面や壁の奥行き変化 |
+| ディスプレイスメント | 最高 | 高い| 難しい| 高品質な凹凸変化 |
+
+## 結論
+
+- 簡単に実装するなら法線マッピング が最適。
+- より立体感を出すなら視差マッピング を追加。
+- 物理的な高さ変化をつけるならディスプレイスメント を採用。ただし、メッシュの細分化が必要。
+- 組み合わせにより、リアルさとパフォーマンスのバランスを調整できる。
+
+アニメーションの方法としては `sin(time)` の変化を適用するのが基本。
+どの手法を選ぶかは、用途とパフォーマンス要件によって決定すべき。
+
+
+
+## <a id="normal-map">法線マップ</a>
+
+### 概要
+法線マップは、オブジェクトの表面の法線ベクトルをRGBテクスチャとして格納するデータ。
+ライティング計算時に擬似的な凹凸を与えることで、メッシュの形状を変更せずにリアルな陰影を作り出す。
+
+### どのようなデータか
+- テクスチャのRGB値を使って法線ベクトルを格納する。
+- R（赤）：法線のX成分、G（緑）：法線のY成分、B（青）：法線のZ成分。
+- RGBの値を $[0, 1]$ から $[-1, 1]$ に変換して使用する。
+
+$$
+N = 2 \times \text{texture}(normalMap, uv).rgb - 1
+$$
+
+### データの作り方
+1. 3Dモデリングソフト（Blender, Substance Painter）を使用
+ - ハイポリゴンメッシュからローポリゴンメッシュへベイク（転写）することで生成可能。
+2. Photoshop などのツールで疑似的に作成
+ - グレースケールの高さマップから「法線マップフィルター」を適用して生成可能。
+3. オンラインツール
+ - `NormalMap Online` などの無料ツールで簡単に生成可能。
+
+### ない場合の対処法
+- シンプルな表面なら、GLSLの微分関数 `dFdx, dFdy` を使ってリアルタイムに計算可能。
+- ディスプレイスメントマップ（高さマップ）から疑似法線マップを生成する。
+
+---
+
+## アンビエントオクルージョンマップ（AO Map）
+
+### 概要
+アンビエントオクルージョン（AO）マップは、環境光の影響を受ける度合いを示すグレースケールテクスチャ。
+影が溜まりやすい場所を暗くし、視覚的なリアリズムを向上させる。
+
+### どのようなデータか
+- グレースケール画像で、白（$1.0$）は光が当たる領域、黒（$0.0$）は光が届きにくい領域。
+- 単独で使用するのではなく、通常のライティングと組み合わせて使用。
+
+$$
+I_{final} = I_{diffuse} \times AO
+$$
+
+### データの作り方
+1. 3Dソフトでベイク（Blender, Substance Painter, Marmoset Toolbag）
+ - レイトレーシングを用いて、光が届かない場所を計算し、テクスチャに焼き込む。
+2. 手動でペイント
+ - PhotoshopやGIMPで影を手描きする方法もある。
+3. プロシージャル生成
+ - Shaderやプログラムでリアルタイム計算も可能だが、計算負荷が高いため事前ベイクが一般的。
+
+### ない場合の対処法
+- 法線マップと深度マップを組み合わせ、疑似AOをリアルタイムに計算する。
+- ライトの強度を調整し、影のコントラストを強調することで代用。
+
+---
+
+## ディスプレイスメントマップ（Displacement Map）
+
+### 概要
+ディスプレイスメントマップは、オブジェクトの頂点を直接移動させるための高さ情報を持つテクスチャ。
+視点に関係なく物理的に形状が変化するため、最もリアルな凹凸表現が可能。
+
+### どのようなデータか
+- グレースケール画像で、白（$1.0$）は最も高い地点、黒（$0.0$）は最も低い地点を示す。
+- 頂点シェーダーで各頂点を高さに応じて移動させる。
+
+$$
+P' = P + N \times h
+$$
+
+### データの作り方
+1. 3Dソフトでベイク
+ - 高解像度モデルからローポリゴンメッシュへディスプレイスメントマップを作成。
+2. プロシージャル生成
+ - Perlinノイズやフラクタルノイズを利用し、コードで生成。
+3. 手書き
+ - Photoshopなどでグレースケールの画像を描画。
+
+### ない場合の対処法
+- 法線マップをもとに、リアルタイムで擬似的に高さを計算。
+- 視差マッピングを使用して、高さを視点依存で表現。
+
+---
+
+## まとめ
+
+| マップ種類 | データの形式 | 目的 | 作成方法 |
+|------------------|------------|-------------------------|----------|
+| 法線マップ | RGB画像| ライティングの凹凸表現| 3Dソフト、Photoshop、生成ツール |
+| AOマップ | グレースケール | 環境光の影の強調| 3Dソフトでベイク、手描き |
+| ディスプレイスメントマップ | グレースケール | 物理的な凹凸変化 | 3Dソフト、プロシージャル生成 |
+
+初心者が作成する場合は、3Dソフトのベイク機能を使うのが最も簡単な方法。
+プログラムで自動生成する場合は、Perlinノイズやフラクタルノイズを利用するのが一般的。
+どのマップも、単独ではなく組み合わせて使用することで、よりリアルな効果を得ることができる。

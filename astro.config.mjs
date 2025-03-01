@@ -41,6 +41,10 @@ export default defineConfig({
                     autogenerate: {directory: 'algorithm'},
                 },                
                 {
+                    label: '数学',
+                    autogenerate: {directory: 'math'},
+                },                
+                {
                     label: 'csound, P5jsなど',
                     autogenerate: {directory: 'misc'},
                 },                
