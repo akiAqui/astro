@@ -108,6 +108,7 @@ figure pre {
 }
 `}</style>
 
+
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
@@ -116,6 +117,17 @@ import RedBox from '../../../components/RedBox';
 import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 
 <TimeStamp fileUrl={import.meta.url} />
+ <style>{`
+ table {
+  width: 100%; 
+ }
+ th:nth-child(1) {
+  min-width: 250px; 
+ }
+ th:nth-child(2) {
+  min-width: 250px; 
+ }
+`}</style>
 
 ##### TODOs
 
@@ -123,5 +135,7 @@ import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 
 | date                      | what                        | 
 |:--------------------------|:----------------------------|
-|25年03月02日               | apt update                  |
-|25年03月02日               | apt upgrade                 |
+|25年03月03日 04時13分      | ~/astro/ git push           |
+|25年03月02日               | apt update   / upgrade      |
+|                           | gh, セキュリティー系        |
+
