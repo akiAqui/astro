@@ -1,5 +1,5 @@
 ---
-title: 更新ログ
+title: ＊）インストール設定
 description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
 ---
@@ -108,7 +108,6 @@ figure pre {
 }
 `}</style>
 
-
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
@@ -117,32 +116,24 @@ import RedBox from '../../../components/RedBox';
 import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 
 <TimeStamp fileUrl={import.meta.url} />
- <style>{`
- table {
-  width: 100%; 
- }
- th:nth-child(1) {
-  min-width: 250px; 
- }
- th:nth-child(2) {
-  min-width: 250px; 
- }
-`}</style>
 
 ##### TODOs
 
  - [x] nothing
 
-| date                      | what                                  | 
-|:--------------------------|:--------------------------------------|
-|25年03月08日 02時35分      | apt install openssh-server -y         |
-|                           | service ssh start                     |
-|                           | systemctl enable ssh                  |
-|                           | systemctl status ssh                  |
-|25年03月06日 03時25分      | weekly_backup                         |
-|                           | node_modules削除                      |
-|                           | astro git push                        |
-|25年03月03日 04時13分      | ~/astro/ git push                     |
-|25年03月02日               | apt update   / upgrade                |
-|                           | gh, セキュリティー系                  |
+
+```text
+sudo apt install emacs -y
+sudo apt install zsh -y
+chsh -s $(which zsh)
+sudo apt install openssh-server
+```
+
+
+- openssh-serverでエラーが出るが使えているし動いている
+
+
+
+
+
 

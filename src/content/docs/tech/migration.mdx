@@ -1,0 +1,440 @@
+---
+title: ＊）data migration between dist.
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+## 初めに
+### 動機
+- WSL2上のディストリビューションは仮想ディスク（VHDXファイル）を使用しており、
+ディストリビューションの内部のファイルを削除してもVHDXファイルは小さくならない。
+これが原因でWindows上のディスク領域を圧迫する。
+- PowerShellでVHDXを圧縮したり、ddで未使用領域を0で書き込むなどの方法はあるが
+安全であるとは限らない
+- そこで、新しいディストリビューションを起動しても1GB程度の領域しか必要としないため、
+旧ディストリビューションから新ディストリビューションの領域へ
+ユーザデータをコピーすることを考える
+
+### 環境
+- Windows 11マシン(256GB)、USB接続されたSSD(1TB)、同ホームネットワーク上にsambaサーバ(3.7TB)がある
+  - 旧環境：Ubuntu 22.04（移行元）
+  - 新環境：Ubuntu 24.04（移行先）
+  - WSL2のPCにUSB接続されたSSD
+    - ext4フォーマット
+    - wsl --mount \\.\PHYSICALDRIVE1 --partition 1 --bare でwsl2環境からは見える
+    - ext4のファイルシステムなのでwindows上からは見えない
+    - ubuntuからは/dev/sdd1に存在している
+    - 旧環境では`/mnt/usb` にマウント済み
+  - Sambaサーバが192.168.1.1にある
+    -旧環境に`/mnt/samba` にマウント済み
+  - 両方のディストリビューションに同じユーザー名を作成
+
+### 方法
+- usbのファイルシステムを介して
+  - rsyncで旧環境をディレクトリごと一旦バックアップを取り、そこから新環境にコピーする
+  - tarファイルを旧環境で作成しusbディスクに一旦コピーして、それを新環境で取得し展開する
+- sambaサーバを介して
+  - rsyncで旧環境をディレクトリごと一旦バックアップを取り、そこから新環境にコピーする
+  - tarファイルを旧環境で作成しusbディスクに一旦コピーして、それを新環境で取得し展開する
+- Windowsファイルシステムを介して
+  - tarファイルを旧環境で作成しWindowsの/mnt/c配下に配置して、新環境で取得し展開する
+  - explore上で直接複数ディレクトリをまとめてコピーする
+- sshプロトコルで2環境間でコピーする
+  - scpを利用して新旧環境間でコピー
+  - rsync利用して新旧環境間でコピー
+- SSHFSをexport/mountして2環境間でコピーする
+
+
+### 評価
+
+| 方法 | ファイル属性の保持 | 時間の短さ | 事前設定 | 確実性 | 総合評価 |
+|------|------------------|------------|----------------|--------|----------|
+| USB + rsync | ◎（保持される） | △（USBの転送速度次第） | ○（USBマウントのみ） | ◎（rsyncの信頼性高） | ★★★★☆ |
+| USB + tar | ◎（保持される） | △（圧縮・解凍で時間がかかる） | ○（USBマウントのみ） | ◎（tarはアーカイブに強い） | ★★★★☆ |
+| Samba + rsync | △（NTFS経由で一部属性喪失） | ×（ネットワークの影響大） | △（Sambaサーバの設定が必要） | △（Sambaの設定ミスで失敗あり） | ★★☆☆☆ |
+| Samba + tar | △（NTFS経由で一部属性喪失） | ×（ネットワーク＋tarの展開） | △（Sambaサーバの設定が必要） | △（Sambaの影響を受ける） | ★★☆☆☆ |
+| Windows + tar | ○（WSLの挙動次第） | ◎（SSDなら高速） | ◎（WSLで簡単） | ○（ファイルシステムの影響あり） | ★★★★☆ |
+| Windows + エクスプローラー | ×（所有権・実行権限喪失） | ◎（ドラッグ＆ドロップは簡単） | ◎（最も簡単） | △（WSLのファイルシステムとの相性悪） | ★★☆☆☆ |
+| SCP(ssh) | ◎（保持される） | △（SSHのオーバーヘッドあり、同一PC間では特に遅い） | △（SSH設定とホスト名/IP指定が必要） | ◎（安全な転送） | ★★★★☆ |
+| rsync(ssh) | ◎（保持される） | △（SSHのオーバーヘッドあり、同一PC間では特に遅い） | △（SSH設定とホスト名/IP指定が必要） | ◎（安全な転送） | ★★★★☆ |
+| SSHFS | ◎（保持される） | ×（ネットワーク速度に依存） | △（FUSEと設定が必要） | ○（ネットワークが安定していれば確実） | ★★★☆☆ |
+
+総合評価の基準:
+- ★★★★★: 速度、信頼性、設定の手間が最もバランスが良い。
+- ★★★★☆: 多少の手間や時間がかかるが、確実に移行可能。
+- ★★★☆☆: 使えるが、他に優れた方法がある。
+- ★★☆☆☆: ファイル属性の喪失や設定の手間が大きく、推奨しにくい。
+- ★☆☆☆☆: 信頼性が低く、移行方法としては不適切。
+
+補足:
+- SCPはSSHのオーバーヘッドがあり、同一PCのWSL間では非効率。また、ホスト名やIPアドレスの指定が必要。
+- WSL環境でSCPを使う場合、WSL1とWSL2の間では`localhost`を使えるが、WSL2同士ではIPアドレスを指定する必要がある。
+  - `ip addr show eth0 | grep 'inet '` で WSL2 の IP を取得し、それを用いて `scp user@<WSL2_IP>:<file> <destination>` のように指定する。
+- USB/SSDを用いた `rsync` や `tar` が最も現実的な選択肢。
+- Windowsの `/mnt/c` を利用する方法も高速で、環境によっては有力候補。
+
+結論:
+? 最もバランスが良い方法: `USB + rsync`, `USB + tar`, `Windows + tar`
+? 時間を優先するなら: `Windows + tar`
+? 避けるべき方法: `エクスプローラー`, `Samba`, `SCP（WSL間での直接コピーには向かない）`
+
+
+
+
+
+
+
+この手順書では、WSL2上の異なるUbuntuディストリビューション間でユーザーデータ（`/home/akihisa`）を移行する方法を説明します。外部ストレージ（USB SSDまたはSambaサーバー）を利用して、Windows環境のディスク容量を消費せずに効率的にファイルを同期します。
+
+
+## 1. 準備
+
+### 両方のディストリビューションでrsyncがインストールされていることを確認
+
+旧環境と新環境の両方で:
+
+```bash
+sudo apt update
+sudo apt install -y rsync
+```
+
+## 2. USB SSDを使用する方法（推奨）
+
+USB SSDは直接Linuxファイルシステムとしてマウントされているため、パーミッションが保持され、最も効率的です。
+
+### 手順
+
+1. USB SSDに一時ディレクトリを作成:
+
+   旧環境で:
+   ```bash
+   mkdir -p /mnt/usb/akihisa_backup
+   ```
+
+2. 旧環境からUSB SSDへデータをコピー:
+
+   旧環境で:
+   ```bash
+   rsync -avz /home/akihisa/ /mnt/usb/akihisa_backup/
+   ```
+
+3. USB SSDから新環境へデータをコピー:
+
+   新環境で（USBが同じパスでマウントされていることを確認）:
+   ```bash
+   rsync -avz /mnt/usb/akihisa_backup/ /home/akihisa/
+   ```
+
+4. 移行後に差分同期が必要な場合:
+
+   旧環境で更新されたファイルがある場合:
+   ```bash
+   # 旧環境で
+   rsync -avz /home/akihisa/ /mnt/usb/akihisa_backup/
+   
+   # 新環境で
+   rsync -avz /mnt/usb/akihisa_backup/ /home/akihisa/
+   ```
+
+## 3. Sambaサーバーを使用する方法
+
+容量の大きいデータを移行する場合は、Sambaサーバーも活用できます。
+
+### 手順
+
+1. Sambaサーバーに一時ディレクトリを作成:
+
+   旧環境で:
+   ```bash
+   mkdir -p /mnt/samba/akihisa_backup
+   ```
+
+2. 旧環境からSambaサーバーへデータをコピー:
+
+   旧環境で:
+   ```bash
+   rsync -avz /home/akihisa/ /mnt/samba/akihisa_backup/
+   ```
+
+   > 注意: Sambaファイルシステムではパーミッションが完全に保持されない場合があります。
+
+3. Sambaサーバーから新環境へデータをコピー:
+
+   新環境で（Sambaが同じパスでマウントされていることを確認）:
+   ```bash
+   rsync -avz /mnt/samba/akihisa_backup/ /home/akihisa/
+   ```
+
+## 4. 直接マウントして同期する方法（より高度）
+
+こちらの方法では、SSHFSを使用して旧環境のユーザーディレクトリを新環境に直接マウントします。
+
+### 手順
+
+1. 旧環境でsshサーバーをセットアップ:
+
+   旧環境で:
+   ```bash
+   sudo apt update
+   sudo apt install -y openssh-server
+   
+   # SSHサーバー設定
+   sudo sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config
+   sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+   
+   # SSHサーバー再起動
+   sudo service ssh restart
+   ```
+
+2. 旧環境のIPアドレスを確認:
+
+   旧環境で:
+   ```bash
+   ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1
+   ```
+   表示されたIPアドレスをメモしておきます（例：`172.17.123.45`）
+
+3. 新環境で旧環境にマウント:
+
+   新環境で:
+   ```bash
+   # 必要なツールのインストール
+   sudo apt update
+   sudo apt install -y sshfs
+   
+   # マウントポイント作成
+   mkdir -p ~/old_home
+   
+   # SSHFSでマウント
+   sshfs akihisa@172.17.123.45:/home/akihisa ~/old_home -p 2222
+   ```
+   プロンプトが表示されたら、旧環境のakihisaユーザーのパスワードを入力します。
+
+4. 新環境でrsyncを使用してデータをコピー:
+
+   新環境で:
+   ```bash
+   rsync -avz ~/old_home/ /home/akihisa/
+   ```
+
+5. マウント解除:
+
+   新環境で:
+   ```bash
+   fusermount -u ~/old_home
+   ```
+
+## 5. パーミッションの修正（必要に応じて）
+
+特にSambaを使用した場合は、ファイル所有者やパーミッションに問題がある場合があります。以下のコマンドで修正できます:
+
+新環境で:
+```bash
+sudo chown -R akihisa:akihisa /home/akihisa
+sudo chmod -R u+rwX /home/akihisa
+```
+
+## 6. 動作確認
+
+新環境で、移行したファイルやアプリケーションが正常に動作することを確認します。すべてが問題なく動作していることを確認してから、旧環境を削除することをお勧めします。
+
+## 7. 差分同期
+
+後で旧環境が更新された場合に差分だけを同期する場合:
+
+USB SSDを使用した場合:
+```bash
+# 旧環境で
+rsync -avz /home/akihisa/ /mnt/usb/akihisa_backup/
+
+# 新環境で
+rsync -avz /mnt/usb/akihisa_backup/ /home/akihisa/
+```
+
+Sambaサーバーを使用した場合:
+```bash
+# 旧環境で
+rsync -avz /home/akihisa/ /mnt/samba/akihisa_backup/
+
+# 新環境で
+rsync -avz /mnt/samba/akihisa_backup/ /home/akihisa/
+```
+
+## rsyncコマンドの詳細
+
+`rsync -avz` コマンドの各オプションの意味:
+
+- `-a`: アーカイブモードで、複数のオプション(`-rlptgoD`)をまとめたもの
+  - `-r`: 再帰的にディレクトリ内のすべてのサブディレクトリとファイルをコピー
+  - `-l`: シンボリックリンクをリンクとしてコピー
+  - `-p`: パーミッション（権限）を保持
+  - `-t`: タイムスタンプを保持
+  - `-g`: グループ所有権を保持
+  - `-o`: 所有者情報を保持
+  - `-D`: デバイスファイルと特殊ファイルを保持
+- `-v`: 詳細な出力（verbose）。何が起きているかを詳しく表示
+- `-z`: 転送時にデータを圧縮。ネットワーク転送を高速化（Sambaの場合に特に有効）
+
+追加のオプション（必要に応じて）:
+- `--delete`: 送信先にあって送信元にないファイルを削除（完全に同一にする場合）
+- `--dry-run`: 実際にはコピーせず、何が起こるかをシミュレーション
+- `--progress`: ファイル転送の進行状況を表示
+
+## 参考：　ssh インストール、起動、確認
+
+```text
+> sudo apt install openssh-server -y
+> sudo service ssh start
+> sudo systemctl enable ssh
+> sudo systemctl status ssh
+> 
+```
+
+``` text
+> ~/download %systemctl status ssh
+systemctl status ssh
+● ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/lib/systemd/system/ssh.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sat 2025-03-08 02:32:28 JST; 8min ago
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+   Main PID: 165379 (sshd)
+      Tasks: 1 (limit: 4596)
+     Memory: 1.7M
+     CGroup: /system.slice/ssh.service
+             └─165379 "sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups"
+
+Mar 08 02:32:28 pasokon systemd[1]: Starting OpenBSD Secure Shell server...
+Mar 08 02:32:28 pasokon sshd[165379]: Server listening on 0.0.0.0 port 22.
+Mar 08 02:32:28 pasokon sshd[165379]: Server listening on :: port 22.
+Mar 08 02:32:28 pasokon systemd[1]: Started OpenBSD Secure Shell server.
+
+
+> netstat -tlnp
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -                   
+tcp        0      0 10.255.255.254:53       0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -                   
+tcp6       0      0 :::22                   :::*                    LISTEN      -                   
+tcp6       0      0 :::4321                 :::*                    LISTEN      163568/node         
+```

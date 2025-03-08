@@ -1,0 +1,203 @@
+---
+title: ＊＊＊）Material
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+
+ <style>{`
+table {
+  width: 100%;
+  table-layout: fixed; /* 列幅を固定 */
+}
+
+th:nth-child(1), td:nth-child(1) {
+  width: 90px; /* 1列目の幅 */
+  max-width: 100px;
+  word-break: break-word; /* 適切な折り返し */
+  white-space: normal; /* 折り返しを許可 */
+  overflow-wrap: break-word;
+}
+
+th:nth-child(n+2), td:nth-child(n+2) {
+  width: 60px; /* 2列目以降の幅 */
+  word-break: break-all; /* 単語途中でも折り返し */
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+`}</style>
+
+##### TODOs
+
+ - [x] nothing
+
+## Three.js マテリアルとテクスチャ適用可能属性一覧
+
+### 1. マテリアルごとのテクスチャ適用可能属性
+
+| Material | map | normalMap | bumpMap | displacementMap | roughnessMap | metalnessMap | aoMap | emissiveMap| envMap|
+|-------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|
+| `MeshBasicMaterial` | ○ | x | x | x | x | x | x | x | ○ |
+| `MeshLambertMaterial` | ○ | ○ | ○ | ○ | x | x | ○ | ○ | ○ |
+| `MeshPhongMaterial` | ○ | ○ | ○ | ○ | x | x | ○ | ○ | ○ |
+| `MeshStandardMaterial` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| `MeshPhysicalMaterial` | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| `MeshToonMaterial` | ○ | x | x | x | x | x | ○ | ○ | ○ |
+| `MeshMatcapMaterial` | ○ (matcap) | x | x | x | x | x | x | x | x |
+| `MeshNormalMaterial` | x | x | x | x | x | x | x | x | x |
+| `MeshDepthMaterial` | x | x | x | x | x | x | x | x | x |
+
+### 2. テクスチャを適用する属性と用途
+
+| 属性名 | 用途 |
+|-----------|--------|
+| `map` | 基本的なカラーテクスチャ（アルベド）を指定する |
+| `normalMap` |法線マップ： 法線情報を上書きし、ライティングの凹凸表現を変更する |
+| `bumpMap` | 凹凸マップ：明暗で凹凸を擬似的に表現する（`normalMap`より軽量） |
+| `displacementMap` | 変位マップ：ジオメトリの頂点位置を変化させて凹凸を作る |
+| `roughnessMap` | 粗さマップ：粗さを指定し、光沢の強弱を制御する（PBR向け） |
+| `metalnessMap` | 金属度マップ：金属感を制御し、反射率を変更する（PBR向け） |
+| `aoMap` | アンビエントオクルージョン（陰影）を追加する |
+| `emissiveMap` | 自己発光する部分を指定する（光を放つマテリアル向け） |
+| `envMap` | 環境マップを適用し、反射や屈折を制御する |
+| `matcap` | 法線情報を使わず、画像を使ったライティングを適用する（`MeshMatcapMaterial`専用） |
+
+### 3. マテリアルごとの光源の影響
+
+| Material | 光源の影響 |
+|-------------|----------------------|
+| `MeshBasicMaterial` | 影響を受けない（完全な自己発光） |
+| `MeshLambertMaterial` | 拡散光のみを考慮（光沢なし） |
+| `MeshPhongMaterial` | 拡散光と鏡面反射を考慮（光沢あり） |
+| `MeshStandardMaterial` | PBR（物理ベースレンダリング）対応、粗さと金属感の影響を考慮 |
+| `MeshPhysicalMaterial` | `MeshStandardMaterial` に加え、屈折や透明度も考慮 |
+| `MeshToonMaterial` | 拡散光のみを考慮、セルシェーディング風の表現 |
+| `MeshMatcapMaterial` | 環境光マップを使用し、ライティング計算を行わない |
+| `MeshNormalMaterial` | 光源の影響を受けず、ジオメトリの法線のみを描画 |
+| `MeshDepthMaterial` | 光源の影響を受けず、深度情報のみを描画 |
+
+---
+
+### まとめ
+- `MeshBasicMaterial` は `map` や `envMap` のみ対応（ライティングなし）
+- `MeshStandardMaterial` や `MeshPhysicalMaterial` は PBR に対応し、多くのテクスチャを適用○
+- `MeshNormalMaterial` や `MeshDepthMaterial` にはテクスチャを適用できない
+- 各テクスチャ属性は一貫しており、適用○なマテリアルを確認して選択することが重要
+- 光源の影響を受けるかどうかは、使用するマテリアルに依存する
+
+

@@ -1,0 +1,347 @@
+---
+title: ＊）Texture - advanced
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+## 基本
+- textureはMaterialに適用する
+- Materialによって
+
+### UV マッピング
+
+THREE.UVMapping: 標準的なUV座標を使用してテクスチャをマッピングする。
+Material
+
+
+```javascript
+const texture = new THREE.TextureLoader().load('texture.jpg');
+texture.mapping = THREE.UVMapping;
+const material = new THREE.MeshBasicMaterial({ map: texture });
+const geometry = new THREE.PlaneGeometry(5, 5);
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+```
+
+### 2.2 キューブマッピング
+
+反射や屈折表現のために、環境マップ（キューブマップ）を利用する。
+
+- THREE.CubeReflectionMapping: 反射を表現するキューブマッピング
+- THREE.CubeRefractionMapping: 屈折を表現するキューブマッピング
+
+#### キューブマップとは？
+
+キューブマップは、6枚の正方形のテクスチャを使って立方体の環境マップを作成する手法。各テクスチャは、以下の順番で指定される必要がある。
+
+1. `px.jpg` - 右 (Positive X)
+2. `nx.jpg` - 左 (Negative X)
+3. `py.jpg` - 上 (Positive Y)
+4. `ny.jpg` - 下 (Negative Y)
+5. `pz.jpg` - 前 (Positive Z)
+6. `nz.jpg` - 後 (Negative Z)
+
+#### ユースケース: 鏡のような球体
+
+```javascript
+const cubeTexture = new THREE.CubeTextureLoader()
+  .setPath('textures/cube/environment/') // 環境マップ用の6方向の画像を指定
+  .load([ 'px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg' ]);
+cubeTexture.mapping = THREE.CubeReflectionMapping;
+const material = new THREE.MeshStandardMaterial({ envMap: cubeTexture });
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), material);
+scene.add(sphere);
+```
+### 3.1 アルファチャンネルの有無
+
+アルファチャンネルがあることで、オブジェクトが透過可能になり、背景や他のオブジェクトと重なった際に部分的に見えるようになる。ただし、単に透明になるだけではなく、屈折や反射を活用して視覚効果を大きく向上させることも可能。
+
+#### ユースケース: 部分的に透明なガラス
+
+```javascript
+const texture = new THREE.TextureLoader().load('glass_texture.png');
+texture.format = THREE.RGBAFormat;
+const material = new THREE.MeshPhysicalMaterial({
+  map: texture,
+  transmission: 0.9,
+  transparent: true,
+  roughness: 0.1,
+  metalness: 0.5
+});
+```
+
+### 3.2 カラーフォーマットとその用途
+
+- THREE.LuminanceFormat: グレースケール画像を扱う場合に使用。RGBではなく1チャネルのみのデータとなるため、メモリ使用量を削減できる。
+- THREE.RedFormat: 赤チャネルのみを使用する場合に適用。例えば、深度マップや特定のマスク処理に利用される。
+- THREE.RGFormat: 赤と緑の2チャネルを用いたフォーマット。法線マップの一部や、流体シミュレーションで速度ベクトルを格納する用途に適用される。
+
+#### ユースケース: グレースケール画像の使用
+
+```javascript
+const texture = new THREE.TextureLoader().load('heightmap.png');
+texture.format = THREE.LuminanceFormat;
+const material = new THREE.MeshBasicMaterial({ map: texture });
+```
+
+#### ユースケース: 赤チャネルを使った深度マップ
+
+```javascript
+const texture = new THREE.DataTexture(new Uint8Array([255, 128, 0]), 1, 1, THREE.RedFormat);
+```
+
+### 3.3 深度フォーマットとデータの意味
+
+- THREE.DepthFormat: 深度情報を格納
+- THREE.DepthStencilFormat: 深度+ステンシル情報
+
+#### 深度データとは？
+
+深度データとは、視点（カメラ）からオブジェクトまでの距離を格納するデータ。シェーダーで深度情報を利用することで、影やポストプロセスエフェクト（例: 霧、被写界深度）を適用可能。
+
+#### ユースケース: 深度バッファを用いたポストプロセスエフェクト
+
+深度バッファを利用して、遠くのオブジェクトをぼかしたり、霧を適用したりする。
+
+```javascript
+const depthRenderTarget = new THREE.WebGLRenderTarget(1024, 1024, {
+  format: THREE.DepthFormat,
+  type: THREE.UnsignedShortType,
+});
+const depthMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    tDepth: { value: depthRenderTarget.texture },
+    cameraNear: { value: camera.near },
+    cameraFar: { value: camera.far }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDepth;
+    uniform float cameraNear;
+    uniform float cameraFar;
+    varying vec2 vUv;
+
+    float readDepth(sampler2D depthTexture, vec2 uv) {
+      float depth = texture2D(depthTexture, uv).r;
+      return cameraNear * cameraFar / (cameraFar - depth * (cameraFar - cameraNear));
+    }
+
+    void main() {
+      float depth = readDepth(tDepth, vUv);
+      gl_FragColor = vec4(vec3(depth / cameraFar), 1.0);
+    }
+  `
+});
+```
+#### ユースケース: 霧の表現
+
+```javascript
+scene.fog = new THREE.FogExp2(0xcccccc, 0.02);
+```
+
+## 4. 特殊なテクスチャ利用
+
+### 4.1 RenderingTarget を利用した動的テクスチャ生成
+
+THREE.WebGLRenderTarget を使用すると、シーンの特定の部分をリアルタイムでテクスチャにできる。
+
+#### ユースケース: ミラー効果
+
+レンダリングターゲットを使用して、仮想的なカメラで反転映像を取得し、オブジェクトのマテリアルとして適用する。
+
+```javascript
+const mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 512); // 512x512の解像度でレンダリング
+const mirrorCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000); // 仮想的な反射用カメラ
+const mirrorMaterial = new THREE.MeshBasicMaterial({ map: mirrorRenderTarget.texture });
+const mirrorPlane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), mirrorMaterial);
+scene.add(mirrorPlane);
+```
+
+### 4.2 DataTexture を使用したカスタムデータの適用
+
+THREE.DataTexture を利用すると、カスタムのバイナリデータを直接テクスチャとして適用できる。
+
+#### ユースケース: Procedural Texture
+
+手続き的に生成したデータを直接テクスチャとして適用する。
+
+```javascript
+const size = 128;
+const data = new Uint8Array(size * size * 3);
+for (let i = 0; i < data.length; i++) {
+  data[i] = Math.random() * 255; // ランダムなノイズ
+}
+const texture = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
+texture.needsUpdate = true;
+const material = new THREE.MeshBasicMaterial({ map: texture });
+```
+
+
+
+
+#### ユースケース: 高さマップとしての利用
+
+DataTexture は、ジオメトリ変形のための高さマップにも利用可能。
+
+```javascript
+const heightSize = 64;
+const heightData = new Float32Array(heightSize * heightSize);
+for (let i = 0; i < heightData.length; i++) {
+  heightData[i] = Math.sin(i / 10) * 5; // サイン波を利用して高さデータを生成
+}
+const heightTexture = new THREE.DataTexture(heightData, heightSize, heightSize, THREE.LuminanceFormat, THREE.FloatType);
+heightTexture.needsUpdate = true;
+const material = new THREE.MeshStandardMaterial({
+  displacementMap: heightTexture, // 高さデータをディスプレイスメントマップとして適用
+  displacementScale: 2 // 高さのスケールを調整
+});
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, 64, 64), material);
+scene.add(plane);
+```
+
+### 参考
+```text
+THREE.UVMapping 
+THREE.CubeReflectionMapping 
+THREE.CubeRefractionMapping
+THREE.EquirectangularReflectionMapping
+THREE.EquirectangularRefractionMapping 
+THREE.CubeUVReflectionMapping
+
+
+THREE.AlphaFormat 
+THREE.RedFormat 
+THREE.RedIntegerFormat 
+THREE.RGFormat
+THREE.RGIntegerFormat 
+THREE.RGBFormat
+THREE.RGBAFormat 
+THREE.RGBAIntegerFormat
+THREE.LuminanceFormat 
+THREE.LuminanceAlphaFormat 
+THREE.DepthFormat
+THREE.DepthStencilFormat
+```
