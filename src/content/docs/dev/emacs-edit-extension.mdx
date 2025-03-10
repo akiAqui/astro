@@ -1,0 +1,410 @@
+---
+title: context menu ext
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+ - [x] nothing
+ - [ ] レジストリを扱うため一旦開発停止詳細確認後に再開想定
+
+# Chrome拡張機能「Open with Emacs」内部技術仕様
+
+## 概要
+この拡張機能は、Chrome上でAstro/Starlightで生成されたWebサイト（localhost:4321）を閲覧中に、リンクを右クリックして「Open with Emacs」を選択することで、対応するソースファイル（.mdx）をWSL2上のEmacsで開くためのものです。
+
+## 構成ファイル
+
+1. **manifest.json** - 拡張機能の基本情報
+2. **background.js** - バックグラウンドスクリプト（コンテキストメニュー処理）
+3. **com.emacs.open.json** - Native Messaging Host マニフェスト
+4. **emacs-edit-extionsion.bat** - WSLのEmacsを起動するバッチファイル
+5. **register_host.bat** - Native Messaging Hostをレジストリに登録
+6. **unregister_host.bat** - Native Messaging Hostをレジストリから削除
+
+## 技術的詳細
+
+### manifest.json
+
+- Manifest V3形式
+- 必要なパーミッション: contextMenus, tabs, nativeMessaging
+- ホストパーミッション: http://localhost/*, https://localhost/*
+- バックグラウンドスクリプトをサービスワーカーとして定義
+
+### background.js
+
+- 拡張機能インストール時にコンテキストメニュー「Open with Emacs」を作成
+- メニュー表示条件: localhost:4321上のリンクのみ
+- リンクURLからファイルパス変換ロジック：
+  - 末尾のスラッシュを削除
+  - .mdx拡張子を追加（ない場合）
+  - 先頭のスラッシュを削除
+- Native Messagingを使用してホストにメッセージ送信
+  - `chrome.runtime.connectNative("com.emacs.open").postMessage({path: filePath})`
+### com.emacs.open.json
+- Native Messaging Host定義ファイル
+- ホスト名: com.emacs.open
+- 実行ファイル: C:\Users\aquis\bin\emacs-edit-extionsion.bat
+- 通信方式: stdio
+- 許可されたオリジン: 拡張機能ID emkdafpgmnepaifibdfgoinchgkgaflb のみ
+
+### emacs-edit-extionsion.bat
+
+- 標準入力からJSONを読み取り
+- パスプロパティを抽出（シンプルなJSON解析）
+- WSL向けにパスを変換（/mnt/c/Users/akihisa/astro/src/contents/docs/をプレフィックスとして使用）
+- emacsclientを使用してファイルを開く
+
+### register_host.bat
+
+- マニフェストディレクトリ作成: %USERPROFILE%\AppData\Local\Google\Chrome\User Data\NativeMessagingHosts
+- マニフェストファイル生成: com.emacs.open.json
+- レジストリ登録: HKCU\Software\Google\Chrome\NativeMessagingHosts\com.emacs.open
+
+### unregister_host.bat
+- レジストリキー削除: HKCU\Software\Google\Chrome\NativeMessagingHosts\com.emacs.open
+- マニフェストファイル削除
+
+### 内部処理フロー
+
+- ユーザーがリンクを右クリックしてコンテキストメニュー「Open with Emacs」を選択
+- バックグラウンドスクリプトがリンクURLを処理
+  - 例: http://localhost:4321/tech/migration/ → tech/migration.mdx
+- Native Messaging Hostにパス情報を送信
+- バッチファイルがJSONを受け取り、パスを抽出
+- WSL用のパスに変換して、emacsclientコマンドを実行
+  - 例: /mnt/c/Users/akihisa/astro/src/contents/docs/tech/migration.mdx
+
+### 特記事項
+- Native Messaging Hostの登録には一度だけレジストリ操作が必要
+- 拡張機能IDは同じディレクトリから読み込む限り変更されない
+- Windows/WSLのパス変換は固定パスを前提としている
+
+### manifest.json
+```json
+{
+    "manifest_version": 3,
+    "name": "Open with Emacs",
+    "version": "1.0",
+    "description": "Right-click on a link to open it with Emacs",
+    "permissions": ["contextMenus", "tabs", "nativeMessaging"],
+    "host_permissions": ["http://localhost/*","https://localhost/*"],
+    "background": {
+        "service_worker": "background.js"
+    }
+}
+```
+
+### background.js
+```javascript
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Extension installed - creating context menu");
+    chrome.contextMenus.create({
+        id: "openWithEmacs",
+        title: "Open with Emacs",
+        contexts: ["link"],
+        documentUrlPatterns: ["http://localhost:4321/*"]
+    });
+    console.log("Context menu created");
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    console.log("Context menu clicked:", info.menuItemId);
+    
+    if (info.menuItemId === "openWithEmacs") {
+        console.log("Original link URL:", info.linkUrl);
+        
+        const url = new URL(info.linkUrl);
+        
+        // URLからファイルパスを変換する処理
+        let filePath = url.pathname;
+        console.log("Initial filePath:", filePath);
+        
+        // 末尾のスラッシュを削除
+        if (filePath.endsWith('/')) {
+            filePath = filePath.slice(0, -1);
+            console.log("After removing trailing slash:", filePath);
+        }
+        
+        // /tech/migration/ → tech/migration.mdx のような変換
+        if (!filePath.endsWith('.mdx')) {
+            filePath = filePath + '.mdx';
+            console.log("After adding .mdx extension:", filePath);
+        }
+        
+        // 先頭のスラッシュを削除
+        if (filePath.startsWith('/')) {
+            filePath = filePath.slice(1);
+            console.log("After removing leading slash:", filePath);
+        }
+        
+        const messageData = { path: filePath };
+        console.log("Sending message to native host:", messageData);
+        
+        try {
+            // Chrome Manifest V3での正しいNative Messaging呼び出し
+            chrome.runtime.connectNative("com.emacs.open").postMessage(messageData);
+            console.log("Native message sent via connectNative");
+        } catch (error) {
+            console.error("Exception when sending native message:", error);
+        }
+    }
+});
+
+console.log("Background script loaded");
+```
+
+### com.emacs.open.json
+```json
+{
+  "name": "com.emacs.open",
+  "description": "Open .mdx files with Emacs",
+  "path": "C:\\Users\\aquis\\bin\\emacs-edit-extionsion.bat",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://emkdafpgmnepaifibdfgoinchgkgaflb/"
+  ]
+}
+```
+
+### emacs-edit-extionsion.bat
+```batch
+@echo off
+set /p json=
+echo Received JSON: %json% >> "%USERPROFILE%\emacs_debug.log"
+
+for /f "tokens=2 delims=:}" %%a in ("%json%") do (
+    set rawpath=%%a
+)
+
+set rawpath=%rawpath:"=%
+set rawpath=%rawpath: =%
+set filepath=%rawpath%
+
+echo Final filepath: %filepath% >> "%USERPROFILE%\emacs_debug.log"
+
+wsl emacsclient -n "/mnt/c/Users/akihisa/astro/src/contents/docs/%filepath%"
+echo Command result: %ERRORLEVEL% >> "%USERPROFILE%\emacs_debug.log"
+```
+
+### register_host.bat
+```batch
+@echo off
+echo === Native Messaging Host Registration Script ===
+
+SET REGISTRY_KEY=HKCU\Software\Google\Chrome\NativeMessagingHosts\com.emacs.open
+SET HOST_MANIFEST_DIR=%USERPROFILE%\AppData\Local\Google\Chrome\User Data\NativeMessagingHosts
+SET HOST_MANIFEST_FILE=%HOST_MANIFEST_DIR%\com.emacs.open.json
+
+SET EXTENSION_ID=emkdafpgmnepaifibdfgoinchgkgaflb
+
+if not exist "%HOST_MANIFEST_DIR%" (
+    echo Creating directory: %HOST_MANIFEST_DIR%
+    mkdir "%HOST_MANIFEST_DIR%"
+    echo Directory created successfully.
+) else (
+    echo Directory already exists: %HOST_MANIFEST_DIR%
+)
+
+echo Creating manifest file: %HOST_MANIFEST_FILE%
+echo {^
+  "name": "com.emacs.open",^
+  "description": "Open .mdx files with Emacs",^
+  "path": "C:\\Users\\aquis\\bin\\emacs-edit-extionsion.bat",^
+  "type": "stdio",^
+  "allowed_origins": [^
+    "chrome-extension://%EXTENSION_ID%/"^
+  ]^
+} > "%HOST_MANIFEST_FILE%"
+echo Manifest file created successfully.
+
+echo Registering in Windows registry: %REGISTRY_KEY%
+REG ADD "%REGISTRY_KEY%" /ve /t REG_SZ /d "%HOST_MANIFEST_FILE%" /f
+IF %ERRORLEVEL% EQU 0 (
+    echo Registry key created successfully.
+) ELSE (
+    echo Failed to create registry key. Error code: %ERRORLEVEL%
+)
+
+echo === Registration Summary ===
+echo Registry Key: %REGISTRY_KEY%
+echo Manifest File: %HOST_MANIFEST_FILE%
+echo Extension ID: %EXTENSION_ID%
+echo Status: Registration complete
+
+pause
+```
+
+### unregister_host.bat
+```batch
+@echo off
+echo === Native Messaging Host Unregistration Script ===
+
+SET REGISTRY_KEY=HKCU\Software\Google\Chrome\NativeMessagingHosts\com.emacs.open
+SET HOST_MANIFEST_DIR=%USERPROFILE%\AppData\Local\Google\Chrome\User Data\NativeMessagingHosts
+SET HOST_MANIFEST_FILE=%HOST_MANIFEST_DIR%\com.emacs.open.json
+
+echo Checking registry key: %REGISTRY_KEY%
+REG QUERY "%REGISTRY_KEY%" /ve >nul 2>&1
+IF %ERRORLEVEL% EQU 0 (
+    echo Registry key exists. Deleting...
+    REG DELETE "%REGISTRY_KEY%" /f
+    IF %ERRORLEVEL% EQU 0 (
+        echo Registry key deleted successfully.
+    ) ELSE (
+        echo Failed to delete registry key. Error code: %ERRORLEVEL%
+    )
+) ELSE (
+    echo Registry key does not exist or cannot be accessed.
+)
+
+echo Checking manifest file: %HOST_MANIFEST_FILE%
+IF EXIST "%HOST_MANIFEST_FILE%" (
+    echo Manifest file exists. Deleting...
+    DEL /F "%HOST_MANIFEST_FILE%"
+    IF %ERRORLEVEL% EQU 0 (
+        echo Manifest file deleted successfully.
+    ) ELSE (
+        echo Failed to delete manifest file. Error code: %ERRORLEVEL%
+    )
+) ELSE (
+    echo Manifest file does not exist.
+)
+
+echo === Unregistration Summary ===
+echo Registry Key: %REGISTRY_KEY%
+echo Manifest File: %HOST_MANIFEST_FILE%
+echo Status: Unregistration complete
+
+pause
+```
+
+## 内部処理フロー
+
+1. ユーザーがリンクを右クリックしてコンテキストメニュー「Open with Emacs」を選択
+2. バックグラウンドスクリプトがリンクURLを処理
+   - 例: `http://localhost:4321/tech/migration/` → `tech/migration.mdx`
+3. Native Messaging Hostにパス情報を送信
+4. バッチファイルがJSONを受け取り、パスを抽出
+5. WSL用のパスに変換して、emacsclientコマンドを実行
+   - 例: `/mnt/c/Users/akihisa/astro/src/contents/docs/tech/migration.mdx`
+
+## 特記事項
+
+- Native Messaging Hostの登録には一度だけレジストリ操作が必要
+- 拡張機能IDは同じディレクトリから読み込む限り変更されない
+- Windows/WSLのパス変換は固定パスを前提としている
+- デバッグログは `%USERPROFILE%\emacs_debug.log` に出力される

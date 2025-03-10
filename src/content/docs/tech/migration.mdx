@@ -197,7 +197,17 @@ import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 
 
 
-
+## 実際に使った手段
+- 旧環境でopenssh-serverを起動（新環境にはscpがインストールされていた、sshクライアントがインストールされていた）
+- 新環境でemacsを起動。emacsでシェルを二つ起動、一つでssh 172.20.172.143（旧環境）にアクセス
+- 二つのシェル間で比較しながらscp user:172.20.172.143/:~/.emacs .　のように旧環境から新環境にコピー
+- ディストリビューションの分割を思いついた
+  - 新しい環境は基本的に開発/three.jsのみ
+  - 他のことを試すなら、例えば、puredata等は、別のディストリビューションを作ってそちらにインストールして試そう
+- windowsにもう一度インストール(優先順位順)
+  - Evernote
+  - blender
+  - vvvv
 
 
 
@@ -396,6 +406,79 @@ rsync -avz /mnt/samba/akihisa_backup/ /home/akihisa/
 - `--delete`: 送信先にあって送信元にないファイルを削除（完全に同一にする場合）
 - `--dry-run`: 実際にはコピーせず、何が起こるかをシミュレーション
 - `--progress`: ファイル転送の進行状況を表示
+
+## WSL2 ディストリビューションのストレージ情報(25年03月09日 16時07分)
+
+<style>{`
+th:nth-child(2), td:nth-child(2) {
+  min-width: 140px; /* 1列目の幅 */
+  word-break: break-word; /* 適切な折り返し */
+  white-space: normal; /* 折り返しを許可 */
+  overflow-wrap: break-word;
+}
+`}</style>
+
+
+| ディストリビューション | VHDXファイルのパス | ディスク使用量 (GB) |
+|----------------|--------------------------------------------------|--------|
+| Ubuntu-22.04  | C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState\ext4.vhdx | 17.82 |
+| Ubuntu-24.04  | C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}\ext4.vhdx | 3.36 |
+
+```
+PS C:\Users\aquis> Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss\*" | Select-Object DistributionName,BasePath
+DistributionName BasePath
+---------------- --------
+Ubuntu-22.04     C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState
+Ubuntu-24.04     C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}
+Ubuntu           C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}
+
+## 一番古い ubuntu22.04
+PS C:\Users\aquis> Get-Item "C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState\ext4.vhdx"
+    Directory: C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/10    17:31    19,132,317,696 ext4.vhdx
+
+## 今後使う予定 ubuntu 24.04
+PS C:\Users\aquis> Get-Item "C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}\ext4.vhdx"
+    Directory: C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/10    17:30     4,508,876,800 ext4.vhdx
+
+## sandbox予定 ubuntu(最新？）
+PS C:\Users\aquis> Get-Item "C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}\ext4.vhdx"
+    Directory: C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/10    17:11     1,354,760,192 ext4.vhdx
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+## WSL2 ディストリビューションの確認手順
+
+| 手順 | コマンド |
+|------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| インストール済みの WSL ディストリビューションを一覧表示 | `wsl --list --verbose` |
+| 各ディストリビューションの保存場所を確認 | `Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss\*" | Select-Object DistributionName,BasePath` |
+| 各ディストリビューションの VHDX ファイルのパスを確認 | `Get-Item "C:\Users\aquis\AppData\Local\wsl\{UUID}\ext4.vhdx"` |
+| VHDX ファイルのサイズを確認 | `Get-Item "C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState\ext4.vhdx"` |
+| Ubuntu 内でディスク使用量を確認 | `wsl -d Ubuntu-XX.XX -- df -h /` |
+
+
+
 
 ## 参考：　ssh インストール、起動、確認
 

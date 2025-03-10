@@ -1,0 +1,301 @@
+---
+title: ＊）OCS利用の検討
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+
+# 音響データとThree.jsのリアルタイム同期
+
+## 要約
+Csound、iPad/iPhoneの作曲ソフト、リアルタイムパフォーマンスソフトをOSC (UDP) を介してThree.jsと統合し、音と映像をリアルタイムに同期する手法を整理する。  
+CsoundはOSCの受信と送信を行い、Three.jsはNode.js経由でOSCメッセージを処理する。  
+iOSアプリはOSCで指令を送るだけでなく、音響データを解析しThree.jsと相互作用できる。  
+
+---
+
+# CsoundとThree.jsのリアルタイム同期
+
+## Csoundの音響解析をThree.jsに適用
+- Csoundで生成した音響データをリアルタイム解析し、Three.jsに送信
+- 解析対象:
+  - 振幅: `rms`
+  - ピッチ: `pitch`
+  - スペクトル: `pvsanal`
+
+### Csound側
+```csound
+instr 1
+  kAmp rms a1
+  kFreq pitch a1
+  kFFT pvsanal a1, 1024, 256, 1024, 1
+
+  OSCsend kAmp, "/amplitude", "f"
+  OSCsend kFreq, "/frequency", "f"
+endin
+```
+
+### Three.js側 (Node.jsでOSC受信)
+```javascript
+const osc = require("osc");
+const udpPort = new osc.UDPPort({
+    localAddress: "0.0.0.0",
+    localPort: 57121
+});
+
+udpPort.open();
+
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/amplitude") {
+        object.scale.set(oscMsg.args[0], oscMsg.args[0], oscMsg.args[0]);
+    }
+    if (oscMsg.address === "/frequency") {
+        object.material.color.setHSL(oscMsg.args[0] / 1000, 1, 0.5);
+    }
+});
+```
+
+---
+
+## CsoundスコアデータをThree.jsに送信
+- Csoundのスコアデータ (`sco`) にビジュアル用のパラメータを含めOSC送信
+- Three.js側で受信し、オブジェクトの変化を制御
+
+### Csoundスコア
+```csound
+i 1 0 1 440 1.0  0.5
+i 1 1 1 660 0.8  0.7
+```
+
+### Csound側
+```csound
+instr 1
+  kFreq = p4
+  kAmp = p5
+  kScale = p6
+
+  OSCsend kFreq, "/freq", "f"
+  OSCsend kAmp, "/amp", "f"
+  OSCsend kScale, "/scale", "f"
+endin
+```
+
+### Three.js側
+```javascript
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/scale") {
+        object.scale.set(oscMsg.args[0], oscMsg.args[0], oscMsg.args[0]);
+    }
+    if (oscMsg.address === "/freq") {
+        object.rotation.y += oscMsg.args[0] * 0.0001;
+    }
+});
+```
+
+---
+
+# iPad/iPhoneの作曲・パフォーマンスソフトとの連携
+
+## iPad/iPhoneのOSC送信 → Three.js
+- **対応アプリ**
+  - TouchOSC / Lemur
+  - Audiobus / AUM
+  - Launchpad (MIDI → OSC変換)
+
+### TouchOSCのスライダー操作 → Three.jsのパラメータ変更
+```javascript
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/filter") {
+        object.scale.y = oscMsg.args[0] * 2;
+    }
+});
+```
+
+---
+
+## iPad/iPhoneのOSC送信 → Csound
+- **TouchOSC / Lemur:** フィルター、LFO、エンベロープパラメータの送信
+- **AUM / Audiobus:** 音響エフェクトのリアルタイム制御
+
+### Csound側
+```csound
+instr 1
+  kFilterCutoff OSClisten 1, "/filter", "f"
+  kReverb OSClisten 1, "/reverb", "f"
+
+  aSig oscil 0.5, 440
+  aFiltered moogladder aSig, kFilterCutoff, 0.8
+  aReverbed reverbsc aFiltered, kReverb, 0.8, 10000
+
+  out aReverbed
+endin
+```
+
+---
+
+# CsoundとThree.jsの双方向連携
+
+## Three.jsの動き → Csoundの音響変化
+- Three.jsのオブジェクトの位置、回転、スケールをOSCで送信し、Csoundの音をリアルタイムに変更
+
+### Three.js側 (OSC送信)
+```javascript
+udpPort.send({
+    address: "/modulation",
+    args: [object.rotation.x]
+});
+```
+
+### Csound側
+```csound
+instr 2
+  kModulation OSClisten 1, "/modulation", "f"
+  aSig oscil 0.5, 440 + (kModulation * 100)
+  out aSig
+endin
+```
+
+---
+
+# 応用例
+- FFT解析結果をThree.jsの頂点変形に適用
+- 振幅データでGLSLエフェクトを操作
+- MIDIノートデータでThree.jsのオブジェクト生成
+- ピッチの変化でパーティクルの方向を変更
+
+---
+
+# 用語説明
+- OSC (Open Sound Control): UDPベースの通信プロトコル
+- rms: 振幅解析
+- pitch: ピッチ検出
+- pvsanal: FFT解析
+- moogladder: Moogスタイルのフィルター
+- reverbsc: スペクトル領域のリバーブ
+
+---
+
+# 参考
+- [OSC.js (Node.js用OSCライブラリ)](https://www.npmjs.com/package/osc)
+- [Csound公式ドキュメント](https://csound.com/docs/)
+- [TouchOSC公式サイト](https://hexler.net/touchosc)
+- [Audiobus公式サイト](https://audiob.us/)
+
+
