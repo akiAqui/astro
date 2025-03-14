@@ -1,3 +1,4 @@
- - [ ] glslViewerバイナリが動いてない、make installできない
- - [ ] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する
+ - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
+ - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
+ - [ ] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない
  - [ ] transform修正中

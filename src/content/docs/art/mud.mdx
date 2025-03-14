@@ -1,0 +1,130 @@
+---
+title: ＊）泥
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## はじめに
+### 目的
+水分量、粒子量、粒子の大きさ、混ざり具合がランダムに与えられた非定型に凝集したの泥の塊を、
+Z軸方向に重力の働く、XY平面に対して、任意の位置で任意の回数落としてゆく。
+泥は重なり合ったり、水分のためにずれや流れを生みだしたり、乾燥してゆく。
+すると、ゲル性と岩石性が混じった泥特有の形状を生みだす。
+
+このプロセスを一定の数学的な数式を用いてアルゴリズミックな形状生成をシミュレーションすることを目的とする。
+
+### 想定するプロセス
+- 初期位置生成プロセス
+  - ランダムに混ぜ合わされた泥粒群を落下させる泥粒子の初期位置生成
+- 凝集プロセス：粒子の位置を運動方程式で更新し垂れや広がりなども再現
+- 浸食プロセス：水分の蒸発により浸食を発生させ鋭い不規則性形成させる
+- 粒子間に引力・斥力を与えてゲル性を表現
+
+
+
+## １．泥粒子の属性定義
+泥粒子を以下の属性で表現する。
+
+- 位置ベクトル $\mathbf{x}_i = (x_i, y_i, z_i)$
+- 速度ベクトル $\mathbf{v}_i = (v_{ix}, v_i{y}, v_{iz})$
+- 半径 $r_i$（粒子サイズ）
+- 水分量 $w_i \; (0 \le w_i \le 1)$
+- 質量 $m_i$ （水量に比例）
+
+$$
+m_i = \rho \cdot \frac{4}{3}\pi r_i^3 \quad (\rho:\text{密度})
+$$
+
+- 粘性パラメータ $\mu_i$（水分量に比例し変化）
+- $\mu_i$は水量と比例
+$$
+\mu_i = \mu_0 \cdot w_i \quad 
+$$
+
+## ２．粒子の落下初期位置（初期条件）
+XY平面のランダム位置から泥粒子を落とす。泥粒子の初期位置は以下のように設定。
+- Perlin多スケールノイズで$x_{i},y_{i}$を決定
+- $z_i = z_{init} + \delta z$ として$z_{init}$からランダム変位
+- 半径は、水量に比例したランダム分布で与える。
+
+## ３．粒子間相互作用（ゲル性の表現）
+
+粒子間には次のような引力・斥力ポテンシャルを適用することでゲル性を再現する。
+
+$$
+\mathbf{F}_{ij} = -\nabla U(r_{ij}), \quad r_{ij} = |\mathbf{x}_j - \mathbf{x}_i|
+$$
+
+ポテンシャル$U(r_{ij})$はLennard-Jones型を使い、以下のように表現する。
+
+$$
+U(r_{ij}) = \varepsilon \left[\left(\frac{\sigma_{ij}}{r_{ij}}\right)^{12} - \left(\frac{\sigma_{ij}}{r_{ij}}\right)^6\right]
+$$
+
+ここで、
+- $\sigma_{ij}$：粒子半径の和（$r_i + r_j$）に比例
+- $\varepsilon$ は粒子間引力の強さ（水量に応じて変動）
+
+## ４．落下と拡散の動的シミュレーションプロセス
+
+各粒子は運動方程式に従って動く。
+
+$$
+m_i \frac{d^2\mathbf{x}_i}{dt^2} = m_i\mathbf{g} + \sum_{j \neq i} \mathbf{F}_{ij} - \mu_i \mathbf{v}_i
+$$
+
+- $\mathbf{g}$：重力ベクトル（下向き）
+- 重力、粒子間の相互作用の総和を考慮し、数値積分（Verlet法など）で位置・速度を更新。
+
+## ５．乾燥・浸食アルゴリズム
+
+粒子の水分量は以下の式で減少。
+
+$$
+\frac{dw_i}{dt} = -\alpha \cdot w_i \quad(\alpha:\text{vaporized })
+$$
+
+水分が減少すると、粒子の半径も減少し粘性（接着強度）は増加。
+
+$$
+r_i(t) = r_{i,0} \cdot w_i(t), \quad \mu_i(t) = \mu_{i,0} \cdot (1-w_i(t))^{-1}
+$$
+
+水量が一定閾値以下になると、粒子間結合強度が増し亀裂が入り始める。侵食ルールを以下のように定義する。
+
+- 粒子間距離が一定以上に離れ、結合が弱い場合、粒子を切り離す。
+- 乾燥に伴い、粒子結合力を増加させ、亀裂を生成（エッジが鋭くなる）。
+
+粒子間結合強度は以下のモデルで表現可能。
+
+$$
+C_{ij}(t) = C_0 \cdot \exp\left(-\alpha_c|w_i(t)-w_j(t)|\right)
+$$
+
+ここで、$C_0$は基礎結合強度、$w_i(t)$は粒子の水分量。
+
+$$
+\text{もし } C_{ij}(t) < C_{threshold} \quad \text{ならば、粒子間の結合を解除}
+$$
+
+## ６．泥の岩石化（不規則な鋭さの形成）
+
+- 上記浸食を繰り返し適用することで、泥の表面に微分不連続な鋭いエッジを生じさせる。
+- ボロノイ分割を行った粒子間を破壊する規則に使用可能。
+
+
+

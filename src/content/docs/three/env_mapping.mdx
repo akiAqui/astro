@@ -1,0 +1,96 @@
+---
+title: ＊）環境マッピング
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+# 環境マッピングと PBR における影響
+
+## 要約
+環境マッピングを使用すると、物理ベースレンダリング（PBR）の精度が向上する。特に metalness の表現には適切な環境光が不可欠であり、高解像度の HDRI または EXR を適用することでリアルな反射が得られる。
+
+環境マップがないと、光源（DirectionalLight, PointLight など）の 直接光 のみでMaterialが計算される。
+鏡面反射（スペキュラ）や間接光が考慮されず、のっぺりした見た目で不自然になってしまう。
+
+
+
+## 環境マッピングとは
+- オブジェクトの反射や照明をリアルに再現するために、全方向の光情報を持つ画像（HDRI / EXR）を使用する技術
+- Three.js では `scene.environment` に設定すると、PBR のマテリアルに影響を与える。Materialとは別にこの設定だけでいい。
+  ```ts
+  exrLoader.load('/hdr/studio_small_09_2k.exr', (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      scene.environment = texture;
+      scene.background  = texture; // 背景も360度このテクスチャになる
+  });
+  ```
+## 環境マッピングを提供しているサイト
+- https://polyhaven.com/
+- https://hdrmaps.com/
+
+
+  
+## メモリ消費と最適化
+環境マップは2k,4k等と大きなデータ必要になる。GPU上のメモリを消費するので最適化することが必要になる。
+
+
+### EXR のメモリ消費
+- 高解像度の EXR 環境マップは VRAM を大量に消費する
+- 4K EXR (4096x2048) の場合、約 128MB のメモリを使用
+- 8K 以上では VRAM に負荷がかかり、レンダリングパフォーマンスが低下する
+
+### 最適化手法
+- 背景マップをオフし、背景画像として環境マッピングのテクスチャを表示しない。これにより、環境光のみを適用し、背景テクスチャのメモリ消費を削減
+  ```ts
+  scene.background = null;
+  ```
+
+- 通常HalfFloatType の使用することで、
+  ```ts
+  texture.type = THREE.HalfFloatType;
+  ```
+  - 16bit float に変換し、VRAM 使用量を約半分に削減
+
+- 解像度の動的切り替え
+  ```ts
+  const useHighRes = window.innerWidth > 1920;
+  const texturePath = useHighRes ? "/hdr/studio_4k.exr" : "/hdr/studio_2k.exr";
+  ```
+  - 高解像度の環境では 4K、それ以外では 2K を使用
+
+## EXR と HDR の違い
+
+<Box>
+| 特性 | EXR | HDR |
+|------|----|----|
+| フォーマット | OpenEXR (.exr) | Radiance HDR (.hdr) |
+| 色深度 | 16bit / 32bit float | 32bit float |
+| ダイナミックレンジ | 非常に広い | 高いが EXR ほどではない |
+| 圧縮 | 非圧縮 / Lossless | Lossless (RGBE) |
+| ファイルサイズ | 大きい | やや小さい |
+| Three.js ローダー | EXRLoader | RGBELoader |
+</Box>
+## 用語説明
+- PBR (Physically Based Rendering): 物理ベースレンダリング。物理法則に基づくレンダリング手法。`metalness` と `roughness` により、リアルな材質を表現する。
+- EXR: Industrial Light & Magic が開発した高精度 HDR 画像フォーマット。科学・映像業界で使用。
+- HDRI: 全方向の光情報を持つ高ダイナミックレンジ画像。環境光や反射に利用される。
+
+## 参考リンク
+- [Three.js - EXRLoader](https://threejs.org/docs/#examples/en/loaders/EXRLoader)
+- [Poly Haven - Free HDRI](https://polyhaven.com/hdris)
+

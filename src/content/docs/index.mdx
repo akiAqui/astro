@@ -6,110 +6,6 @@ description: top
 table { width: 100%; }
 th:nth-child(3) { min-width: 180px; }
 `}</style>
- <style>{`
-
-.sl-markdown-content > main > hr:not(:where(.not-content *)) {
-  border: none !important;
-  border-bottom: 4px double white !important;
-  margin-bottom: 14px;
-}
- 
-.sl-markdown-content div.ec-line {
-margin-top: 0 !important;
-font-size:10px;
-}
-.sl-markdown-content{
- font-size:15px;
-}
-
-.sl-markdown-content p,table,div.expressive-code {
- padding:0em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-.sl-markdown-content p {
- text-indent: 1em;
-}
-.sl-markdown-content li p {
-  text-indent: 0;
-  margin-left:0 !important;
-}
-
-.sl-markdown-content ul,ol,li::marker {
- padding-left:2em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-
-.sl-markdown-content h3::before {
-content: "> ";
-} 
-.sl-markdown-content h4::before {
-content: ">> ";
-} 
-.sl-markdown-content h5::before {
-content: ">>> ";
-} 
-.sl-markdown-content h6::before {
-content: ">>>> ";
-} 
-
-h1,h2,h3,h4,h5,h6 {
- margin-top: 1em !important;
-
-}
-
-figure pre {
- margin-top: 0.4em !important;
-}
-.sl-markdown-content h1 {
- font-size:27px;
- text-decoration: underline;
- font-weight: bold
-}
-
-.sl-markdown-content h2 {
- font-size:26px;
- font-weight: normal;
- text-decoration: underline;
-}
-
-.sl-markdown-content h3 {
- font-size:24px;
- font-weight: normal;
- font-style: italic;
- text-decoration: underline;
-}
-
-.sl-markdown-content h4 {
- font-size:22px;
- font-weight: normal;
- font-style: italic; 
- text-decoration: underline;
- margin-top: 2px;
-}
-.sl-markdown-content h5 {
- font-size:18px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-.sl-markdown-content h6 {
- font-size:15px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-
-.sl-markdown-content th {
- font-size:13px;
-}
-.sl-markdown-content td {
- font-size:13px;
-}
-`}</style>
 
 import CodeTitle from '../../components/CodeTitle';
 import MermaidChart from '../../components/MermaidChart.astro';
@@ -117,14 +13,18 @@ import TimeStamp from '../../components/TimeStamp';
 import Box from '../../components/Box';
 import RedBox from '../../components/RedBox';
 import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
+import StandardStyle from '../../components/StandardStyle';
+import Search from '../../components/Search.astro';
 
-<TimeStamp fileUrl={import.meta.url} />
+<StandardStyle />
+<Search />
 
 ##### TODOs
 
  - [x] nothing
- - [ ] glslViewerバイナリが動いてない、make installできない
- - [ ] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する
+ - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
+ - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
+ - [ ] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない
  - [ ] transform修正中
 <Box>
 - このページの更新には、update_indexを実行
@@ -132,11 +32,16 @@ import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
-| ＊）OCSを利用した応用を検討 | [art/osc.mdx](http://localhost:4321/art/osc/) | Mar 9 20:05 |
-| ＊）data migration between dist. | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Mar 9 18:27 |
+| context menu ext | [dev/emacs-edit-extension.mdx](http://localhost:4321/dev/emacs-edit-extension/) | Mar 11 02:18 |
+| ＊）data migration between dist. | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Mar 10 17:41 |
+| katex | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 10 10:46 |
+| emacs ショートカット入力 | [mdx/cdlatex.mdx](http://localhost:4321/mdx/cdlatex/) | Mar 10 10:39 |
+| ＊）git | [tech/git.mdx](http://localhost:4321/tech/git/) | Mar 10 10:24 |
+| ＊）PDF, 各種変換 | [tech/doc-convert.mdx](http://localhost:4321/tech/doc-convert/) | Mar 10 09:46 |
+| ＊）emacs register etc | [tech/emacs-register.mdx](http://localhost:4321/tech/emacs-register/) | Mar 10 09:38 |
+| ＊）OCS利用の検討 | [art/osc.mdx](http://localhost:4321/art/osc/) | Mar 9 20:08 |
 | 暫）wslネットワーク | [tech/wsl-network.mdx](http://localhost:4321/tech/wsl-network/) | Mar 9 02:42 |
 | ＊）インストール設定 | [tech/install.mdx](http://localhost:4321/tech/install/) | Mar 9 01:47 |
-| ＊）emacs register etc | [tech/emacs-register.mdx](http://localhost:4321/tech/emacs-register/) | Mar 9 01:44 |
 | 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 8 03:23 |
 | ＊）Texture - advanced | [three/texture_advanced.mdx](http://localhost:4321/three/texture_advanced/) | Mar 7 01:35 |
 | ＊＊＊）Material | [three/material.mdx](http://localhost:4321/three/material/) | Mar 6 02:22 |
@@ -144,7 +49,6 @@ import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
 | ＊）TCBスプライン基礎 | [math/tcb_spline_basic.mdx](http://localhost:4321/math/tcb_spline_basic/) | Mar 3 03:04 |
 | ベジェ曲線 | [math/bezier.mdx](http://localhost:4321/math/bezier/) | Mar 2 00:15 |
 | ＊）エルミートスプラインのパラメータtの決定方法 | [math/hermite_spline_parameter.mdx](http://localhost:4321/math/hermite_spline_parameter/) | Mar 1 14:21 |
-| katex | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 1 14:20 |
 | ＊）TCBスプラインの実践的パラメータ設定 | [math/tcb_spline_parameter.mdx](http://localhost:4321/math/tcb_spline_parameter/) | Mar 1 05:21 |
 | ＊）エルミートスプラインのパラメータ決定 | [three/math.mdx](http://localhost:4321/three/math/) | Mar 1 03:24 |
 | ＊）TCB animation | [three/tcb_animation.mdx](http://localhost:4321/three/tcb_animation/) | Mar 1 03:08 |
@@ -161,7 +65,6 @@ import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
 | ＊）blobスキームとその周辺 | [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 21:42 |
 | レンダリングプロセスとWebGLRender | [three/webgl_renderer.mdx](http://localhost:4321/three/webgl_renderer/) | Feb 17 21:40 |
 | style用sandbox | [mdx/style.mdx](http://localhost:4321/mdx/style/) | Feb 17 21:38 |
-| emacs ショートカット入力 | [mdx/cdlatex.mdx](http://localhost:4321/mdx/cdlatex/) | Feb 17 16:26 |
 | Riemann Surface | [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 08:02 |
 | ＊）波形操作合成とWaveTerrainSynthesis | [algorithm/waveTerrainSynthesis.mdx](http://localhost:4321/algorithm/waveTerrainSynthesis/) | Feb 12 20:08 |
 | ＊）バイポーラ | [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 01:57 |
