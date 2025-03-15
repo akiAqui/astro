@@ -4,6 +4,7 @@ description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
 ---
 
+import CC from "../../../components/c-c.astro";
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
@@ -12,80 +13,90 @@ import RedBox from '../../../components/RedBox';
 import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 import StandardStyle from '../../../components/StandardStyle';
 
+
+
+
 <StandardStyle />
 
 ##### TODOs
 
  - [x] nothing
 
+<CC>xyz</CC>
+\\([^[:space:]]+\\)
+\\([^[:space:]]+\\)
+\\\(.*\)
+
+<CC>\1</CC>
+
                   
-|記号             |入力             |記号             |入力             | 記号            |入力             |
-|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|
-| $\alpha$        | `\alpha`        | $\Alpha$        | `\Alpha`        |
-| $\beta$         | `\beta`         | $\Beta$         | `\Beta`         |
-| $\gamma$        | `\gamma`        | $\Gamma$        | `\Gamma`        |
-| $\delta$        | `\delta`        | $\Delta$        | `\Delta`        |
-| $\epsilon$      | `\epsilon`      | $\Epsilon$      | `\Epsilon`      | 
-| $\varepsilon$   | `\varepsilon`   | 
-| $\zeta$         | `\zeta`         | $\Zeta$         | `\Xeta`         |
-| $\eta$          | `\eta`          | $\Eta$          | `\Eta`          |
-| $\theta$        | `\theta`        | $\Theta$        | `\Theta`        |
-| $\vartheta$     | `\vartheta`     | 
-| $\iota$         | `\iota`         | $\Iota$         | `\Iota`         |
-| $\kappa$        | `\kappa`        | $\Kappa$        | `\Kappa`        |
-| $\lambda$       | `\lambda`       | $\Lambda$       | `\Lambda`       |
-| $\nu$           | `\nu`           | $\Nu$           | `\Nu`           |
-| $\mu$           | `\mu`           | $\Mu$           | `\Mu`           |
-| $\xi$           | `\xi`           | $\Xi$           | `\Xi`           |
-| $\omicron$      | `\omicron`      | $\Omicron$      | `\Omicron`      |
-| $\pi$           | `\pi`           | $\Pi$           | `\Pi`           |
-| $\varpi$        | `\varpi`        |
-| $\rho$          | `\rho`          | $\Rho$          | `\Rho`          |
-| $\varrho$       | `\varrho`       | 
-| $\sigma$        | `\sigma`        | $\Sigma$        | `\Sigma`        | 
-| $\varsigma$     | `\varsigma`     | 
-| $\tau$          | `\tau`          | $\Tau$          | `\Tau`          |
-| $\upsilon$      | `\upsilon`      | $\Upsilon$      | `\Upsilon`      |
-| $\phi$          | `\phi`          | $\Phi$          | `\Phi`          |
-| $\varphi$       | `\varphi`       | 
-| $\chi$          | `\chi`          | $\Chi$          | `\Chi`          |
-| $\psi$          | `\psi`          | $\Psi$          | `\Psi`          |
-| $\omega$        | `\omega`        | $\Omega$        | `\Omega`        |
-| $\mho$          | `\mho`          | 
+|記号             |入力                   |記号             |入力                   | 記号            |入力           |
+|-----------------|-----------------------|-----------------|-----------------------|-----------------|---------------|
+| $\alpha$        | <CC>\alpha</CC>       | $\Alpha$        | <CC>\Alpha</CC>        |
+| $\beta$         | <CC>\beta</CC>         | $\Beta$         | <CC>\Beta</CC>         |
+| $\gamma$        | <CC>\gamma</CC>        | $\Gamma$        | <CC>\Gamma</CC>        |
+| $\delta$        | <CC>\delta</CC>        | $\Delta$        | <CC>\Delta</CC>        |
+| $\epsilon$      | <CC>\epsilon</CC>      | $\Epsilon$      | <CC>\Epsilon</CC>      | 
+| $\varepsilon$   | <CC>\varepsilon</CC>   | 
+| $\zeta$         | <CC>\zeta</CC>         | $\Zeta$         | <CC>\Xeta</CC>         |
+| $\eta$          | <CC>\eta</CC>          | $\Eta$          | <CC>\Eta</CC>          |
+| $\theta$        | <CC>\theta</CC>        | $\Theta$        | <CC>\Theta</CC>        |
+| $\vartheta$     | <CC>\vartheta</CC>     | 
+| $\iota$         | <CC>\iota</CC>         | $\Iota$         | <CC>\Iota</CC>         |
+| $\kappa$        | <CC>\kappa</CC>        | $\Kappa$        | <CC>\Kappa</CC>        |
+| $\lambda$       | <CC>\lambda</CC>       | $\Lambda$       | <CC>\Lambda</CC>       |
+| $\nu$           | <CC>\nu</CC>           | $\Nu$           | <CC>\Nu</CC>           |
+| $\mu$           | <CC>\mu</CC>           | $\Mu$           | <CC>\Mu</CC>           |
+| $\xi$           | <CC>\xi</CC>           | $\Xi$           | <CC>\Xi</CC>           |
+| $\omicron$      | <CC>\omicron</CC>      | $\Omicron$      | <CC>\Omicron</CC>      |
+| $\pi$           | <CC>\pi</CC>           | $\Pi$           | <CC>\Pi</CC>           |
+| $\varpi$        | <CC>\varpi</CC>        |
+| $\rho$          | <CC>\rho</CC>          | $\Rho$          | <CC>\Rho</CC>          |
+| $\varrho$       | <CC>\varrho</CC>       | 
+| $\sigma$        | <CC>\sigma</CC>        | $\Sigma$        | <CC>\Sigma</CC>        | 
+| $\varsigma$     | <CC>\varsigma</CC>     | 
+| $\tau$          | <CC>\tau</CC>          | $\Tau$          | <CC>\Tau</CC>          |
+| $\upsilon$      | <CC>\upsilon</CC>      | $\Upsilon$      | <CC>\Upsilon</CC>      |
+| $\phi$          | <CC>\phi</CC>          | $\Phi$          | <CC>\Phi</CC>          |
+| $\varphi$       | <CC>\varphi</CC>       | 
+| $\chi$          | <CC>\chi</CC>          | $\Chi$          | <CC>\Chi</CC>          |
+| $\psi$          | <CC>\psi</CC>          | $\Psi$          | <CC>\Psi</CC>          |
+| $\omega$        | <CC>\omega</CC>        | $\Omega$        | <CC>\Omega</CC>        |
+| $\mho$          | <CC>\mho</CC>          | 
 ||
-| $\prod$         | `\prod`         | $\Sigma$        | `\Sigma`        |
-| $\nabla$        | `\nabla`        | 
-| $\partial$      | `\partial`      |
-| $\Re$           | `\Re`           | $\Im$           | `\Im`           |
-| $\langle$       | `\langle`       | $\rangle$       | `\rangle`       |
-| $\forall$       | `\forall`       | $\exists$       | `\exists`       |
-| $\aleph$        | `\aleph`        |
-| $\beth$         | `\beth`         |
-| $\daleth$       | `\daleth`       |
-| $\gimel$        | `\gimel`        |
-| $\complement$   | `\complement`   |
-| $\ell$          | `\ell`          |
-| $\eth$          | `\eth`          |
-| $\hbar$         | `\hbar`         | $\hslash$       | `\hslash`       |
-| $\wp$           | `\wp`           |
-| $\vee$          | `\vee`          |
-| $\in$           | `\in`           |
-| $\supset$       | `\supset`       |
-| $\cup$          | `\cup`          |
-| $\emptyset$     | `\emptyset`     | $\infty$        | `\infty`        |
-| $\imath$        | `\imath`        | $\jmath$        | `\jmath`        |
-| $\not$          | `\not`          | $\setminus$     | `\setminus$`    |
-| $\times$        | `\times`        | $\cdot$         | `\cdot`         |
-| $\neg$          | `\neg`          |
-| $\prime$        | `\prime`        |
+| $\prod$         | <CC>\prod</CC>         | $\Sigma$        | <CC>\Sigma</CC>        |
+| $\nabla$        | <CC>\nabla</CC>        | 
+| $\partial$      | <CC>\partial</CC>      |
+| $\Re$           | <CC>\Re</CC>           | $\Im$           | <CC>\Im</CC>           |
+| $\langle$       | <CC>\langle</CC>       | $\rangle$       | <CC>\rangle</CC>       |
+| $\forall$       | <CC>\forall</CC>       | $\exists$       | <CC>\exists</CC>       |
+| $\aleph$        | <CC>\aleph</CC>        |
+| $\beth$         | <CC>\beth</CC>         |
+| $\daleth$       | <CC>\daleth</CC>       |
+| $\gimel$        | <CC>\gimel</CC>        |
+| $\complement$   | <CC>\complement</CC>   |
+| $\ell$          | <CC>\ell</CC>          |
+| $\eth$          | <CC>\eth</CC>          |
+| $\hbar$         | <CC>\hbar</CC>         | $\hslash$       | <CC>\hslash</CC>       |
+| $\wp$           | <CC>\wp</CC>           |
+| $\vee$          | <CC>\vee</CC>          |
+| $\in$           | <CC>\in</CC>           |
+| $\supset$       | <CC>\supset</CC>       |
+| $\cup$          | <CC>\cup</CC>          |
+| $\emptyset$     | <CC>\emptyset</CC>     | $\infty$        | <CC>\infty</CC>        |
+| $\imath$        | <CC>\imath</CC>        | $\jmath$        | <CC>\jmath</CC>        |
+| $\not$          | <CC>\not</CC>          | $\setminus$     | <CC>\setminus$</CC>    |
+| $\times$        | <CC>\times</CC>        | $\cdot$         | <CC>\cdot</CC>         |
+| $\neg$          | <CC>\neg</CC>          |
+| $\prime$        | <CC>\prime</CC>        |
 |
-| $\min$          | `\min`          | $\max$          | `\max`          |
-| $\sin$          | `\sin`          | $\cos$          | `\cos`          | $\tan$           | `\tan`           |
-| $\arcsin$       | `\arcsin`       | $\arccos$       | `\arccos`       | $\arctan$        | `\arctan`        |
-| $\exp$          | `\exp`          | $\log$          | `\log`          | $\ln$            | `\ln`            |
+| $\min$          | <CC>\min</CC>          | $\max$          | <CC>\max</CC>          |
+| $\sin$          | <CC>\sin</CC>          | $\cos$          | <CC>\cos</CC>          | $\tan$           | <CC>\tan</CC>           |
+| $\arcsin$       | <CC>\arcsin</CC>       | $\arccos$       | <CC>\arccos</CC>       | $\arctan$        | <CC>\arctan</CC>        |
+| $\exp$          | <CC>\exp</CC>          | $\log$          | <CC>\log</CC>          | $\ln$            | <CC>\ln</CC>            |
 |
-| $\equiv$        | `\equiv`        | $\fallingdotseq$| `\fallingdotseq`| $\neq$           | `\neq`           |
-| $\sim$          | `\sim`          | $\simeq$        | `\simeq`        | $\approx$        | `\approx`        |
+| $\equiv$        | <CC>\equiv</CC>        | $\fallingdotseq$| <CC>\fallingdotseq</CC>| $\neq$           | <CC>\neq</CC>           |
+| $\sim$          | <CC>\sim</CC>          | $\simeq$        | <CC>\simeq</CC>        | $\approx$        | <CC>\approx</CC>        |
 
 
 
@@ -93,57 +104,144 @@ import StandardStyle from '../../../components/StandardStyle';
 
 |記号               |入力               |記号             |入力            | 記号              |入力               |
 |-------------------|-------------------|-----------------|----------------|-------------------|-------------------|
-| $\rightarrow$     | `\rightarrow`     | $\leftarrow$    | `\leftarrow`   |$\leftrightarrow$  |`\leftrightarrow`  |
-| $\Rightarrow$     | `\Rightarrow`     | $\Leftarrow$    | `\Leftarrow`   | $\Leftrightarrow$ | `\Leftrightarrow` |
-| $\uparrow$        | `\uparrow`        | $\downarrow$    | `\downarrow`   | 
-| $\mapsto$         | `\mapsto`         |
+| $\rightarrow$     | <CC>\rightarrow</CC>     | $\leftarrow$    | <CC>\leftarrow</CC>   |$\leftrightarrow$  |<CC>\leftrightarrow</CC>  |
+| $\Rightarrow$     | <CC>\Rightarrow</CC>     | $\Leftarrow$    | <CC>\Leftarrow</CC>   | $\Leftrightarrow$ | <CC>\Leftrightarrow</CC> |
+| $\uparrow$        | <CC>\uparrow</CC>        | $\downarrow$    | <CC>\downarrow</CC>   | 
+| $\mapsto$         | <CC>\mapsto</CC>         |
 
 
 #### 長い矢印
 
 |記号                    |入力                   |
 |------------------------|-----------------------|
-| $\longrightarrow$      | `\longrightarrow`     | 
-| $\longleftarrow$       | `\longleftarrow`      |
-| $\longleftrightarrow$  | `\longleftrightarrow` |
-| $\Longleftarrow$       | `\Longleftarrow`      |
-| $\Longrightarrow$      | `\Longrightarrow`     |
-| $\Longleftrightarrow$  | `\Longleftrightarrow` |
-| $\longmapsto$          | `\longmapsto`         |
+| $\longrightarrow$      | <CC>\longrightarrow</CC>     | 
+| $\longleftarrow$       | <CC>\longleftarrow</CC>      |
+| $\longleftrightarrow$  | <CC>\longleftrightarrow</CC> |
+| $\Longleftarrow$       | <CC>\Longleftarrow</CC>      |
+| $\Longrightarrow$      | <CC>\Longrightarrow</CC>     |
+| $\Longleftrightarrow$  | <CC>\Longleftrightarrow</CC> |
+| $\longmapsto$          | <CC>\longmapsto</CC>         |
 
 
-## ベクトル表記
+#### ベクトル表記
 <TwoColumn>
 <Left>
 $$
-\mathbf{a}\\
-\mathbf{b}\\
-\mathbf{c}\\
-\mathbf{p}\\
-\mathbf{q}\\
-\mathbf{r}\\
-\mathbf{u}\\
-\mathbf{v} \\
+\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{p},\mathbf{q},\mathbf{r},\mathbf{u},\mathbf{v},\mathbf{x}\\
+\bm{a},\bm{b},\bm{c},\bm{p},\bm{q},\bm{r},\bm{u},\bm{v},\bm{x}\\
+\vec{a},\vec{b},\vec{c},\vec{p},\vec{q},\vec{r},\vec{u},\vec{v},\vec{x}\\
+
+\overrightharpoon{a},\overrightharpoon{b},\overrightharpoon{c},\overrightharpoon{p},\overrightharpoon{q},\overrightharpoon{r},\overrightharpoon{u},\overrightharpoon{v},\overrightharpoon{x}\\
+\overrightarrow{a},\overrightarrow{b},\overrightarrow{c},\overrightarrow{p},\overrightarrow{q},\overrightarrow{r},\overrightarrow{u},\overrightarrow{v},\overrightarrow{x}\\
 
 $$
 </Left>
 <Right>
-```text
+```
 $$
-\mathbf{a}\\
-\mathbf{b}\\
-\mathbf{c}\\
-\mathbf{p}\\
-\mathbf{q}\\
-\mathbf{r}\\
-\mathbf{u}\\
+\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{p},
+\mathbf{q},\mathbf{r},\mathbf{u},\mathbf{v},\mathbf{x}\\
+
+\bm{a},\bm{b},\bm{c},\bm{p},\bm{q},
+\bm{r},\bm{u},\bm{v},\bm{x}\\
+
+\vec{a},\vec{b},\vec{c},\vec{p},
+\vec{q},\vec{r},\vec{u},\vec{v},\vec{x}\\ //効いてない
+
+\overrightharpoon{a},\overrightharpoon{b},\overrightharpoon{c},
+\overrightharpoon{p},\overrightharpoon{q},\overrightharpoon{r},
+\overrightharpoon{u},\overrightharpoon{v},\overrightharpoon{x}\\
+
+\overrightarrow{a},\overrightarrow{b},\overrightarrow{c},
+\overrightarrow{p},\overrightarrow{q},\overrightarrow{r},
+\overrightarrow{u},\overrightarrow{v},\overrightarrow{x}\\
 \mathbf{v} \\
 $$
 ```
 </Right>
 </TwoColumn>
 
+#### 定義(\gdef)
+同じブロックでないと定義は使えない
+<TwoColumn>
+<Left>
+$$
+    \gdef\dd{\mathrm{d}}
+    \gdef\d#1{\frac{\dd}{\dd #1}}
+    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
+    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
+    
+    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+$$
 
+</Left>
+<Right>
+```
+$$
+    \gdef\dd{\mathrm{d}}
+    \gdef\d#1{\frac{\dd}{\dd #1}}
+    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
+    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
+    
+    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+$$
+```
+</Right>
+</TwoColumn>
+
+### 定義２
+<TwoColumn>
+<Left>
+
+</Left>
+<Right>
+
+</Right>
+</TwoColumn>
+
+
+#### コメント
+<TwoColumn>
+<Left>
+$$
+    \overbrace{(-1)\times(-1)}^{\text{先に計算}}+
+    \overbrace{1\div2}^{\text{先に計算}}-5=
+    -\frac{7}{2}
+$$
+</Left>
+<Right>
+```
+$$
+    \overbrace{(-1)\times(-1)}^{\text{先に計算}}+
+    \overbrace{1\div2}^{\text{先に計算}}-5=
+    -\frac{7}{2}
+$$
+```
+</Right>
+</TwoColumn>
+
+#### cases
+<TwoColumn>
+<Left>
+$$
+    \begin{cases}
+    x+y &= 1 \\
+    3x+2y & = 0\\
+    \end{cases}
+$$
+</Left>
+<Right>
+```
+$$
+    \begin{cases}
+    x+y &= 1 \\
+    3x+2y & = 0\\
+    \end{cases}
+$$
+```
+</Right>
+
+</TwoColumn>
 #### align*　その１
 式を列挙
 
@@ -160,7 +258,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align*}
@@ -189,7 +287,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align*}
@@ -219,7 +317,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align*}
@@ -249,7 +347,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align}
@@ -280,7 +378,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align}
@@ -314,7 +412,7 @@ $$
 
 </Left>
 <Right>
-```text
+```
 $$
 \begin{equation}
 \left\{
@@ -346,7 +444,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align}
@@ -377,7 +475,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left\{
 \begin{align}
@@ -411,7 +509,7 @@ $$
 
 </Left>
 <Right>
-```text
+```
 $$
 \begin{equation}
 \left\{
@@ -441,7 +539,7 @@ $$
 
 </Left>
 <Right>
-```text
+```
 $$
 (
 \frac{1}{x} + \frac{1}{y}
@@ -461,7 +559,7 @@ $$
 $$
 </Left>
 <Right>
-```text
+```
 $$
 \left(
 \frac{1}{x} + \frac{1}{y}
@@ -483,7 +581,7 @@ $$
 
 </Left>
 <Right>
-```text
+```
 
 ```
 </Right>

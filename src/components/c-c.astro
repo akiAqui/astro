@@ -1,0 +1,54 @@
+<style>
+  c-c {
+    transition: background-color 0.2s ease-in-out;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+
+  c-c:hover {
+    background-color: #ff2222;
+    color: white;
+  }
+</style>
+
+<script>
+  class CC extends HTMLElement {
+    constructor() {
+      super();
+      this.originalText = this.textContent.trim();
+
+      this.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(this.originalText);
+          console.log("Copied:", this.originalText);
+
+          // 背景色をフラッシュ（瞬く）
+          this.style.backgroundColor = "#223300";
+          setTimeout(() => (this.style.backgroundColor = ""), 200);
+        } catch (err) {
+          console.error("Failed to copy:", err);
+        }
+      });
+
+      // ホバー時に背景色を反転（黒背景・白文字）
+      this.addEventListener("mouseenter", () => {
+        this.style.cursor = "pointer";
+        this.style.backgroundColor = "#aa444444";
+        this.style.color = "white";
+      });
+
+      // ホバー解除時に元の色に戻す
+      this.addEventListener("mouseleave", () => {
+        this.style.backgroundColor = "";
+        this.style.color = "";
+      });
+    }
+  }
+
+  customElements.define("c-c", CC);
+</script>
+
+<c-c>
+  <slot />
+</c-c>
+
