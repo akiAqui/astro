@@ -1,112 +1,8 @@
 ---
-title: katex
+title: 数学記号
 description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
 ---
- <style>{`
-
-.sl-markdown-content > main > hr:not(:where(.not-content *)) {
-  border: none !important;
-  border-bottom: 4px double white !important;
-  margin-bottom: 14px;
-}
- 
-.sl-markdown-content div.ec-line {
-margin-top: 0 !important;
-font-size:10px;
-}
-.sl-markdown-content{
- font-size:15px;
-}
-
-.sl-markdown-content p,table,div.expressive-code {
- padding:0em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-.sl-markdown-content p {
- text-indent: 1em;
-}
-.sl-markdown-content li p {
-  text-indent: 0;
-  margin-left:0 !important;
-}
-
-.sl-markdown-content ul,ol,li::marker {
- padding-left:2em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-
-.sl-markdown-content h3::before {
-content: "> ";
-} 
-.sl-markdown-content h4::before {
-content: ">> ";
-} 
-.sl-markdown-content h5::before {
-content: ">>> ";
-} 
-.sl-markdown-content h6::before {
-content: ">>>> ";
-} 
-
-h1,h2,h3,h4,h5,h6 {
- margin-top: 1em !important;
-
-}
-
-figure pre {
- margin-top: 0.4em !important;
-}
-.sl-markdown-content h1 {
- font-size:27px;
- text-decoration: underline;
- font-weight: bold
-}
-
-.sl-markdown-content h2 {
- font-size:26px;
- font-weight: normal;
- text-decoration: underline;
-}
-
-.sl-markdown-content h3 {
- font-size:24px;
- font-weight: normal;
- font-style: italic;
- text-decoration: underline;
-}
-
-.sl-markdown-content h4 {
- font-size:22px;
- font-weight: normal;
- font-style: italic; 
- text-decoration: underline;
- margin-top: 2px;
-}
-.sl-markdown-content h5 {
- font-size:18px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-.sl-markdown-content h6 {
- font-size:15px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-
-.sl-markdown-content th {
- font-size:13px;
-}
-.sl-markdown-content td {
- font-size:13px;
-}
-`}</style>
 
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
@@ -114,12 +10,106 @@ import TimeStamp from '../../../components/TimeStamp';
 import Box from '../../../components/Box';
 import RedBox from '../../../components/RedBox';
 import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
 
-<TimeStamp fileUrl={import.meta.url} />
+<StandardStyle />
 
 ##### TODOs
 
  - [x] nothing
+
+                  
+|記号             |入力             |記号             |入力             | 記号            |入力             |
+|-----------------|-----------------|-----------------|-----------------|-----------------|-----------------|
+| $\alpha$        | `\alpha`        | $\Alpha$        | `\Alpha`        |
+| $\beta$         | `\beta`         | $\Beta$         | `\Beta`         |
+| $\gamma$        | `\gamma`        | $\Gamma$        | `\Gamma`        |
+| $\delta$        | `\delta`        | $\Delta$        | `\Delta`        |
+| $\epsilon$      | `\epsilon`      | $\Epsilon$      | `\Epsilon`      | 
+| $\varepsilon$   | `\varepsilon`   | 
+| $\zeta$         | `\zeta`         | $\Zeta$         | `\Xeta`         |
+| $\eta$          | `\eta`          | $\Eta$          | `\Eta`          |
+| $\theta$        | `\theta`        | $\Theta$        | `\Theta`        |
+| $\vartheta$     | `\vartheta`     | 
+| $\iota$         | `\iota`         | $\Iota$         | `\Iota`         |
+| $\kappa$        | `\kappa`        | $\Kappa$        | `\Kappa`        |
+| $\lambda$       | `\lambda`       | $\Lambda$       | `\Lambda`       |
+| $\nu$           | `\nu`           | $\Nu$           | `\Nu`           |
+| $\mu$           | `\mu`           | $\Mu$           | `\Mu`           |
+| $\xi$           | `\xi`           | $\Xi$           | `\Xi`           |
+| $\omicron$      | `\omicron`      | $\Omicron$      | `\Omicron`      |
+| $\pi$           | `\pi`           | $\Pi$           | `\Pi`           |
+| $\varpi$        | `\varpi`        |
+| $\rho$          | `\rho`          | $\Rho$          | `\Rho`          |
+| $\varrho$       | `\varrho`       | 
+| $\sigma$        | `\sigma`        | $\Sigma$        | `\Sigma`        | 
+| $\varsigma$     | `\varsigma`     | 
+| $\tau$          | `\tau`          | $\Tau$          | `\Tau`          |
+| $\upsilon$      | `\upsilon`      | $\Upsilon$      | `\Upsilon`      |
+| $\phi$          | `\phi`          | $\Phi$          | `\Phi`          |
+| $\varphi$       | `\varphi`       | 
+| $\chi$          | `\chi`          | $\Chi$          | `\Chi`          |
+| $\psi$          | `\psi`          | $\Psi$          | `\Psi`          |
+| $\omega$        | `\omega`        | $\Omega$        | `\Omega`        |
+| $\mho$          | `\mho`          | 
+||
+| $\prod$         | `\prod`         | $\Sigma$        | `\Sigma`        |
+| $\nabla$        | `\nabla`        | 
+| $\partial$      | `\partial`      |
+| $\Re$           | `\Re`           | $\Im$           | `\Im`           |
+| $\langle$       | `\langle`       | $\rangle$       | `\rangle`       |
+| $\forall$       | `\forall`       | $\exists$       | `\exists`       |
+| $\aleph$        | `\aleph`        |
+| $\beth$         | `\beth`         |
+| $\daleth$       | `\daleth`       |
+| $\gimel$        | `\gimel`        |
+| $\complement$   | `\complement`   |
+| $\ell$          | `\ell`          |
+| $\eth$          | `\eth`          |
+| $\hbar$         | `\hbar`         | $\hslash$       | `\hslash`       |
+| $\wp$           | `\wp`           |
+| $\vee$          | `\vee`          |
+| $\in$           | `\in`           |
+| $\supset$       | `\supset`       |
+| $\cup$          | `\cup`          |
+| $\emptyset$     | `\emptyset`     | $\infty$        | `\infty`        |
+| $\imath$        | `\imath`        | $\jmath$        | `\jmath`        |
+| $\not$          | `\not`          | $\setminus$     | `\setminus$`    |
+| $\times$        | `\times`        | $\cdot$         | `\cdot`         |
+| $\neg$          | `\neg`          |
+| $\prime$        | `\prime`        |
+|
+| $\min$          | `\min`          | $\max$          | `\max`          |
+| $\sin$          | `\sin`          | $\cos$          | `\cos`          | $\tan$           | `\tan`           |
+| $\arcsin$       | `\arcsin`       | $\arccos$       | `\arccos`       | $\arctan$        | `\arctan`        |
+| $\exp$          | `\exp`          | $\log$          | `\log`          | $\ln$            | `\ln`            |
+|
+| $\equiv$        | `\equiv`        | $\fallingdotseq$| `\fallingdotseq`| $\neq$           | `\neq`           |
+| $\sim$          | `\sim`          | $\simeq$        | `\simeq`        | $\approx$        | `\approx`        |
+
+
+
+#### 矢印
+
+|記号               |入力               |記号             |入力            | 記号              |入力               |
+|-------------------|-------------------|-----------------|----------------|-------------------|-------------------|
+| $\rightarrow$     | `\rightarrow`     | $\leftarrow$    | `\leftarrow`   |$\leftrightarrow$  |`\leftrightarrow`  |
+| $\Rightarrow$     | `\Rightarrow`     | $\Leftarrow$    | `\Leftarrow`   | $\Leftrightarrow$ | `\Leftrightarrow` |
+| $\uparrow$        | `\uparrow`        | $\downarrow$    | `\downarrow`   | 
+| $\mapsto$         | `\mapsto`         |
+
+
+#### 長い矢印
+
+|記号                    |入力                   |
+|------------------------|-----------------------|
+| $\longrightarrow$      | `\longrightarrow`     | 
+| $\longleftarrow$       | `\longleftarrow`      |
+| $\longleftrightarrow$  | `\longleftrightarrow` |
+| $\Longleftarrow$       | `\Longleftarrow`      |
+| $\Longrightarrow$      | `\Longrightarrow`     |
+| $\Longleftrightarrow$  | `\Longleftrightarrow` |
+| $\longmapsto$          | `\longmapsto`         |
 
 
 ## ベクトル表記
