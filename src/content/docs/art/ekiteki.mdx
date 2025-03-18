@@ -1,57 +1,24 @@
 ---
-title: f) ekiteki/液滴
+title: 液滴
 description: 液滴の形状を計算する
 layout: '../../../layouts/BaseLayout.astro'
 ---
- <style>{`
-        .sl-markdown-content   div.ec-line {
-            margin-top: 0 !important;
-        }
-        .sl-markdown-content  {
-           font-size:15px;
-        }
-        .sl-markdown-content h1 {
-           font-size:  27px;
-           text-decoration: underline;
-           font-weight: bold
-        }
-        .sl-markdown-content h2 {
-           font-weight: normal;
-           text-decoration: underline;
-           font-size:25px;
-        }
-        .sl-markdown-content h3 {
-           font-size:20px;
-           font-weight: normal;
-           font-style: italic;
-           text-decoration: underline;
-        }
-        .sl-markdown-content h4 {
-           font-size:15px;
-           font-weight: normal;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h5 {
-           font-size:12px;
-           font-weight: bold;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content th {
-           font-size:12px;
-        }
-        .sl-markdown-content td {
-           font-size:12px;
-        }
-        
- `}</style>
 
-import CodeTitle from    '../../../components/CodeTitle';
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from    '../../../components/TimeStamp';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
 
-<TimeStamp fileUrl={import.meta.url} />
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
 
 <center><img src="/ekiteki.png" width="60%"/></center>
 
@@ -68,17 +35,35 @@ import TimeStamp from    '../../../components/TimeStamp';
 ステップ
 - キャンバスの大きさを決定
   - 定数WIDTH=400, HEIGHT=400で定義
-  
 - キャンバスの大きさの矩形内に乱数で頂点をＮ個生成。
   - $k$番目の点を$p(k,t)$とする。$0<=k<=N-1$
   - $N$は偶数である
   - $N=6$として定数定義
-  - 頂点はキャンバスの左右上下の一定の幅ＦＲＡＭＥを見ごろとして取る
+  - 頂点はキャンバスの左右上下の一定の幅FRAME値を見ごろとして取る
   - $FRAME=30$として定数定義
 - これらの点を並びなおして新たに$q(k,t)$を以下のルールで生成する
   - 全ての点を通る多角形を構成する順番にする
   - 隣り合う$q(k,t),q(k+1,t)$で線分を描く$q(N,t)$に対しては$q(N,t),q(0,t)$の間に線分を描く
   - これらの線分は交差しないことが条件で$q(k,t)$を生成する
+
+<CodeTitle title="reduceを使って改善された点の並べ替え" id="orderPoints" counter="01">
+```javascript
+function orderPoints() {
+    let { centerX, centerY } = points.reduce((acc, p) => {
+        acc.centerX += p.x;
+        acc.centerY += p.y;
+        return acc;
+    }, { centerX: 0, centerY: 0 });
+
+    centerX /= points.length;
+    centerY /= points.length;
+
+    points.sort((a, b) => {
+        return Math.atan2(a.y - centerY, a.x - centerX) - Math.atan2(b.y - centerY, b.x - centerX);
+    });
+}
+```
+</CodeTitle>
 
 - $q(k,t)$を描画する
   - 点は$circle()$で半径$R$として描画する
@@ -97,6 +82,7 @@ import TimeStamp from    '../../../components/TimeStamp';
   - $q(k+1,t),q(k+2,t)$の間には、$q(k,t),q(k+1,t),q(k+2,t)$を通る曲線と$q(k+1,t),q(k+2,t),q(k+3,t)$を通る二本の曲線が異なる色で異なる曲線として描かれる
   - この曲線は、下記のようなアルゴリズムで達成する
 
+<CodeTitle title="曲線描画" id="drawCurves" counter="02">
 ```javascript
   function drawCurves() {
     for (let i = 0; i < orderedPoints.length; i++) {
@@ -118,55 +104,53 @@ import TimeStamp from    '../../../components/TimeStamp';
     }
 }
 ```
+</CodeTitle>
 
 - 各区間の曲線上に均等に補間点$r(m)$を生成する。
 - 補間点の数は$M(k,k+1)$とする
 - $M(k,k+1)$の保管点の密度は全閉曲線で一定の$c$とする
 - Catmull-Romスプラインの点を補間して新しい点列$r(m)$を生成する。
-
 - このようにして得られる曲線を$Ｑ$とする
 - 曲線Ｑは閉曲線である
 - この閉曲線は閉曲線内に
 
---
-はい、液滴の時間推移をシミュレーションするプログラムの詳細な指示文を作成いたします。レベルセット法、ナビエ・ストークス方程式、圧力ポアソン方程式を用いた手順を、初期条件の設定から各時間ステップの操作まで、綿密に説明します。
+---
+## 初期条件の設定:
 
-# 初期条件の設定:
-
-## シミュレーション領域の定義
+### シミュレーション領域の定義
 - 2次元の計算領域を設定
 - 格子点数と格子間隔を決定
 - シミュレーション単位時間を決定
 
-## 液滴の初期形状の定義
+### 液滴の初期形状の定義
 - レベルセット関数$φ(x,y,z)$を用いて液滴の初期形状を表現
 - $φ < 0$が液滴内部、$φ > 0$が外部、$φ = 0$が界面を表す
 
-## 初期速度場の設定
+### 初期速度場の設定
 - 全領域で初期速度$u(x,y,z)$を$(0,0,0)$と定義
 
-## 物性値の設定
+### 物性値の設定
 - 液滴と周囲流体の密度$ρ$、粘性$μ$、表面張力係数$σ$を設定
 
-## 境界条件の設定
+### 境界条件の設定
 計算領域の境界における速度と圧力の条件を指定
 
 
-# 時間発展のメインループ:
+## 時間発展のメインループ:
 - 各時間ステップ$Δt$ごとに以下の操作を繰り返す
 
-## レベルセット関数の更新
+### レベルセット関数の更新
 - レベルセット方程式 $∂φ/∂t + u・∇φ = 0 $を解く
 - 下記に説明するいずれかの数値スキームを用いて離散化
 - 必要に応じて再初期化を行い、符号付き距離関数の性質を保持
 
-### レベルセット関数の数値スキーム
+#### レベルセット関数の数値スキーム
 - 以下のスキームのうちどれかを採用する
   - ENO(Essentially Non-Oscillatory)
   - WENO (Weighted Essentially Non-Oscillatory)
   - MUSCL (Monotonic Upstream-Centered Scheme for Conservation Laws) 法
 
-### 用語説明（このセクションは指示文ではなく人間が読むためのセクションである)
+#### 用語説明（このセクションは指示文ではなく人間が読むためのセクションである)
 
 - ステンシル
   - 計算点の周りの格子点のグループのこと。

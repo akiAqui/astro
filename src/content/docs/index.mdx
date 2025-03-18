@@ -7,11 +7,13 @@ table { width: 100%; }
 th:nth-child(3) { min-width: 180px; }
 `}</style>
 
+import CC from "../../components/c-c.astro";
 import CodeTitle from '../../components/CodeTitle';
 import MermaidChart from '../../components/MermaidChart.astro';
 import TimeStamp from '../../components/TimeStamp';
 import Box from '../../components/Box';
 import RedBox from '../../components/RedBox';
+import WhiteBox from '../../components/WhiteBox';
 import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
 import StandardStyle from '../../components/StandardStyle';
 
@@ -30,8 +32,19 @@ import StandardStyle from '../../components/StandardStyle';
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
-| 数学記号 | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 15 17:25 |
-| ＊）泥 | [art/mud.mdx](http://localhost:4321/art/mud/) | Mar 15 12:59 |
+| 物質微分と微分の連鎖律 | [math/material_derivatives.mdx](http://localhost:4321/math/material_derivatives/) | Mar 19 01:46 |
+| 数学記号 | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 19 00:08 |
+| ＊）流体力学/オイラー保存形方程式 | [algorithm/eulerConservationForm.mdx](http://localhost:4321/algorithm/eulerConservationForm/) | Mar 18 14:39 |
+| ＊）せん断層数値解析 | [algorithm/uzu.mdx](http://localhost:4321/algorithm/uzu/) | Mar 18 11:31 |
+| ＊）流体の保存則に基づく数値解法 | [algorithm/eno.mdx](http://localhost:4321/algorithm/eno/) | Mar 18 09:48 |
+| 液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Mar 16 22:24 |
+| 一次元バネ | [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Mar 16 21:02 |
+| OCS利用の検討 | [art/osc.mdx](http://localhost:4321/art/osc/) | Mar 16 21:01 |
+| 泥 | [art/mud.mdx](http://localhost:4321/art/mud/) | Mar 16 21:00 |
+| 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | Mar 16 20:59 |
+| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Mar 16 20:53 |
+| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Mar 15 23:21 |
+| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 15 20:37 |
 | ＊）分子動力学/テキスト目次 | [algorithm/molecular_dynamics_text.mdx](http://localhost:4321/algorithm/molecular_dynamics_text/) | Mar 14 21:49 |
 | ＊）分子動力学 | [algorithm/molecular_dynamics.mdx](http://localhost:4321/algorithm/molecular_dynamics/) | Mar 13 16:30 |
 | ＊）環境マッピング | [three/env_mapping.mdx](http://localhost:4321/three/env_mapping/) | Mar 12 01:44 |
@@ -39,14 +52,11 @@ import StandardStyle from '../../components/StandardStyle';
 | ＊）data migration between dist. | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Mar 11 16:33 |
 | context menu ext | [dev/emacs-edit-extension.mdx](http://localhost:4321/dev/emacs-edit-extension/) | Mar 11 16:33 |
 | ＊）アニメーションの方式比較 | [three/animation.mdx](http://localhost:4321/three/animation/) | Mar 11 16:33 |
-| emacs ショートカット入力 | [mdx/cdlatex.mdx](http://localhost:4321/mdx/cdlatex/) | Mar 10 10:39 |
 | ＊）git | [tech/git.mdx](http://localhost:4321/tech/git/) | Mar 10 10:24 |
 | ＊）PDF, 各種変換 | [tech/doc-convert.mdx](http://localhost:4321/tech/doc-convert/) | Mar 10 09:46 |
 | ＊）emacs register etc | [tech/emacs-register.mdx](http://localhost:4321/tech/emacs-register/) | Mar 10 09:38 |
-| ＊）OCS利用の検討 | [art/osc.mdx](http://localhost:4321/art/osc/) | Mar 9 20:08 |
 | 暫）wslネットワーク | [tech/wsl-network.mdx](http://localhost:4321/tech/wsl-network/) | Mar 9 02:42 |
 | ＊）インストール設定 | [tech/install.mdx](http://localhost:4321/tech/install/) | Mar 9 01:47 |
-| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 8 03:23 |
 | ＊）Texture - advanced | [three/texture_advanced.mdx](http://localhost:4321/three/texture_advanced/) | Mar 7 01:35 |
 | セキュアな業務環境の構築 | [tech/pc_env.mdx](http://localhost:4321/tech/pc_env/) | Mar 3 03:44 |
 | ＊）TCBスプライン基礎 | [math/tcb_spline_basic.mdx](http://localhost:4321/math/tcb_spline_basic/) | Mar 3 03:04 |
@@ -62,7 +72,6 @@ import StandardStyle from '../../components/StandardStyle';
 | double spiral | [glsl/double_spiral.mdx](http://localhost:4321/glsl/double_spiral/) | Feb 26 17:58 |
 | ＊）各種変換 | [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 26 16:57 |
 | ＊＊＊）Shader+3D | [three/3D+shader.mdx](http://localhost:4321/three/3D+shader/) | Feb 22 01:58 |
-| astro/mdx簡単マニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Feb 20 02:36 |
 | 基本的な関数 | [algorithm/basic_functions.mdx](http://localhost:4321/algorithm/basic_functions/) | Feb 20 00:36 |
 | AI用指示文 | [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 18 16:54 |
 | ＊）blobスキームとその周辺 | [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 21:42 |
@@ -77,13 +86,11 @@ import StandardStyle from '../../components/StandardStyle';
 | 液体 | [algorithm/fluid.mdx](http://localhost:4321/algorithm/fluid/) | Feb 11 01:46 |
 | ＊）ホームネットワーク管理 | [tech/home-netowork.mdx](http://localhost:4321/tech/home-netowork/) | Feb 4 15:55 |
 | (*)プルリク | [tech/pullRequest.mdx](http://localhost:4321/tech/pullRequest/) | Feb 4 06:47 |
-| (*)点と線による動画生成 | [art/anime.mdx](http://localhost:4321/art/anime/) | Feb 1 17:34 |
 | ＊） fBM | [algorithm/fBM.mdx](http://localhost:4321/algorithm/fBM/) | Feb 1 14:36 |
 | ＊) Flickの拡散の法則 | [algorithm/flick.mdx](http://localhost:4321/algorithm/flick/) | Jan 28 22:31 |
 | ＊） Keller-Segel Model | [algorithm/kellerSegel.mdx](http://localhost:4321/algorithm/kellerSegel/) | Jan 28 16:09 |
 | ＊）ランダムウォーク | [algorithm/randomWalk.mdx](http://localhost:4321/algorithm/randomWalk/) | Jan 28 09:29 |
 | (r)補間法 | [algorithm/interpolation.mdx](http://localhost:4321/algorithm/interpolation/) | Jan 27 10:37 |
-| f) ekiteki/液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Jan 26 16:35 |
 | f) TypeScript | [tech/typescript.mdx](http://localhost:4321/tech/typescript/) | Jan 26 15:51 |
 | -) JavaScript | [tech/javascript.mdx](http://localhost:4321/tech/javascript/) | Jan 26 01:22 |
 | f) Performanceテスト | [tech/performance_test.mdx](http://localhost:4321/tech/performance_test/) | Jan 26 01:07 |
@@ -93,7 +100,6 @@ import StandardStyle from '../../components/StandardStyle';
 | f) Canavasでテクスチャ生成 | [three/gen_texture.mdx](http://localhost:4321/three/gen_texture/) | Jan 22 03:39 |
 | Textureの詳細、 | [three/texture.mdx](http://localhost:4321/three/texture/) | Jan 22 03:37 |
 | (*) vite.config.tsについて | [tech/vite_conf_ts.mdx](http://localhost:4321/tech/vite_conf_ts/) | Jan 17 02:27 |
-| f) 一次元バネ | [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Jan 15 09:53 |
 | (*) ボリュームレンダリング | [algorithm/vrender.mdx](http://localhost:4321/algorithm/vrender/) | Jan 14 01:49 |
 | (*)画像変形技術 | [algorithm/morphing.mdx](http://localhost:4321/algorithm/morphing/) | Jan 14 01:49 |
 | (r)数値積分手法 | [algorithm/nint.mdx](http://localhost:4321/algorithm/nint/) | Jan 14 01:49 |

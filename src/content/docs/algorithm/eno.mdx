@@ -1,0 +1,591 @@
+---
+title: ＊）流体の保存則に基づく数値解法
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+import Indent from '../../../components/Indent';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## 流体シミュレーションの数値解法の分類と適用
+
+
+流体シミュレーションでは、物理法則に基づく数値解法を用いて流体の動きを計算する。
+その際、どの手法を選択するかは、流体の特性（圧縮性・非圧縮性、粘性の有無など）、
+解析の目的（ショック波の処理、乱流解析など）、計算コストの制約に依存する。
+本レポートでは、主に 保存則を満たす手法と保存則を直接満たさない手法 を分類し、
+どの状況で適用すべきかを整理する。
+
+- 保存則を満たす手法は、圧縮性流体やショック波の計算に適している
+- 保存則を直接満たさない手法は、非圧縮性流体や自由表面問題に適している
+
+
+### 数値解法の分類
+
+- tmp/5をもう少し取り込めてないかも
+
+
+### 保守形と非保守形
+
+流体力学における保存則は、質量、運動量、エネルギーが時間とともに保存される ことを意味する。
+保存則を数学的に表現する際、保守形（conservative form）と非保守形（non-conservative form）の2つの記述方法がある。
+
+
+#### 保守形の一般式
+
+一般的な保存則の保守形は次のように書ける：
+
+$$
+\frac{\partial U}{\partial t} + \nabla \cdot F(U) = S(U)
+$$
+
+ここで：
+
+<Indent left={5.5} bottom={1} unit="rem">
+- $U$ は保存変数のベクトル（例：密度、運動量、エネルギー）
+- $F(U)$ は流束（flux）ベクトル
+- $S(U)$ は外力や熱源項などのソース項
+</Indent>
+
+この形は、質量保存、運動量保存、エネルギー保存の法則を統一的に表現できる。
+
+#### 非保守形の一般式
+
+非保守形では、Navier-Stokes方程式を次のような形で記述する：
+
+$$
+\frac{\partial u}{\partial t} + u \cdot \nabla u = -\frac{1}{\rho} \nabla p + \nu \nabla^2 u + f
+$$
+
+ここで：
+<Indent left={5.5} bottom={1} unit="rem">
+- $u$ は速度
+- $p$ は圧力
+- $\nu$ は動粘性係数
+- $f$ は外力
+</Indent>
+非保守形では保存変数を直接扱わないため、ショックや急激な変化を正確に捉えるのが難しい。
+
+
+### 保存則を満たす手法とそれ以外の手法
+
+#### 保存則を満たす手法
+
+保存則を満たす手法では、
+質量、運動量、エネルギーの厳密な保存 を考慮し、
+「流体方程式を保守形で離散化」する。
+
+- 用途: 圧縮性流体、ショック波、乱流など
+- 適用分野: 空力解析、爆発現象、衝撃波計算
+
+
+
+##### 代表的な手法
+
+数値計算では、流体方程式を離散化し、コンピュータ上で計算可能な形にする。\
+保守形で離散化する方法として、以下の手法がよく使われる。
+
+1. 有限体積法（FVM, Finite Volume Method）
+   - 体積要素ごとに保存則を適用し、流束の収支を計算
+   - 局所的な保存則を厳密に満たす
+   - 衝撃波、ショック波のような急激な変化を正確に捉えられる
+
+2. Godunov法
+   - 保存則を考慮し、セル間で局所リーマン問題を解く
+   - 保存則を厳密に満たす
+   - 高精度なショック捕獲能力が高い
+
+3. 高解像度スキーム（ENO/WENO法）
+   - ショック波や渦構造を高精度で捕捉
+   - 数値振動を抑えながら高精度な結果を得る
+   - 計算コストは高いが精度が向上
+
+4. Total Variation Diminishing（TVD）スキーム
+   - 数値振動を抑えつつ、保存則を満たす
+
+5. HLL/HLLCリーマンソルバー
+   - 保存則を厳密に満たすが、計算コストは比較的低い
+
+
+
+#### 保存則を直接満たさない手法
+
+保存則を厳密に満たさない手法も、特定の用途では有効。特に非圧縮性流体や粒子ベースの手法では、保存則よりも計算効率や境界条件の適用が重要となる場合がある。
+
+- 用途: 非圧縮性流体、自由表面流れ、粒子系流体
+- 適用分野: 産業用流体解析、CG・アニメーション、海洋シミュレーション
+
+##### 代表的な手法
+
+1. 圧力ベースの方法（例: SIMPLE法）
+   - 圧力補正方程式を解くことで流体の運動を計算
+   - 保存則を近似的に満たすが、非圧縮性流体向け
+
+2. 非保存形のNavier-Stokes解法
+   - 速度・圧力を直接計算する方法
+   - 圧縮性流体には不向き、ショック波の処理が困難
+
+3. 粒子法（例: SPH, MPS）
+   - 保存則を厳密に離散化せず、粒子間の相互作用を利用
+   - 境界条件の扱いが簡単だが、数値散逸が発生しやすい
+
+4. 格子ボルツマン法（LBM, Lattice Boltzmann Method）
+   - 粒子分布関数を進化させる方法で、Navier-Stokes方程式を直接解かない
+   - 保存則はある程度満たすが、厳密な保存則ベースの方法とは異なる
+
+### 手法の選択
+
+#### 圧縮性 vs 非圧縮性
+| 手法 | 圧縮性流体 | 非圧縮性流体 |
+|------|----------|------------|
+| Godunov法 | ◎ | × |
+| ENO/WENO | ◎ | × |
+| TVDスキーム | ○ | × |
+| SIMPLE法 | × | ◎ |
+| LBM | ○ | ◎ |
+| SPH | ○ | ◎ |
+
+#### 計算コスト vs 精度
+| 手法 | 計算コスト | 精度 |
+|------|----------|------|
+| Godunov法 | 高 | 高 |
+| ENO/WENO | 高 | 高 |
+| TVDスキーム | 中 | 中 |
+| LBM | 中 | 中 |
+| SIMPLE法 | 低 | 低 |
+| SPH | 低 | 低 |
+
+#### 適用領域（ショック波, 乱流, 自由表面）
+| 手法 | ショック波処理 | 乱流解析 | 自由表面 |
+|------|------------|--------|--------|
+| Godunov法 | ◎ | ○ | × |
+| ENO/WENO | ◎ | ◎ | × |
+| TVDスキーム | ○ | ◎ | × |
+| SIMPLE法 | × | ○ | ◎ |
+| LBM | × | ○ | ◎ |
+| SPH | × | ○ | ◎ |
+
+### 参考文献
+- Patankar, S. V. (1980). *Numerical Heat Transfer and Fluid Flow*. Hemisphere Publishing Corporation.
+- Shu, C.-W., & Osher, S. (1989). "Efficient Implementation of Essentially Non-Oscillatory Shock-Capturing Schemes." *Journal of Computational Physics*.
+- Kruger, T., Kusumaatmaja, H., Kuzmin, A., et al. (2017). *The Lattice Boltzmann Method: Principles and Practice*. Springer.
+
+
+
+
+
+
+
+
+
+## 保存則を満たす手法の詳細
+数値流体力学（CFD）では、流体の運動を記述する保存則を満たす方程式を数値的に解く必要がある。
+これらの手法は、流れ場における密度、速度、圧力、エネルギーなどの物理量を計算するために用いられる。
+
+### 与えられるもの（初期条件と境界条件）
+- 初期時刻 $t=0$ での密度、速度、圧力分布
+- 流れ場の境界条件（壁、流入、流出）
+- 外力（重力、磁場など）
+
+### 求めるもの
+- 密度 $\rho(x,t)$: 単位体積あたりの質量
+- 速度 $u(x,t), v(x,t), w(x,t)$: 各方向の流速
+- 圧力 $p(x,t)$: 単位面積あたりの力
+- エネルギー密度 $E(x,t)$: 単位体積あたりのエネルギー
+
+
+### 数値解法の役割
+- 連続方程式、運動方程式、エネルギー方程式といった保存則に基づく偏微分方程式（PDE）を離散化し、時間発展を計算
+- ショック波、不連続点、渦構造などの流体現象を高精度でシミュレーション
+
+
+#### 連続方程式（質量保存則）
+   $$
+   \frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \mathbf{u}) = 0
+   $$
+   - 質量の保存を記述
+   - 密度の時間変化と流れによる輸送を表す
+
+#### 運動方程式（Navier-Stokes方程式の運動量保存則）
+   $$
+   \frac{\partial (\rho \mathbf{u})}{\partial t} + \nabla \cdot (\rho \mathbf{u} \otimes \mathbf{u}) = -\nabla p + \nabla \cdot \tau + \mathbf{F}
+   $$
+   - 運動量の保存を記述
+   - 圧力勾配、粘性応力テンソル $\tau$、外力 $\mathbf{F}$ を考慮
+
+#### エネルギー方程式
+   $$
+   \frac{\partial E}{\partial t} + \nabla \cdot ((E + p) \mathbf{u}) = \nabla \cdot (k \nabla T) + \Phi
+   $$
+   - エネルギー保存則を記述
+   - 圧力仕事、熱伝導項（$k \nabla T$）、粘性散逸項（$\Phi$）を含む
+
+#### ショック波
+- 超音速流れにおいて急激な圧力・温度・密度の変化が発生する現象
+- 例: 超音速ジェット機の衝撃波、爆発波
+
+#### 不連続点
+- 物理量が急変する領域（例えば接触面や界面）
+- 例: 気液界面、燃焼波
+
+#### 渦構造
+- 速度場の局所的な回転運動
+- 例: 台風の渦、カルマン渦列、航空機の翼端渦
+
+
+
+
+
+
+## 風上差分法 (Upwind Difference Scheme)
+- 高解像度スキーム（High-Resolution Schemes）は、保存則を満たす流体計算のための数値手法
+- シンプルで安定だが、一次精度では数値粘性が強く、解の精度が低い
+- 風上差分法を基本として、高次精度化することでショックや不連続点を適切に処理
+- 数値振動を抑制し、精度の向上を目的とする
+- 基本的な考え方は物理量の輸送を流れの方向に応じて計算
+- 保存則に従う物理量（密度、運動量、エネルギーなど）の輸送を数値的に計算する手法
+- 一次精度の風上差分法（Upwind Difference Scheme）は数値的に安定だが精度が低い
+- 二次精度の風上差分法は精度を向上させることで誤差を低減
+- 風上差分法は、流れの方向に基づいた補間を行い、数値的な安定性を向上させる
+- 一次精度の風上差分法は安定性があるが数値粘性が大きい
+- 二次精度の風上差分法を導入することで、精度を向上させ、数値粘性を低減できる
+
+### 風上差分法を使用しない場合の問題点
+
+数値流体力学において、流れの方向を考慮せずに単純な中心差分を適用すると、以下の問題が生じる：
+
+- 非物理的な振動：ショックや急激な変化がある場合に、数値解が発散することがある
+- 負の密度やエネルギー：保存則が守られず、物理的にありえない解が出ることがある
+- 安定性の問題：流れの向きに依存せず均等に補間するため、情報の流れに適さず、不安定性を生じることがある
+
+風上差分法は、これらの問題を回避するために、流れの向きを考慮して数値計算を行う手法である。
+
+### 一次精度の風上差分法
+
+#### 目的
+- 物理量の輸送を、数値振動を抑えて安定に計算
+- 保存則を満たしながら、流れの向きに応じた計算を行う
+
+#### アルゴリズム
+
+1. 流れの方向を判定する
+2. 風上側の値を使用して差分を計算する
+3. 保存則に基づいて物理量を更新する
+
+#### 数式
+
+一次精度の風上差分法では、フラックス $F_{i+1/2}$ を流れの向きに応じて決定する。
+
+もし $u > 0$ の場合（右向きの流れ）：
+
+$$
+F_{i+1/2} = u_{i+1/2} U_i
+$$
+
+もし $u < 0$ の場合（左向きの流れ）：
+
+$$
+F_{i+1/2} = u_{i+1/2} U_{i+1}
+$$
+
+この方法は簡単かつ安定だが、一次精度のため数値粘性が強く、解の精度が低い。
+
+### 二次精度の風上差分法
+
+#### 目的
+- 一次精度の風上差分法の数値粘性を低減し、よりシャープな解を得る
+- 保存則を満たしながら、より高精度な補間を行う
+
+#### アルゴリズム
+
+1. 風上方向を決定する
+2. 風上セルの情報を用いて二次精度の補間を行う
+3. フラックスを計算し、時間積分で更新する
+
+#### 数式
+
+二次精度の風上補間を導入すると、補間式は次のようになる：
+
+$$
+U_{i+1/2} = U_i + \frac{1}{2} \phi(\theta_i) (U_{i+1} - U_i)
+$$
+
+ここで、
+
+- $\phi(\theta_i)$ はスロープリミター関数
+- $\theta_i$ は勾配比
+
+$$
+\theta_i = \frac{U_i - U_{i-1}}{U_{i+1} - U_i}
+$$
+
+スロープリミターの例：
+
+- Minmod:
+  $$
+  \phi(\theta) = \max(0, \min(1, \theta))
+  $$
+- Van Leer:
+  $$
+  \phi(\theta) = \frac{\theta + |\theta|}{1 + |\theta|}
+  $$
+
+スロープリミターにより、
+
+- 数値振動を抑制
+- 不連続点付近の過度な補間を回避
+
+### 参考文献
+
+- Van Leer, B. (1979). "Towards the ultimate conservative difference scheme V. A second order sequel to Godunov’s method." Journal of Computational Physics
+
+
+
+
+
+
+
+# ENO法、WENO法、MUSCL法
+
+## 概要
+
+- これらの手法は、高次精度の数値流体力学(Numerical Fluid Dynamics)において、
+  - 保存則に従う物理量（密度、運動量、エネルギーなど）の時間発展を計算
+  - 高精度な近似を維持しながら、不連続点や急激な変化を適切に処理
+  - 数値振動を抑制し、解の精度を向上させる
+
+## ENO法 (Essentially Non-Oscillatory Method)
+
+### 目的
+
+- ショックや密度ジャンプのような急激な変化を含む流体問題で、
+  - 高次精度を維持
+  - 数値振動を防ぐ
+
+### データ
+
+- 格子点上の物理量（例：密度 $
+ho$、速度 $u$、エネルギー $E$）
+- 保存則の差分方程式
+
+### 結果
+
+- 各セルで最も滑らかな補間領域を選択し、精度の高い数値解を得る
+
+### アルゴリズム
+
+1. 補間関数を構築
+2. 各セルに対して、最も滑らかな補間領域を選択
+3. フラックスを計算
+
+### 数式
+
+近似において、$f(x)$ を $k$ 次精度で補間するために、
+
+$$
+P(x) = \sum_{j=0}^{k} c_j x^j
+$$
+
+を使用する。
+
+滑らかさ指標 $S_k$ を計算し、最も小さい値を持つ領域を選択：
+
+$$
+S_k = \sum_{m=1}^{k} \int_{x_{i-1/2}}^{x_{i+1/2}} \left( \frac{d^m P(x)}{dx^m} \right)^2 dx
+$$
+
+この領域を用いてフラックスを計算：
+
+$$
+F_{i+1/2} = f(x_{i+1/2})
+$$
+
+## WENO法 (Weighted Essentially Non-Oscillatory Method)
+
+### 目的
+
+- ENO法の精度向上
+- 全ての候補補間を考慮し、最適な重み付けで組み合わせることで精度向上
+
+### データ
+
+- 格子点上の物理量
+- 複数の補間領域の情報
+
+### 結果
+
+- 数値振動を抑えつつ、精度の高い補間結果を得る
+
+### アルゴリズム
+
+1. 異なる $k$ 次補間の候補を構築
+2. 各補間領域に対して滑らかさ指標 $S_k$ を計算
+3. 重みを計算し、補間関数を合成
+
+### 数式
+
+重み $\omega_k$ の計算：
+
+$$
+\omega_k = \frac{\alpha_k}{\sum_{j} \alpha_j}, \quad \alpha_k = \frac{d_k}{(S_k + \epsilon)^r}
+$$
+
+ここで、
+
+- $d_k$ は線形重み
+- $S_k$ は滑らかさ指標
+- $\epsilon$ はゼロ除算回避用の小さな定数
+- $r$ は重みの指数調整パラメータ
+
+最終的な補間関数：
+
+$$
+P(x) = \sum_{k} \omega_k P_k(x)
+$$
+
+## MUSCL法 (Monotonic Upwind Scheme for Conservation Laws)
+
+### 目的
+
+- 二次精度の風上差分法を用いて、保存則に基づく物理量の輸送を精度よく計算
+- 数値振動を抑えながら急激な変化を適切に表現
+
+### データ
+
+- セル中心値の物理量
+- 風上補間による近似値
+
+### 結果
+
+- スロープリミターを用いた適切な補間により、ショックを含む流れ場を高精度に再現
+
+### アルゴリズム
+
+1. 風上補間によるフラックス計算
+2. スロープリミターで急激な変化を抑制
+3. 時間積分で更新
+
+### 数式
+
+セル中心値 $U_i$ から勾配を求める：
+
+$$
+U_{i+1/2}^{L} = U_i + \frac{1}{2} \phi(\theta_i) (U_{i+1} - U_i)
+$$
+
+スロープリミター $\phi(\theta_i)$ で補正：
+
+$$
+\theta_i = \frac{U_i - U_{i-1}}{U_{i+1} - U_i}
+$$
+
+一般的なスロープリミター関数：
+
+- Van Leer: $ \phi(\theta) = \frac{\theta + |\theta|}{1 + |\theta|} $
+- Minmod: $ \phi(\theta) = \max(0, \min(1, \theta)) $
+
+## 用語説明
+
+- 保存則: 流体の物理量（密度、運動量、エネルギー）が時間発展で保存される性質
+- フラックス: 物理量の流れを示す関数
+- スロープリミター: 数値振動を抑制する関数
+
+## 参考文献
+
+- Shu, C.-W., & Osher, S. (1989). "Efficient Implementation of Essentially Non-Oscillatory Shock-Capturing Schemes." Journal of Computational Physics
+- Van Leer, B. (1979). "Towards the ultimate conservative difference scheme V. A second order sequel to Godunov’s method." Journal of Computational Physics
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+## MUSCL法 (Monotonic Upwind Scheme for Conservation Laws)
+
+- 風上差分法の高精度化
+  - 二次精度以上の補間を導入
+  - スロープリミターを使用し、数値振動を抑制
+  - ショックの表現を改善
+
+## ENO法 (Essentially Non-Oscillatory Method)
+
+- MUSCL法の拡張
+  - 最も滑らかな補間領域を動的に選択
+  - 高次精度ながら、ショック近傍での不安定な振動を抑制
+
+## WENO法 (Weighted Essentially Non-Oscillatory Method)
+
+- ENO法の改良版
+  - すべての補間候補を考慮し、最適な重み付けで組み合わせる
+  - 精度をさらに向上させ、より滑らかな解を得る
+
+## 他の関連手法
+
+### Godunov法
+
+- 風上差分法の基盤となる手法
+- 局所リーマン問題（Riemann Problem）を解き、保存則を厳密に守る
+
+### TVD（Total Variation Diminishing）スキーム
+
+- MUSCL法と同様にスロープリミターを使用して数値振動を抑制
+- Swebyダイアグラムを用いて安定性を評価
+
+### HLL/HLLCリーマンソルバー
+
+- Godunov法を拡張し、ショックとレアファクション波をより適切に処理
+
+### Runge-Kutta-Discontinuous Galerkin（RK-DG）法
+
+- 高次精度の有限要素法（Finite Element Method, FEM）をベースにした方法
+- WENO法と組み合わせて用いることが多い
+
+### Lattice Boltzmann Method（LBM）
+
+- 速度分布関数の進化を解く粒子ベースの手法
+- 直接的な流体方程式の離散化とは異なるアプローチ
+
+## 関係性まとめ
+
+- 風上差分法 → MUSCL法 (精度向上)
+- MUSCL法 → ENO法 (補間領域の動的選択)
+- ENO法 → WENO法 (重み付き補間の導入)
+- Godunov法やTVDスキームは、保存則を厳密に守りつつ、ショック処理を強化するアプローチ
+- RK-DG法やLBMは、異なる数値解析の枠組みから流体シミュレーションを高精度化する方法
+
+## 参考文献
+
+- Shu, C.-W., & Osher, S. (1989). "Efficient Implementation of Essentially Non-Oscillatory Shock-Capturing Schemes." Journal of Computational Physics
+- Van Leer, B. (1979). "Towards the ultimate conservative difference scheme V. A second order sequel to Godunov’s method." Journal of Computational Physics
+
+
+
+
+
+

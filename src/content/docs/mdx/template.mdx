@@ -1,17 +1,24 @@
 ---
-title: astro/mdx簡単マニュアル
+title: astro/mdxマニュアル
 description: 特にコードの書き方
 layout: '../../../layouts/BaseLayout.astro'
 ---
+
+import CC from "../../../components/c-c.astro";
 import CodeTitle from '../../../components/CodeTitle';
 import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
 import Box from '../../../components/Box';
 import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
 import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
 import StandardStyle from '../../../components/StandardStyle';
 
 <StandardStyle />
+
+---
+
+
 
 ##### TODOs
 
@@ -25,13 +32,6 @@ import StandardStyle from '../../../components/StandardStyle';
   <Left>左側のコンテンツああああああああああああああああああああああああああああああああああああああああ</Left>
   <Right>右側のコンテンツ</Right>
 </TwoColumn>
-
-
-<TwoColumn>
-  <Left>左側のコンテンツああああああああああああああああああああああああああああああああああああああああ</Left>
-  <Right>右側のコンテンツ</Right>
-</TwoColumn>
-
 
 
 ## image表示方法

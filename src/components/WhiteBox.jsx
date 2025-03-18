@@ -1,4 +1,4 @@
-const RedBox = ({ children }) => {
+const WhiteBox = ({ children }) => {
     return (
         <div style={{
                  display: "flex",
@@ -25,4 +25,4 @@ const RedBox = ({ children }) => {
     );
 };
 
-export default RedBox;
+export default WhiteBox;

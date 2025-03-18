@@ -124,78 +124,338 @@ import StandardStyle from '../../../components/StandardStyle';
 
 
 #### ベクトル表記
+`\vec{a}`はベクトルにならない。普通にただの矢印なしアルファベットになる（$\vec{a}$)
+
+
 <TwoColumn>
 <Left>
 $$
-\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{p},\mathbf{q},\mathbf{r},\mathbf{u},\mathbf{v},\mathbf{x}\\
-\bm{a},\bm{b},\bm{c},\bm{p},\bm{q},\bm{r},\bm{u},\bm{v},\bm{x}\\
-\vec{a},\vec{b},\vec{c},\vec{p},\vec{q},\vec{r},\vec{u},\vec{v},\vec{x}\\
-
-\overrightharpoon{a},\overrightharpoon{b},\overrightharpoon{c},\overrightharpoon{p},\overrightharpoon{q},\overrightharpoon{r},\overrightharpoon{u},\overrightharpoon{v},\overrightharpoon{x}\\
-\overrightarrow{a},\overrightarrow{b},\overrightarrow{c},\overrightarrow{p},\overrightarrow{q},\overrightarrow{r},\overrightarrow{u},\overrightarrow{v},\overrightarrow{x}\\
-
+\mathbf{a}
 $$
 </Left>
 <Right>
 ```
 $$
-\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{p},
-\mathbf{q},\mathbf{r},\mathbf{u},\mathbf{v},\mathbf{x}\\
-
-\bm{a},\bm{b},\bm{c},\bm{p},\bm{q},
-\bm{r},\bm{u},\bm{v},\bm{x}\\
-
-\vec{a},\vec{b},\vec{c},\vec{p},
-\vec{q},\vec{r},\vec{u},\vec{v},\vec{x}\\ //効いてない
-
-\overrightharpoon{a},\overrightharpoon{b},\overrightharpoon{c},
-\overrightharpoon{p},\overrightharpoon{q},\overrightharpoon{r},
-\overrightharpoon{u},\overrightharpoon{v},\overrightharpoon{x}\\
-
-\overrightarrow{a},\overrightarrow{b},\overrightarrow{c},
-\overrightarrow{p},\overrightarrow{q},\overrightarrow{r},
-\overrightarrow{u},\overrightarrow{v},\overrightarrow{x}\\
-\mathbf{v} \\
+\mathbf{a}
 $$
 ```
 </Right>
 </TwoColumn>
 
-#### 定義(\gdef)
-同じブロックでないと定義は使えない
 <TwoColumn>
 <Left>
 $$
-    \gdef\dd{\mathrm{d}}
-    \gdef\d#1{\frac{\dd}{\dd #1}}
-    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
-    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
-    
-    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+\bm{a}
 $$
-
 </Left>
 <Right>
 ```
 $$
-    \gdef\dd{\mathrm{d}}
-    \gdef\d#1{\frac{\dd}{\dd #1}}
-    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
-    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
-    
-    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+\bm{a}
 $$
 ```
 </Right>
 </TwoColumn>
 
-### 定義２
 <TwoColumn>
 <Left>
-
+$$
+\overrightharpoon{a}
+$$
 </Left>
 <Right>
+```
+$$
+\overrightharpoon{a}
+$$
+```
+</Right>
+</TwoColumn>
 
+<TwoColumn>
+<Left>
+$$
+\overrightarrow{a}
+$$
+</Left>
+<Right>
+```
+$$
+\overrightarrow{a}
+$$
+```
+</Right>
+</TwoColumn>
+
+### 絶対値/ノルム
+`\left \right`で囲むと縦方向にいっぱいになる
+
+<TwoColumn>
+<Left>
+$$
+|x|
+$$
+</Left>
+<Right>
+```
+$$
+|x|
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\lvert x \rvert
+$$
+</Left>
+<Right>
+```
+$$
+\lvert x \rvert
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\mid x \mid
+$$
+</Left>
+<Right>
+```
+$$
+\mid x \mid
+$$
+```
+</Right>
+</TwoColumn>
+
+
+
+<TwoColumn>
+<Left>
+$$
+\|x\|
+$$
+</Left>
+<Right>
+```
+$$
+\|x\|
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+|\frac{a}{b}|
+$$
+</Left>
+<Right>
+```
+$$
+|\frac{a}{b}|
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\left|\frac{a}{b}\right|
+$$
+</Left>
+<Right>
+```
+$$
+\left|\frac{a}{b}\right|
+$$
+```
+</Right>
+</TwoColumn>
+
+#### カッコ
+`\left \right`で囲むと縦方向にいっぱいになる
+
+<TwoColumn>
+<Left>
+$$
+(\frac{a}{b})
+$$
+</Left>
+<Right>
+```
+$$
+(\frac{a}{b})
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\left(\frac{a}{b}\right)
+$$
+</Left>
+<Right>
+```
+$$
+\left(\frac{a}{b}\right)
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\left[\frac{a}{b}\right]
+$$
+</Left>
+<Right>
+```
+$$
+\left[\frac{a}{b}\right]
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\left<\frac{a}{b}\right>
+$$
+</Left>
+<Right>
+```
+$$
+\left<\frac{a}{b}\right>
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\left\{\frac{a}{b}\right\}
+$$
+</Left>
+<Right>
+```
+$$
+\left\{\frac{a}{b}\right\}
+$$
+```
+</Right>
+</TwoColumn>
+中カッコだけはmathの文法の囲い記号と分けるためにエスケープする
+
+
+
+#### 積分
+
+<TwoColumn>
+<Left>
+$$
+\int f(x) dx
+$$
+</Left>
+<Right>
+```
+$$
+\int f(x) dx
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\int f(x) \, dx
+$$
+</Left>
+<Right>
+```
+$$
+\int f(x) \, dx
+$$
+```
+</Right>
+</TwoColumn>
+ちょっとだけ間が空く
+
+<TwoColumn>
+<Left>
+$$
+\int_{- \infty}^{+ \infty} f(x) dx
+$$
+</Left>
+<Right>
+```
+$$
+\int_{- \infty}^{+ \infty} f(x) dx
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\iint_{- \infty}^{+ \infty} f(x) dx dy
+$$
+</Left>
+<Right>
+```
+$$
+\iint_{- \infty}^{+ \infty} f(x) dx dy
+$$
+```
+</Right>
+</TwoColumn>
+
+<TwoColumn>
+<Left>
+$$
+\oint_{C} f(z) dz
+$$
+</Left>
+<Right>
+```
+$$
+\oint_{C} f(z) dz
+$$
+```
+</Right>
+</TwoColumn>
+
+
+#### 偏微分
+
+<TwoColumn>
+<Left>
+$$
+\frac{\partial f}{\partial x}
+$$
+</Left>
+<Right>
+```
+$$
+\frac{\partial f}{\partial x}
+$$
+```
 </Right>
 </TwoColumn>
 
@@ -220,7 +480,12 @@ $$
 </Right>
 </TwoColumn>
 
+
+
+
+
 #### cases
+本来は場合分けの記述に使う
 <TwoColumn>
 <Left>
 $$
@@ -242,6 +507,66 @@ $$
 </Right>
 
 </TwoColumn>
+
+
+### ベクトル/行列
+
+
+<TwoColumn>
+<Left>
+$$
+\overrightarrow{v}=
+\
+\begin{pmatrix}
+v_{x}\\
+v_{y}\\
+v_{z}
+\end{pmatrix}
+$$
+</Left>
+<Right>
+```
+$$
+\overrightarrow{v}=
+\
+\begin{pmatrix}
+v_{x}\\
+v_{y}\\
+v_{z}
+\end{pmatrix}
+$$
+```
+</Right>
+</TwoColumn>
+
+
+<TwoColumn>
+<Left>
+$$
+\overrightarrow{v}=
+\
+\begin{bmatrix}
+v_{x}\\
+v_{y}\\
+v_{z}
+\end{bmatrix}
+$$
+</Left>
+<Right>
+```
+$$
+\overrightarrow{v}=
+\
+\begin{bmatrix}
+v_{x}\\
+v_{y}\\
+v_{z}
+\end{bmatrix}
+$$
+```
+</Right>
+</TwoColumn>
+
 #### align*　その１
 式を列挙
 
@@ -571,6 +896,33 @@ $$
 </TwoColumn>
 
 
+#### 定義(\gdef)
+同じブロックでないと定義は使えない
+<TwoColumn>
+<Left>
+$$
+    \gdef\dd{\mathrm{d}}
+    \gdef\d#1{\frac{\dd}{\dd #1}}
+    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
+    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
+    
+    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+$$
+
+</Left>
+<Right>
+```
+$$
+    \gdef\dd{\mathrm{d}}
+    \gdef\d#1{\frac{\dd}{\dd #1}}
+    \gdef\dv#1#2{\frac{\dd #2}{\dd #1}} 
+    \gdef\ndv#1#2#3{\frac{\dd^{#3} #2}{\dd #1^{#3}}} 
+    
+    \dd x, \d{x}, \dv{x}{f}, \ndv{x}{f}{n}
+$$
+```
+</Right>
+</TwoColumn>
 
 
 #### rei 

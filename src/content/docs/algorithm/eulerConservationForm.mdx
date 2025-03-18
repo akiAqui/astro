@@ -1,0 +1,233 @@
+---
+title: ＊）流体力学/オイラー保存形方程式
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## 序論
+
+流体力学における保存形オイラー方程式は、
+個々の物理保存則（質量保存、運動量保存、エネルギー保存）を統一的な数学形式でまとめたものである。
+このレポートでは各保存則の基本形から始め、それらがどのように統合されて保存形オイラー方程式を形成するかを解説する。
+
+### 前提
+圧縮性流体に対して、適用する。密度は
+$$
+ \rho=\rho(T,P)
+$$
+- $T$は温度
+- $P$は圧力
+
+と考えられる
+
+- マッハ0.3以上の流れやせん断層の解析では圧縮性流体であることが重要になる 
+
+## 個別保存則の基本形
+
+### 質量保存則（連続の式）
+
+質量保存則は「系の質量は生成も消滅もしない」という原理に基づく。
+
+微分形式での表現:
+
+$$
+\frac{\partial \rho}{\partial t} + \frac{\partial (\rho v_{x})}{\partial x} + \frac{\partial (\rho v_{y})}{\partial y} + \frac{\partial (\rho v_{z})}{\partial z} = 0
+$$
+
+
+- $\rho$: 密度[$kg/m^3$]
+- $\overrightharpoon{v}=(v_{x},v_{y},v_{z})$は流体の速度[$m/s$]
+- $\rho \cdot \overrightharpoon{v}$ は質量流束（mass flux）[$kg/(m^2 \cdot s)$]
+- $\frac{\partial \rho}{\partial t}$: 密度の時間変化率
+- $\frac{\partial (\rho u)}{\partial x}$: $x$方向の質量流入出率
+- $\frac{\partial (\rho v)}{\partial y}$: $y$方向の質量流入出率
+
+### 運動量保存則（ニュートンの第二法則）
+
+運動量保存則はニュートンの第二法則に基づく。
+
+$x$方向の運動量保存:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u u)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} = -\frac{\partial p}{\partial x}
+$$
+
+$y$方向の運動量保存:
+
+$$
+\frac{\partial (\rho v)}{\partial t} + \frac{\partial (\rho v u)}{\partial x} + \frac{\partial (\rho v v)}{\partial y} = -\frac{\partial p}{\partial y}
+$$
+
+意味:
+- 左辺第1項: 運動量の時間変化率
+- 左辺第2,3項: 対流による運動量の流入出
+- 右辺: 圧力勾配による力
+
+### エネルギー保存則（熱力学第一法則）
+
+エネルギー保存則は「エネルギーは生成も消滅もせず、形態が変換されるだけ」という原理に基づく。
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial (E u)}{\partial x} + \frac{\partial (E v)}{\partial y} = -\frac{\partial (p u)}{\partial x} - \frac{\partial (p v)}{\partial y}
+$$
+
+意味:
+- 左辺第1項: 全エネルギーの時間変化率
+- 左辺第2,3項: 流れによるエネルギーの流入出
+- 右辺: 圧力による仕事（圧力エネルギーの流れ）
+
+## 保存形への変換プロセス
+
+個別の保存則を保存形に変換するには、右辺の項を左辺に移動させ、発散形式にまとめる。
+
+### 運動量方程式の変形
+
+$x$方向運動量保存則:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u u)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} + \frac{\partial p}{\partial x} = 0
+$$
+
+これを整理:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u^2 + p)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} = 0
+$$
+
+$y$方向運動量保存則も同様:
+
+$$
+\frac{\partial (\rho v)}{\partial t} + \frac{\partial (\rho u v)}{\partial x} + \frac{\partial (\rho v^2 + p)}{\partial y} = 0
+$$
+
+### エネルギー方程式の変形
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial (E u)}{\partial x} + \frac{\partial (E v)}{\partial y} + \frac{\partial (p u)}{\partial x} + \frac{\partial (p v)}{\partial y} = 0
+$$
+
+これを整理:
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial ((E + p) u)}{\partial x} + \frac{\partial ((E + p) v)}{\partial y} = 0
+$$
+
+## ベクトル形式への統合
+
+各保存則が「時間変化率 + 空間的な流れの発散 = 0」の形になったので、これらをベクトル形式でまとめる。
+
+### 保存量ベクトル $U$ の定義
+
+$$
+U = \begin{bmatrix} 
+\rho \\
+\rho u \\
+\rho v \\
+E
+\end{bmatrix}
+$$
+
+各成分は:
+- 質量密度
+- $x$方向運動量密度
+- $y$方向運動量密度
+- 全エネルギー密度
+
+### 流束ベクトル $F$ の定義
+
+流束ベクトルは方向によって分解される:
+
+$x$方向流束ベクトル:
+
+$$
+F_x = \begin{bmatrix} 
+\rho u \\
+\rho u^2 + p \\
+\rho u v \\
+(E + p) u
+\end{bmatrix}
+$$
+
+$y$方向流束ベクトル:
+
+$$
+F_y = \begin{bmatrix} 
+\rho v \\
+\rho u v \\
+\rho v^2 + p \\
+(E + p) v
+\end{bmatrix}
+$$
+
+流束ベクトルの各成分は:
+- 質量の流れ（質量流束）
+- 運動量の流れと圧力効果（運動量流束）
+- エネルギーの流れと圧力仕事（エネルギー流束）
+
+### 統合された保存形オイラー方程式
+
+個別の保存則を統合すると:
+
+$$
+\frac{\partial U}{\partial t} + \frac{\partial F_x}{\partial x} + \frac{\partial F_y}{\partial y} = 0
+$$
+
+あるいはベクトル表記で:
+
+$$
+\frac{\partial U}{\partial t} + \nabla \cdot F = 0
+$$
+
+ここで $\nabla \cdot F$ は流束ベクトルの発散を表す。
+
+## 統合形式の意義
+
+保存形オイラー方程式の統合形式には以下の利点がある:
+
+- 数学的に簡潔な表現
+- 物理的保存則の明示的表現
+- 数値解法への適用が容易
+- 保存則の構造的類似性の表現
+- 有限体積法などの保存則ベース数値解法との親和性
+
+## 物理的解釈
+
+統合された形式は、各保存則の本質的な構造が同じであることを示している:
+
+1. 保存量の時間変化率
+2. 保存量の流入出率（流束の発散）
+3. 合計がゼロ（保存則）
+
+この構造的類似性は、質量、運動量、エネルギーという異なる物理量が同じ数学的枠組みで扱えることを意味する。
+
+## 用語説明
+
+- 保存則: 特定の物理量が生成も消滅もせず保存されるという法則
+- 発散: ベクトル場から流出入する量を表す微分演算子
+- 対流項: 流体の移動に伴う物理量の輸送を表す項
+- 圧力勾配: 空間的な圧力の変化率
+
+## リファレンス
+
+- Panton, R. L. (2013). Incompressible Flow. John Wiley & Sons.
+- White, F. M. (2016). Fluid Mechanics. McGraw-Hill Education.
+- Anderson, J. D. (1995). Computational Fluid Dynamics: The Basics with Applications. McGraw-Hill.
+- Hirsch, C. (2007). Numerical Computation of Internal and External Flows. Butterworth-Heinemann.
+- LeVeque, R. J. (2002). Finite Volume Methods for Hyperbolic Problems. Cambridge University Press.
