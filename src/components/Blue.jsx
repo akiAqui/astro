@@ -1,8 +1,8 @@
-export const Blue = ({ message, children, className }) => {
+export const Blue = ({ children }) => {
   return (
-    <div className={className}>
-      <span style={{ color: 'blue' }}>{message}</span>
-      <span>{children}</span>
+    <div>
+      <span style={{ color: "#8888ff" }}>{children}</span>
     </div>
   );
 };
+

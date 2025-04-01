@@ -3,74 +3,84 @@ title: 点と線
 description: スコアを定義して、animationエンジンを作って3次元空間内で多数の点と線を動かす
 layout: '../../../layouts/BaseLayout.astro'
 ---
- <style>{`
-        .sl-markdown-content   div.ec-line {
-            margin-top: 0 !important;
-        }
-        .sl-markdown-content  {
-           font-size:15px;
-        }
-        .sl-markdown-content h1 {
-           font-size:  27px;
-           text-decoration: underline;
-           font-weight: bold
-        }
-        .sl-markdown-content h2 {
-           font-weight: normal;
-           text-decoration: underline;
-           font-size:25px;
-        }
-        .sl-markdown-content h3 {
-           font-size:20px;
-           font-weight: normal;
-           font-style: italic;
-           text-decoration: underline;
-        }
-        .sl-markdown-content h4 {
-           font-size:15px;
-           font-weight: normal;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h5 {
-           font-size:12px;
-           font-weight: bold;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content th {
-           font-size:12px;
-        }
-        .sl-markdown-content td {
-           font-size:12px;
-        }
-        
- `}</style>
 
-import CodeTitle from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
 
-<TimeStamp fileUrl={import.meta.url} />
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
 
-## 前提
+<StandardStyle />
 
-### 概要
+##### TODOs
+
+ - [x] nothing
+ - [ ] gsapの扱い方
+ - [ ] 同期方式の決定
+ - [ ] MIDI clockからの安定的な統計的BPM算出方式
+ - [ ] 動作発動、パラメータ、とMIDI信号マッピング方式
+ - [ ] 
+
+### ねらい/基本的な要件
 - 階層構造を持つ点と線のオブジェクトの集合を扱いアニメーションさせる
+- 音に合わせてアニメーションをシンクさせる
 - 振舞いは今後も次々と追加する想定でそれを容易にする
 - 点や線は数百や数千のオーダーで扱うことを想定する
-- 
-- 音に合わせてアニメーションをシンクさせる
 - 指示に従ってその様子を録画することができる
 
-### アーキテクチャ概要
+
+### 前提
+
+## サマリー
+- 基本的な同期的な仕組みはMIDI/rtpMIDIで行う
+  - rtpMIDIで同一セグメントのネットワーク上での通信を想定する
+    - rtpMIDI, Bluetooth LE/MIDI, OSCなどの通信方法があるが、安定性の点からBluetoothは利用を想定できなかった
+    - OSCはデータ送信をUDPで行いlatencyは小さく、最も自由度が高いが、MIDIの同期的な性質を欠いている
+    - rtpは基本的にudp上で動作しFWを超えることを考えなければそのままudpで動くのでlatencyは小さい
+  - 通信がなくてもMIDIがベースであれば、Windows上でシーケンサーを動かすことができる
+  - rtpMIDIアプリケーションはwindows上で動作し、Compatible to the network MIDI included in Apple OS-X and iOS
+
+
+
+### アーキテクチャ
+- 同期的部分のスコアはMIDIに記載され、同期性はMIDIで担保する
+  - オーディオトラックとMIDIトラックをLogic Pro等のDAW環境で実現できることを考えるとMIDIでの同期が最適だろう
+- 同期をMIDIに任せてもchannel/note number/velocity/CCの値等とどう紐づけるかの表が別に必要になる
+- 同じch/noteでもタイミングによっては紐づける動作が異なることを考慮に入れる
+- GSAPをベースに・・・
 - JSONに記載されたスコアを読み込むことで環境定義、デバッグ設定、オブジェクト定義、グループ定義、アニメーション定義を行う。
 - JSONの記載が困難を伴う場合は外部プログラムを別途開発する可能性もある
 
 ### 採用技術
 - テクスチャはcanvasにプログラム生成することを想定し
 
-## スコア要件
+### スコア要件
+
+### ■ MIDI信号の詳細（数の範囲を明示）
+
+| 種類                     | チャネル (16) | 値の範囲                             | 総数（種類）                  |
+|--------------------------|----------------|--------------------------------------|-------------------------------|
+| Note On                 | 16             | ノート番号 (128), ベロシティ (128)  | 262,144 (16 × 128 × 128)     |
+| Note Off                | 16             | ノート番号 (128), ベロシティ (128)  | 262,144 (16 × 128 × 128)     |
+| Control Change          | 16             | CC番号 (128), 値 (128)              | 262,144 (16 × 128 × 128)     |
+| Program Change          | 16             | プログラム番号 (128)                | 2,048 (16 × 128)             |
+| Pitch Bend              | 16             | 値 (14bit = 0?16383)               | 262,128 (16 × 16,384)        |
+| Channel Pressure        | 16             | 値 (128)                             | 2,048 (16 × 128)             |
+| Polyphonic Aftertouch   | 16             | ノート番号 (128), 値 (128)          | 262,144 (16 × 128 × 128)     |
+| Song Position Pointer   | 0 (Global)     | 値 (14bit = 0?16383)               | 16,384                       |
+| Song Select             | 0 (Global)     | ソング番号 (128)                    | 128                          |
+| Tune Request            | 0 (Global)     | 値なし                              | 1                            |
+| Start / Stop / Continue | 0 (Global)     | 値なし                              | 3                            |
+| Clock                   | 0 (Global)     | 値なし                              | 1                            |
+| Reset                   | 0 (Global)     | 値なし                              | 1                            |
+| System Exclusive        | 0 (Global)     | 任意長のデータ                      | 無制限                       |
+
+---
+
+
 
 ### スコアの定義
 - 全ターゲットに対して一定時間内のアクションを定義した2次元の表をスコアと呼ぶ

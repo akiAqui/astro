@@ -7,15 +7,14 @@ table { width: 100%; }
 th:nth-child(3) { min-width: 180px; }
 `}</style>
 
-import CC from "../../components/c-c.astro";
-import CodeTitle from '../../components/CodeTitle';
+import CC  from "../../components/c-c.astro";
 import MermaidChart from '../../components/MermaidChart.astro';
-import TimeStamp from '../../components/TimeStamp';
-import Box from '../../components/Box';
-import RedBox from '../../components/RedBox';
-import WhiteBox from '../../components/WhiteBox';
-import {TwoColumn,Left,Right}  from '../../components/TwoColumn';
-import StandardStyle from '../../components/StandardStyle';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../components/';
 
 <StandardStyle />
 
@@ -24,27 +23,48 @@ import StandardStyle from '../../components/StandardStyle';
  - [x] nothing
  - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
  - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
- - [ ] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない
+ - [x] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない(動いた。index.jsxファイルでdefault exportとexportの書き方が違うのでエラーだった。でも、*.astroファイルはexport/importはバレルではやはりできてない）[2025/03/19]
  - [ ] transform修正中
+ - [ ] 泥/分子動力学
+ - [ ] ボルツマン定数を、微視的状態とエントロピーから導くメモをここか紙に作る
+ - [ ] convective flux+diffusive flux = total fluxの理解とメモ作成
+   - 質量流束、熱流束、運動量流束について理解する
+ - [ ] オイラー保存形式勉強中
+   - [ ] ガウスの発散定理が未完了。
+ - [ ] せん断層の渦の数値解析
+ - [ ] g-sandboxで歪んだアトラクタ/ポテンシャルの渦をせん断層より先に(ブランチ名はuzu01)
+   - gsap学習目次完了、5.4まで学習する
+ - [x] OSC確認(不要になった）
+ - [ ] rtpMIDI, Bluetooth LE/MIDIを試したので実験結果を考察に残すart/networking.mdx. OSCは不要
+ - [ ] MIDIイベントをどうやってスコアにマップさせるかの考察！！！(点と線）
+   - interval_1ではMIDIイベントとtarget/behavior/prmを対応させ、interval_2ならどのtarget/behavior/prmかというJSON?
+   - gsapとの関連も考えるとどこまでをJSONに持つか
+   - ch16ではカメラアニメーションで他のチャネルでは全般のアニメーションを指定するか？とか
+   - 背景はch16?ch15?何を対応させるか？とか
+ 
+
 <Box>
 - このページの更新には、update_indexを実行
 - TODOの追加は~/docs/todoを編集
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
+| ＊）GSAP x Three.js | [three/gsap.mdx](http://localhost:4321/three/gsap/) | Mar 31 01:59 |
+| MIDIでのnetworkingに関する検討 | [art/networking.mdx](http://localhost:4321/art/networking/) | Mar 31 00:39 |
+| 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | Mar 31 00:39 |
+| 音響スコア考察（なぜ？） | [art/score.mdx](http://localhost:4321/art/score/) | Mar 30 16:19 |
+| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Mar 28 21:11 |
+| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 22 03:18 |
+| ＊）ガウスの発散定理 | [math/divergence-theorem.mdx](http://localhost:4321/math/divergence-theorem/) | Mar 19 14:04 |
+| ＊）流体力学/オイラー保存形方程式 | [algorithm/eulerConservationForm.mdx](http://localhost:4321/algorithm/eulerConservationForm/) | Mar 19 11:56 |
+| 数学表記 | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 19 11:33 |
 | 物質微分と微分の連鎖律 | [math/material_derivatives.mdx](http://localhost:4321/math/material_derivatives/) | Mar 19 01:46 |
-| 数学記号 | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 19 00:08 |
-| ＊）流体力学/オイラー保存形方程式 | [algorithm/eulerConservationForm.mdx](http://localhost:4321/algorithm/eulerConservationForm/) | Mar 18 14:39 |
 | ＊）せん断層数値解析 | [algorithm/uzu.mdx](http://localhost:4321/algorithm/uzu/) | Mar 18 11:31 |
 | ＊）流体の保存則に基づく数値解法 | [algorithm/eno.mdx](http://localhost:4321/algorithm/eno/) | Mar 18 09:48 |
 | 液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Mar 16 22:24 |
 | 一次元バネ | [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Mar 16 21:02 |
-| OCS利用の検討 | [art/osc.mdx](http://localhost:4321/art/osc/) | Mar 16 21:01 |
 | 泥 | [art/mud.mdx](http://localhost:4321/art/mud/) | Mar 16 21:00 |
-| 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | Mar 16 20:59 |
-| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Mar 16 20:53 |
 | このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Mar 15 23:21 |
-| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 15 20:37 |
 | ＊）分子動力学/テキスト目次 | [algorithm/molecular_dynamics_text.mdx](http://localhost:4321/algorithm/molecular_dynamics_text/) | Mar 14 21:49 |
 | ＊）分子動力学 | [algorithm/molecular_dynamics.mdx](http://localhost:4321/algorithm/molecular_dynamics/) | Mar 13 16:30 |
 | ＊）環境マッピング | [three/env_mapping.mdx](http://localhost:4321/three/env_mapping/) | Mar 12 01:44 |
@@ -80,7 +100,6 @@ import StandardStyle from '../../components/StandardStyle';
 | Riemann Surface | [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 08:02 |
 | ＊）波形操作合成とWaveTerrainSynthesis | [algorithm/waveTerrainSynthesis.mdx](http://localhost:4321/algorithm/waveTerrainSynthesis/) | Feb 12 20:08 |
 | ＊）バイポーラ | [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 01:57 |
-| スコア考察 | [art/score.mdx](http://localhost:4321/art/score/) | Feb 12 01:56 |
 | ＊）sandbox/multi branch | [tech/git_branches.mdx](http://localhost:4321/tech/git_branches/) | Feb 11 03:47 |
 | Ｆ）Perlinノイズ | [algorithm/perlin.mdx](http://localhost:4321/algorithm/perlin/) | Feb 11 01:48 |
 | 液体 | [algorithm/fluid.mdx](http://localhost:4321/algorithm/fluid/) | Feb 11 01:46 |

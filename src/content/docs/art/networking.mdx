@@ -1,18 +1,16 @@
 ---
-title: OCS利用の検討
+title: MIDIでのnetworkingに関する検討
 description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
 ---
-
-import CC from "../../../components/c-c.astro";
-import CodeTitle from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
-import Box from '../../../components/Box';
-import RedBox from '../../../components/RedBox';
-import WhiteBox from '../../../components/WhiteBox';
-import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
-import StandardStyle from '../../../components/StandardStyle';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
 
 <StandardStyle />
 
@@ -20,8 +18,22 @@ import StandardStyle from '../../../components/StandardStyle';
 
  - [x] nothing
 
+##### TODOs
 
-# 音響データとThree.jsのリアルタイム同期
+ - [x] nothing
+
+## 本レポートの目標
+VJ的な方向性を自分のプラットフォームで実現することを目標としている。
+ただし、楽曲は一般的にwavファイルであり、楽曲はMIDIデータから構成されることもある。
+この楽曲と同期させアニメーションを作ることを0から考える。
+
+
+
+音響データとThree.jsのリアルタイム同期をすることを目的とする。
+二つの方向性が考えられる。
+
+1. wavファイルを読み込みFFT（周波数帯分析）、ボリューム、位相という音の3要素を使ってアニメーションを作成する
+
 
 ## 要約
 Csound、iPad/iPhoneの作曲ソフト、リアルタイムパフォーマンスソフトをOSC (UDP) を介してThree.jsと統合し、音と映像をリアルタイムに同期する手法を整理する。  

@@ -33,20 +33,89 @@ import StandardStyle from '../../../components/StandardStyle';
 ##### TODOs
 
  - [x] nothing
+ - [ ] 5/1にはubuntu-22.04を削除
 
-| date                      | what                                  | 
-|:--------------------------|:--------------------------------------|
-|25年03月15日 20時32分      | apt update/upgrade                    |
-|                           | git pusu@astro                        |
-|                           | weekly backup@24.04.2                 |
-|25年03月08日 02時35分      | apt install openssh-server -y         |
-|                           | service ssh start@22                  |
-|                           | systemctl enable ssh                  |
-|                           | systemctl status ssh                  |
-|25年03月06日 03時25分      | weekly_backup                         |
-|                           | node_modules削除                      |
-|                           | astro git push                        |
-|25年03月03日 04時13分      | ~/astro/ git push                     |
-|25年03月02日               | apt update   / upgrade                |
-|                           | gh, セキュリティー系                  |
+| date                  | what                                                    |
+|:----------------------|:--------------------------------------------------------|
+| 25年03月22日 02時18分 | @24                                                     |
+|                       | npm outdated -g npm/npm install -g npm@latest           |
+|                       | sudo apt upgrade                                        |
+|                       | weekly backup                                           |
+|                       | Ubuntu-22.04 17.82GB/Ubuntu-24.04 4.57GB Ubuntu  2.01GB |
+|                       |
+| 25年03月15日 20時32分 | apt update/upgrade                                      |
+|                       | git pusu@astro                                          |
+|                       | weekly backup@24.04.2                                   |
+| 25年03月08日 02時35分 | apt install openssh-server -y                           |
+|                       | service ssh start@22                                    |
+|                       | systemctl enable ssh                                    |
+|                       | systemctl status ssh                                    |
+| 25年03月06日 03時25分 | weekly_backup                                           |
+|                       | node_modules削除                                        |
+|                       | astro git push                                          |
+| 25年03月03日 04時13分 | ~/astro/ git push                                       |
+| 25年03月02日          | apt update   / upgrade                                  |
+|                       | gh, セキュリティー系                                    |
 
+
+### 2025年3月22日
+```
+[03/22 3:00 ]@(24.04.2)  ~/back %du -s *
+du -s *
+49.0G	20250208
+ 4.2G	20250213
+33.0G	20250306
+ 8.4G	20250322
+ 1.3G	Captures.zip
+ 0.06GM	Math_of_Real-Time_Graphics
+ 0.2G	csound
+ 3.4G	glslViewer
+ 0.02	html.js
+ 1.5G	html.ts
+ 2.1G	p5
+ 0.08G	python
+ 0.14G	tmp
+[03/22 3:07 ]@(24.04.2)  ~/back %
+```
+### 2025年3月22日
+```
+ubuntu 22 19,132,317,696
+ubuntu 24  2,160,066,560
+ubuntu     4,911,529,984
+
+aquis> Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss\*" | Select-Object DistributionName,BasePath
+
+DistributionName BasePath
+---------------- --------
+Ubuntu-22.04     C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState
+Ubuntu-24.04     C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}
+Ubuntu           C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}
+
+
+aquis> Get-Item "C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState\ext4.vhdx"
+
+    Directory: C:\Users\aquis\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc\LocalState
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/17     1:44    19132317696 ext4.vhdx
+
+aquis> Get-Item "C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}\ext4.vhdx"
+
+    Directory: C:\Users\aquis\AppData\Local\wsl\{a48b6377-4503-4fea-81f2-3b03329a76c5}
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/11    16:37     2160066560 ext4.vhdx
+
+
+\aquis> Get-Item "C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}\ext4.vhdx"
+
+    Directory: C:\Users\aquis\AppData\Local\wsl\{42d332fc-4c83-460c-af9c-229533d69005}
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2025/03/22     2:31     4911529984 ext4.vhdx
+
+PS C:\Users\aquis>
+```

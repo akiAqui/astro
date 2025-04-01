@@ -1,18 +1,17 @@
 ---
-title: ＊＊＊）タイトル
+title: ＊）ガウスの発散定理
 description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
 ---
 
-import CC from "../../../components/c-c.astro";
-import CodeTitle from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
-import Box from '../../../components/Box';
-import RedBox from '../../../components/RedBox';
-import WhiteBox from '../../../components/WhiteBox';
-import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
-import StandardStyle from '../../../components/StandardStyle';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
 
 <StandardStyle />
 

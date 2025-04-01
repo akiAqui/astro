@@ -1,0 +1,305 @@
+---
+title: ＊）GSAP x Three.js
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+ - [ ] 目次が一通りできたので、中身を作り始める作業が必要
+ - [ ] 多分5.4までできれば、点と線に行ける
+
+### 第1章: 導入編
+#### 1.1 はじめに
+- 実装はTypescriptを使って実装する説明
+- interface等のTypescriptをを用いた型セーフな実装をすることを説明
+- 環境構築はここでは説明しない
+
+#### 1.2 GSAPとは何か？なぜGSAPを使うのか？
+#### 1.3 CanvasとrequestAnimationFrameの基礎理解
+- 
+- 描画ループ内でのオブジェクト更新の流れを説明しrequestAnimationの位置づけを説明
+- requestAnimationFrame() の仕組みと主な使い方
+
+#### 1.4 GSAPとCanvasの統合
+
+
+
+### 第2章: 基本操作
+- GSAPはrequestAnimationFrameを内部で使用しており、毎フレームの更新処理を書かなくてもアニメーションが機能するという説明
+- 逆に、GSAPとThree.jsの独自アニメーション（カメラワークなど）を並行処理する場合、競合しないよう注意が必要だという説明
+- 表タイトル例：「GSAPアニメーションでよく使うプロパティ一覧」を追加
+  - 表では項目：duration, delay, ease, repeat, yoyo, onStart, onUpdate, onComplete, paused, などを一括提示
+
+#### 2.0 よく使うGSAP記法とプロパティ
+- 記法に慣れるためいくつかの例を提示
+- 表記内容がオブジェクトであるとか、配列であるとか、決まった用語であるとか、文法的な説明
+
+
+#### 2.1 基本的な使い方(1) sample program(2-1)
+- GSAPでは、アニメーションする対象としては、DOM以外にJavaScriptの任意のオブジェクトを対象にで切るという説明。
+- Three.jsでは Mesh, Object3D, position, rotation, material.color などがターゲットになり得るという説明
+- gsap.to(),gsap.from(),gsapfromTo()の全てを利用
+- duration, delayの利用
+- easingは複数のタイプを複数の応用
+- 色、位置・回転・スケールなど基本プロパティのアニメーション
+- GSAPはQuaternionや行列変換には対応していない、回転は .rotation に対してオイラー角で行う必要があるという説明
+- Matrix4 などの行列全般、BufferGeometry の頂点配列、Texture や ShaderMaterial のuniform変数はそのままではGSAPに対応できないという説明。
+- Three.jsでのカラーやベクトルの各成分（r/g/b, x/y/z）はプロパティ名を直接指定してアニメーションできる説明と例に含める
+
+##### 2.1.1 `gsap.to()` / `gsap.from()` / `gsap.fromTo()` の使い分け
+- 考え方、使い方、制限などを説明
+- gsap.tickerの説明
+- 複数のアニメーションが同じプロパティを操作する競合の可能性の説明、
+- 競合時は`overwrite: true` を指定して競合を防ぐ説明（詳しくは3.1で利用と説明)
+
+
+##### 2.1.2 時間制御（duration, delay）
+- 考え方、使い方、制限などを説明
+
+##### 2.1.3 イージング（easing）
+- sine, cubic-splineなど一通り説明
+
+#### 2.2 基本的な使い方(2) sample program(2-2)
+
+- repeat, yoyo, repeatDelayを利用
+- gsap.timeline()を利用
+- timeline内にtweenを順に追加する流れの中で、「何もしない」期間を作ることもできることを示す
+- seek(),progress(),play()等を利用
+- 全種類のイベントハンドラを利用
+- キーボードイベントの利用
+- マウスイベントの利用
+##### 2.2.1 `repeat`, `yoyo`, `repeatDelay` の使い方
+- 考え方、使い方、制限などを説明
+##### 2.2.2 `gsap.timeline()` と基本的なシーケンス制御
+- 考え方、使い方、制限などを説明
+- playheadの説明
+- Timelineは pause(), play(), restart(), seek(), progress(), reverse() などのメソッドで制御できる説明
+```ts
+const tl = gsap.timeline({ paused: true });
+tl.to(obj.position, { x: 2, duration: 1 });
+
+// 一時停止や再開、位置調整など
+tl.pause();
+tl.seek(0.5);       // 0.5秒地点に移動
+tl.progress(0.5);   // 全体の50%地点に移動
+tl.restart();
+```
+##### 2.2.3 イベントハンドラ（onStart, onUpdate, onComplete）
+- 考え方、使い方、制限などを説明
+- 全イベントハンドラの違いを説明
+##### 2.2.4 マウス・キーボードイベントとの連携
+- 考え方、使い方、制限などを説明
+- mobile環境でのイベントの説明}
+
+#### 2.3 関数指定easing sample program(2-3)
+- 関数指定によるeasing定義の利用場面、利用目的、利用方法の説明
+- `(t) => ...` のように、進行度 `t` を受け取って独自の出力値を返す関数形式のeasingを解説
+- 複雑な補間カーブや動的なeasingに柔軟に対応可能
+- `ease: t => t * t` や三角関数、ノイズなどを活用した応用例も紹介
+
+#### 2.4 カスタムイージング sample program(2-4)
+- CustomEaseを利用した例
+- カスタムイージングの利用場面、利用方法の説明
+
+#### 2.5 BezierPlugin sample program(2-5)
+- BezierPluginを利用
+- BezierPlugin（GSAP）の利用場面、利用目的、利用方法の説明
+
+#### 2.6 MotionPlugin sample program(2-6)
+- MotionPathPlugin による軌道アニメーション例
+- 本手法の、利用場面、利用目的、利用方法の説明
+- 座標の配列を与え、GSAPが自動補間したパスに沿ってオブジェクトを移動させる方法を解説
+- Three.jsオブジェクトで実装
+
+#### 2.7 CurvePath/Catmull-Rom sample program(2-7)
+- CurvePath + 自前関数による Catmull-Rom 曲線移動
+- 本手法の利用場面、利用目的、利用方法の説明
+- `THREE.CatmullRomCurve3` を使った独自曲線軌道と `getPointAt(t)` による補間制御
+- GSAPと併用してより柔軟な動きが可能
+
+
+#### 2.8 CurvePath/TCBスプライン sample program(2-8)
+- CurvePath + 自前関数による TCB スプライン制御
+- 本手法の利用場面、利用目的、利用方法の説明
+- Three.jsで自作のテンション・連続性・バイアス付き曲線を構築し、アニメーションに応用
+
+#### 2.9 表
+duration, ease, delay, repeat, yoyo を表にまとめる
+
+
+
+### 第3章: タイムラインとアニメーション構造
+
+#### 3.1 ラベルと相対位置指定 sample program(3-1)
+- timeline内のアニメーションに名前（ラベル）を付ける方法を説明
+- その位置にジャンプ（seek）する方法を説明
+- 相対的な位置を指定して再生順を調整する方法を説明
+- overwriteの利用と説明
+- タイムラインのpositionパラメータの説明と利用
+- 相対指定 ('+=1', '-=0.5')の説明と利用
+- 数値による絶対指定（0, 1, 2.3など)の説明と利用
+- 同時再生 ('<')の利用と利用
+- ラベル指定の方法と説明と利用
+
+#### 3.2 タイムラインの高度な使い方 sample program(3-2)
+- nested timelineでaddで子タイムラインを追加する方法を説明
+- timelineを動的に生成する方法を説明
+- addLabel, seek, pause, play time, progressなどを活用し、再生位置や速度をプログラムで制御
+- 条件に応じたスキップや分岐の仕組みを説明
+- 複数timelineを保持する Map や オブジェクト構造を利用
+- 全アニメーションのリセット・再スタートなどの設計を含む方法
+- playheadの相対制御ラベルや時間オフセットによる位置指定
+
+#### 3.3 アニメーションの構造化と再利用 sample program(3-3)
+- timelineをモジュール化・再利用するための設計パターンを追加
+- invalidateの利用と説明
+- defaultの利用と説明
+
+#### 3.4 staggerによる多要素アニメーション制御 sample program(3-4)
+- 配列やグループに対してアニメーションを順に遅らせて適用する `stagger` の使い方
+- timelineやforEachとの併用で動きに「波」や「群れ」を作り出す応用例
+
+#### 3.5 modifiersによるプロパティ変換制御  sample program(3-5)
+- `modifiers` を用いてアニメーション対象の値を動的に加工する方法を解説
+- 例：位置をループさせる、角度を常に0-360に保つ、数値を整数化するなど
+
+
+
+### 第4章: Three.jsオブジェクトと状態の管理
+
+#### 4.1 状態遷移のアニメーション管理 sample program(4-1)
+- 非連続的な状態の明示的な切り替え（例：フェーズ遷移、画面セクション遷移など）に焦点を当てる
+- 関数ベースでの実装
+- 条件分岐や制御フローとの組み合わせによる「非連続的」なアニメーション設計を扱う
+- 例えば「登場 → 遷移 → 退場」などのシーン内状態の移行を、GSAPのtimelineでどう管理するかを実装する例
+
+
+#### 4.2 オブジェクト指向でのアニメーション管理 sample program(4-2)
+- Three.jsオブジェクトに対するGSAPアニメーションを、アニメーションロジックを内部に持つデザインパタンの実装例
+- 階層構造を持たないMesh
+- Factory+strategyデザインパタンで実装
+- `interface`,`class` 等を用いてアニメーションを内部に持つ再利用可能なデザインを実装
+- クラスにオブジェクトと動作を閉じ込めることで、コードの分離性・保守性も実装
+- 各インスタンスに対して異なるアニメーション設定を持たせるパターンや、プロパティごとの責務分離も実装
+- 2章で学んだ、gsap.to/from/timelineなどをOOP的に整理・再利用するパタンとして実装
+- コンポーネントやエンティティ毎に制御を分けるデザインパタン
+
+
+#### 4.3 複数オブジェクトでのアニメーション管理 sample program(4-3)
+- 複数のオブジェクトにクラスベースで適用する方法を紹介
+- 親子関係を持たない複数オブジェクトの管理と、親子関係を持つ複数オブジェクトの管理を実装
+- 親子関係はCompositeデザインパタンを用いる
+- シーンに複数のMeshやLight等の異なる対象が存在する場合も管理する実装
+- Three.jsの `Object3D` や `Group` を用い、全体と部分の動きを分離してアニメーション制御するパターン
+- 階層構造（親子関係）を活用したグループ制御も実装
+- forEach処理やタイムラインのバッチ適用といった実装面も確認
+- 大量オブジェクトを一括で更新する際、パフォーマンス向上のために `gsap.quickSetter` の使用
+
+
+#### 4.4 スコア駆動アニメーション管理 sample program(4-4)
+- 名前ベースでターゲットや動作をマッピングする方法を提示
+- Strategy + Mediator + Data Mapperで実装
+- 詳細TBD
+
+
+
+### 第5章: インタラクション
+
+#### 5.1 状態マシンとの統合 sample program(5-1)
+- アニメーションの切り替えを「状態（State）」の概念で管理する
+- 状態ごとに異なる `gsap.timeline()` を準備し、状態遷移に応じて再生・停止・リセットなどを行う
+- 状態は以下のような用途に活用される：
+  - UIコンポーネントの表示/非表示（例：メニューの開閉）
+  - オブジェクトの「待機」「移動」「消失」といったアクションの切り替え
+- 条件分岐（if/switch）や状態変数（currentState）による実装
+- 応用例として、XStateなどの状態マシンライブラリとGSAPを連携する方法も紹介
+
+
+#### 5.2 非同期データと連動したアニメーション sample program(5-2)
+- async/await や Promise を使って非同期処理の完了を待ってから GSAP アニメーションを実行するパターン
+- 要素の出現・変化・動きなどを非同期イベントの後に発生させる方法
+- 非同期イベントの例：REST APIレスポンス受信後
+- 非同期フローとアニメーションのタイミングをどのように結びつけるかを解説
+
+#### 5.3 オーディオとの同期アニメーション sample program(5-3)
+- Web Audio APIとの基本的な接続方法
+- 周波数や音量データ（FFT）に応じたビジュアルエフェクトの制御
+- 楽曲の進行に応じた時間的アニメーション（beat-based）
+
+
+#### 5.4 MIDIとの同期アニメーション sample program(5-4)
+- Web MIDI APIを使った入力検出とGSAPアニメーションのトリガー化
+- Observerデザインパタンで実装する
+- ノートオン／オフによるオブジェクトのアニメーション制御
+- コントローラー入力によるリアルタイム調整（例：knob→位置や透明度）
+- MIDIresetを受信したときの autoKillの実装
+- MIDI ClockからのBPMの検出
+- GSAPの時間とBPMをマッピングして、ビートに合わせたアニメーションの実現
+
+##### 5.5 WebSocket連携 sample program(5-5)
+##### 5.6 MQTT連携 sample program(5-6)
+##### 5.7 OSC連携 sample program(5-7)
+##### 5.8 OSC連携 sample program(5-8)
+- 各プロトコルにおける反応速度（latency）や、データの処理フロー設計について解説\
+- WebSocket利用例：Raspberry Pi等の外部デバイスからリアルタイムデータを受信
+- OSC（Open Sound Control）利用例：センサー情報やジェスチャー入力の伝達（特に音響／映像系で多用）
+- MQTT利用例：IoT用途に多い軽量メッセージングプロトコルで、センサーデータ配信に利用
+
+
+### 第6章: 応用例
+#### 6.1 パーティクルアニメーションsample program(6-1)
+- 多数のオブジェクトの、大量同次制御、寿命管理をテーマ
+- 4.2で学んだforEach処理の応用として、多数のパーティクルにアニメーションを適用する
+- 4.3で触れた状態遷移（生成→移動→消滅）を、多数オブジェクトに自動進行させる「ライフサイクル制御」として展開
+- 各粒子に異なるタイミングで処理を行うために `stagger` を補足的に使用する（基本概念は第3章で習得）
+- 実時間ベースで粒子ごとのアニメーションを分散制御し、自然で密度の高い表現を実現
+
+#### 6.2 GSAPでGLSLと連携（Three.js経由）sample program(6-3)
+- uniformとgsapとの連携
+  - `uniforms.uTime` のような時間に応じた変化とgsapとの関係を学ぶ
+  - `uniforms.uScale` や `uIntensity` などユーザー入力や状態に連動した強度・スケール変化を学ぶ
+- サンプルプログラム実装内容のポイント
+  - GLSLのぼかしの強度をGSAPで時間で制御する
+  - ShaderMaterialのuniformsにアニメーション対象のfloatやvec3を定義
+  - uniformオブジェクトのプロパティは Three.js 固有形式（`.value`）を使う必要がある
+  - 値の型に応じてアニメーションできるプロパティが異なる（number, Vector2, Vector3 など）
+  - そのuniformをJavaScript側で保持しておき、GSAPでアニメーションを適用（`gsap.to(material.uniforms.uValue, { value: 1.0 })` など）
+
+
+### 第7章: パフォーマンスと設計
+
+##### 7.1 FPSと描画負荷の測定
+##### 7.2 GSAPの軽量化設定（autoKillなど）
+##### 7.3 アニメーションのキャンセルと再利用
+##### 7.4 OOP的Canvas管理
+##### 7.5 メモリリーク対策と破棄処理
+
+### 第8章: よくあるトラブルとFAQ
+
+##### 8.1 アニメーションが動かないとき
+##### 8.2 Canvasがちらつく／壊れるとき
+##### 8.3 ScrollTriggerが効かないとき
+##### 8.4 pluginがうまく動作しないとき
+##### 8.5 デバッグ方法まとめ
+
+### 第9章: Three.js以外の技術との補足連携
+
+##### 9.1 2次元CanvasにおけるGSAPの活用
+##### 9.2 SVG / DOM要素アニメーションの補足
+##### 9.3 フレームワークとの連携（React, Vue, Svelte）
+##### 9.4 UIエフェクトのアニメーション化
+
+

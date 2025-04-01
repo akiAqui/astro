@@ -28,14 +28,11 @@ import StandardStyle from '../../../components/StandardStyle';
 このレポートでは各保存則の基本形から始め、それらがどのように統合されて保存形オイラー方程式を形成するかを解説する。
 
 ### 前提
-圧縮性流体に対して、適用する。密度は
+圧縮性流体に対して、適用する。密度は温度と圧力の関数と考えられる。
 $$
  \rho=\rho(T,P)
 $$
-- $T$は温度
-- $P$は圧力
 
-と考えられる
 
 - マッハ0.3以上の流れやせん断層の解析では圧縮性流体であることが重要になる 
 
@@ -92,6 +89,173 @@ $$
 - 左辺第1項: 全エネルギーの時間変化率
 - 左辺第2,3項: 流れによるエネルギーの流入出
 - 右辺: 圧力による仕事（圧力エネルギーの流れ）
+
+### エネルギー保存則（補)
+
+**エネルギー流束**:
+   - 全エネルギー $E$ の流束は $(E + p) u$。
+
+#### 状態方程式の導出
+
+エネルギー密度 $E$ は、運動エネルギーと内部エネルギーの和で表される。
+
+$$
+E = \frac{1}{2} \rho |
+\mathbf{u}|^2 + \frac{p}{\gamma - 1}
+$$
+
+この関係を用いることで、状態方程式（理想気体の関係式）が得られる。
+
+$$
+p = (\gamma - 1) \left( E - \frac{1}{2} \rho |
+\mathbf{u}|^2 \right)
+$$
+
+ここで、
+- $\rho$ [kg/m3]: 密度
+- $u, v$ [m/s]: 速度成分
+- $p$ [Pa]: 圧力
+- $E$ [J/m3]: エネルギー密度
+- $\gamma = 1.4$: 比熱比（空気の値）
+
+
+
+
+## 流体の質量保存則と連続の式
+
+連続の式は質量保存則を表現した流体力学の基本方程式である：
+
+$$
+\frac{\partial \rho}{\partial t} + \frac{\partial (\rho v_{x})}{\partial x} + \frac{\partial (\rho v_{y})}{\partial y} + \frac{\partial (\rho v_{z})}{\partial z} = 0
+$$
+
+ここで：
+- $\rho$: 密度[$kg/m^3$]
+- $\overrightharpoon{v}=(v_{x},v_{y},v_{z})$: 流体の速度[$m/s$]
+- $\rho \cdot \overrightharpoon{v}$: 質量流束（mass flux）[$kg/(m^2 \cdot s)$]
+- $\frac{\partial \rho}{\partial t}$: 密度の時間変化率
+- $\frac{\partial (\rho v_x)}{\partial x}$: $x$方向の質量流入出率
+- $\frac{\partial (\rho v_y)}{\partial y}$: $y$方向の質量流入出率
+- $\frac{\partial (\rho v_z)}{\partial z}$: $z$方向の質量流入出率
+
+ベクトル形式では：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = 0
+$$
+
+## 質量保存則の導出
+
+### コントロールボリュームの考え方
+
+空間内の任意の固定体積 $V$ を考える。この体積内の質量変化率は、体積に流入する質量から流出する質量を引いたものに等しい。
+
+### 数学的表現
+
+体積 $V$ 内の総質量は $\int_V \rho dV$ である。この時間変化率は：
+
+$$
+\frac{d}{dt}\int_V \rho dV = -\int_S \rho \vec{v} \cdot \vec{n} dS
+$$
+
+ここで：
+- 左辺：体積 $V$ 内の質量の時間変化率
+- 右辺：表面 $S$ を通過する質量流束（マイナスは流出が正として定義）
+- $\vec{n}$：表面の単位法線ベクトル
+
+### ガウスの発散定理
+
+ガウスの発散定理によると、ベクトル場 $\vec{F}$ に対して：
+
+$$
+\int_S \vec{F} \cdot \vec{n} dS = \int_V \nabla \cdot \vec{F} dV
+$$
+
+この定理を $\vec{F} = \rho \vec{v}$ に適用すると：
+
+$$
+\int_S \rho \vec{v} \cdot \vec{n} dS = \int_V \nabla \cdot (\rho \vec{v}) dV
+$$
+
+### 方程式の変形
+
+質量保存の式に発散定理を適用：
+
+$$
+\frac{d}{dt}\int_V \rho dV = -\int_V \nabla \cdot (\rho \vec{v}) dV
+$$
+
+積分の中に微分を入れると：
+
+$$
+\int_V \left(\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v})\right) dV = 0
+$$
+
+### 微分形式
+
+この式は任意の体積 $V$ で成立する必要があるため、被積分関数自体がゼロでなければならない：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = 0
+$$
+
+これが連続の式（質量保存則）の微分形式である。
+
+## 物質微分との関係
+
+物質微分と質量保存則は互いに関連しており、物質微分を用いると質量保存則を流体粒子の視点で解釈できる。
+
+### 物質微分の定義
+
+物質微分（Material Derivative）は流体要素に沿って測定される量の時間変化率：
+
+$$
+\frac{D}{Dt} = \frac{\partial}{\partial t} + \vec{v} \cdot \nabla
+$$
+
+### 連続の式との関係
+
+連続の式を展開すると：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = \frac{\partial \rho}{\partial t} + \vec{v} \cdot \nabla \rho + \rho \nabla \cdot \vec{v} = 0
+$$
+
+物質微分の定義を適用：
+
+$$
+\frac{D\rho}{Dt} + \rho \nabla \cdot \vec{v} = 0
+$$
+
+この式は流体要素に沿った密度の変化率が、流体の膨張・収縮率（$\nabla \cdot \vec{v}$）に比例することを示している。
+
+### 特殊ケース：非圧縮性流体
+
+非圧縮性流体では $\nabla \cdot \vec{v} = 0$ であり、この場合：
+
+$$
+\frac{D\rho}{Dt} = 0
+$$
+
+つまり、流体要素に沿った密度変化はない。
+
+## 用語説明
+
+- **連続の式**: 質量保存則を表現した偏微分方程式
+- **コントロールボリューム**: 流体解析において考慮する固定された空間領域
+- **ガウスの発散定理**: ベクトル場の発散を体積積分と面積分で関連付ける定理
+- **物質微分**: 流体粒子に沿って観測される物理量の時間変化率
+- **非圧縮性流体**: 密度が一定の流体。$\nabla \cdot \vec{v} = 0$ という条件を満たす
+
+## リファレンス
+
+- Anderson, J. D. (2011). *Fundamentals of Aerodynamics*.
+- Batchelor, G. K. (2000). *An Introduction to Fluid Dynamics*.
+- Kundu, P. K., Cohen, I. M., & Dowling, D. R. (2015). *Fluid Mechanics*.
+- White, F. M. (2016). *Fluid Mechanics*.
+
+
+
 
 ## 保存形への変換プロセス
 
