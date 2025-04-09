@@ -1,0 +1,120 @@
+---
+title: ＊）毎日のコマンド
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+### 初期化
+- (PowerShell)usb ssdを接続
+```txt
+wsl --mount \\.\PHYSICALDRIVE1 --partition 1 --bare
+```
+- usbのデバイス名を確認
+```txt
+lsblk
+```
+- マウント
+```txt
+ sudo mount -t ext4 /dev/sde1 /mnt/usb
+```
+- NFSをsambaマウント
+```txt
+sudo mount -t cifs //192.168.1.1/ndisk /mnt/samba -o "username=nobe,password=Kisamic8,vers=2.0,uid=1000,gid=1000,file_mode=0644,dir_mode=0755"
+```
+```txt
+smount
+```
+- apt
+```txt
+sudo apt update
+```
+```txt
+sudo apt upgrade -y
+```
+### portforward
+- (powershell) FW設定確認
+```txt
+Get-NetFirewallRule | Where-Object DisplayName -like "*WSL2*" | Get-NetFirewallPortFilter | Select-Object Protocol, LocalPort
+```
+
+- (powershell) FW設定(astro)
+```txt
+netsh advfirewall firewall add rule name="WSL2 astro" dir=in action=allow protocol=TCP localport=4321
+
+```
+- (powershell) FW設定(three.js)
+```txt
+netsh advfirewall firewall add rule name="WSL2 three.js" dir=in action=allow protocol=TCP localport=5173
+
+```
+
+- (powershell)port forward確認(されていることを確認するだけでいい何故なら、永続設定のはずなので）
+```txt
+netsh interface portproxy show all
+```
+
+
+### 開発中
+- git
+```
+gaa
+```
+```txt
+gc メッセージ
+```
+```txt
+gp
+```
+
+### 開発開始
+- repository初期化
+```txt
+git init
+```
+```txt
+gaa
+```
+```txt
+gc 最初
+```
+```txt
+git branch -M master
+```
+```txt
+git remote add origin https://github.com/username/repo.git
+```
+```txt
+git push -u origin master
+```
+### 更新・バックアップ
+- commit できていないプロジェクトを検索
+```txt
+ git_todo_all
+```
+- バックアップ
+```txt
+weekly_backup
+```
+- astroの初期ページ更新
+```txt
+update_index
+```
+- distroのサイズ確認
+```txt
+distro
+```

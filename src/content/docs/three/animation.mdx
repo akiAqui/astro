@@ -18,6 +18,49 @@ import StandardStyle from '../../../components/StandardStyle';
 
 
 
+### Three.jsでの基本的なアニメーションの作り方
+
+#### THREE.Clockクラス
+- 経過時間の測定
+- アニメーションのタイミング管理
+- シェーダーの時間パラメータ更新
+- メソッド
+  -getElapsedTime()
+    - Clockインスタンスが作成されてからの秒数（または最後にリセットされてからの秒数）を返す
+  - getDelta() 
+    - 前回の呼び出しからの経過時間を取得
+  - stop() 
+    - 時計を一時停止
+  - start() 
+    - 一時停止した時計を再開
+
+#### requestAnimationFrame()
+- ブラウザのAPIで、次のフレームを描画する前に指定したコールバック関数を実行するよう要求します。
+  - animation 関数の中でrequestAnimationFrame(animation)として自分を呼び出す
+- フレームレート最適化 - モニターのリフレッシュレートに同期し（通常60FPS）、スムーズなアニメーションを実現する
+- ブラウザがタブをバックグラウンドにしたときに自動的に実行を停止し、リソースを節約
+
+```txt
+const clock = new THREE.Clock(); // 時間を測定
+
+function animate() {
+  requestAnimationFrame(animate); // 次のフレームでanimate関数を再度呼び出す
+  
+  // シェーダーの時間パラメータを更新
+  customPass.uniforms["time"].value = clock.getElapsedTime();
+  
+  composer.render(); // シーンをレンダリング
+}
+
+animate(); // アニメーションループを開始
+```
+- 動作
+  - requestAnimationFrameは引数として関数（この場合はanimate）を受け取る
+  - この関数は次のフレーム描画のタイミングで実行されるよう非同期処理で予約される
+  - よってrequestAnimationFrameを呼び出した後、JavaScriptはブロックせずに次の行に進む
+  - animate関数の中で再度requestAnimationFrame(animate)を呼び出すことで、連続的なアニメーションループとなる
+
+
 |手法|性能|利点|欠点|使用例|制約|
 |----|----|----|----|------|----|
 |シェーダーベース|4|GPU利用で高性能|Gデバッグが複雑|粒子、波、プロシージャルアニメーション|GPUが必要|

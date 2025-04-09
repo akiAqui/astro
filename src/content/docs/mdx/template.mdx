@@ -29,26 +29,37 @@ import StandardStyle from '../../../components/StandardStyle';
 
 ## TwoColumnコンポーネント
 <TwoColumn>
-  <Left>左側のコンテンツああああああああああああああああああああああああああああああああああああああああ</Left>
-  <Right>右側のコンテンツ</Right>
+  <Left>記載方法</Left>
+  <Right>表示され方</Right>
 </TwoColumn>
 
 
 ## image表示方法
 - htmlの場合は、~/astro/pubic配下に配置
+<TwoColumn>
+  <Left>
+   ```html
+<center>
+ <img src="/smoothstep.png" width="100" />
+</center>
+   ```
+  </Left>
+
+  <Right>
+    <center><img src="/smoothstep.png" width="400" height="300" /></center>
+  </Right>
+</TwoColumn>
+
 - markdownの場合はドキュメントのあるディレクトリが現ディレクトリになる
 <TwoColumn>
   <Left>
-   ```markdown
-    <center><img src="/smoothstep.png" width="400" height="300" /></center>
-   ```
    ```markdown
      ![Smoothstep Function](./smoothstep.png)
    ```
   </Left>
 
   <Right>
-   <center><img src="/smoothstep.png" width="400" height="300" /></center> 
+     ![Smoothstep Function](./smoothstep.png)
   </Right>
 </TwoColumn>
 

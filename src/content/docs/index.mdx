@@ -24,37 +24,89 @@ import {
  - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
  - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
  - [x] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない(動いた。index.jsxファイルでdefault exportとexportの書き方が違うのでエラーだった。でも、*.astroファイルはexport/importはバレルではやはりできてない）[2025/03/19]
- - [ ] transform修正中
- - [ ] 泥/分子動力学
- - [ ] ボルツマン定数を、微視的状態とエントロピーから導くメモをここか紙に作る
- - [ ] convective flux+diffusive flux = total fluxの理解とメモ作成
-   - 質量流束、熱流束、運動量流束について理解する
- - [ ] オイラー保存形式勉強中
-   - [ ] ガウスの発散定理が未完了。
- - [ ] せん断層の渦の数値解析
- - [ ] g-sandboxで歪んだアトラクタ/ポテンシャルの渦をせん断層より先に(ブランチ名はuzu01)
-   - gsap学習目次完了、5.4まで学習する
- - [x] OSC確認(不要になった）
- - [ ] rtpMIDI, Bluetooth LE/MIDIを試したので実験結果を考察に残すart/networking.mdx. OSCは不要
- - [ ] MIDIイベントをどうやってスコアにマップさせるかの考察！！！(点と線）
-   - interval_1ではMIDIイベントとtarget/behavior/prmを対応させ、interval_2ならどのtarget/behavior/prmかというJSON?
+ - [ ] [泥](/art/mud/)
+ - [ ] dum break
+ - [ ] transformを全部整理
+ - [ ] finkの法則
+ - [ ] 拡散方程式
+ - [ ] 水面に映った文字が水の揺れで壊れてゆく。これを逆にすれば、ロゴ表現にできる
+   - [ ] 完了させる
+ - [ ] Three.js
+   - [ ] [マテリアル](/three/material/)
+     - [ ] 環境マッピングをまとめる
+     - [ ] lineMaterial
+   - [ ] [テクスチャマッピング](three/texture_advanced/)
+   - [ ] [シェーダーパス](/glsl/shader-pass/)
+ - [ ] glsl
+   - [ ] [vertex shader](typical-vertex-shader/)の読み込み理解要約
+   - [ ] 基本テクニックのまとめ
+     - [ ] double buffering     
+     - [ ] data texture
+     - [ ] render target
+   - [ ] [shader mapping](/glsl/shader-and-mapping/)
+ - [ ] 偏微分・流束   
+   - [ ] convective flux+diffusive flux = total fluxの理解とメモ作成
+   - [ ] 質量流束、熱流束、運動量流束について理解する
+ - [ ] gsap
+   - [x] 学習目次
+   - [ ] 5.4まで学習する
+ - [ ] networking.mdx[2025/3/30開始]
+   - [x] OSC確認(不要になった）[2025/3/30]
+   - [ ] Bluetooth LE/MIDIを試したので実験結果を考察に残す
+   - [ ] rtpMIDIまとめ(art/misc.mdx)
+ - [ ] 点と線
+   - [ ] MIDIイベントをどうやってスコアにマップさせるかの考察
+   - 特定の時間間隔の時にMIDI/target,behavior,prmを紐づけるか？JSONを利用してスコアを書くか？
    - gsapとの関連も考えるとどこまでをJSONに持つか
    - ch16ではカメラアニメーションで他のチャネルでは全般のアニメーションを指定するか？とか
    - 背景はch16?ch15?何を対応させるか？とか
- 
-
+ - g-sandbox
+   - uzu01
+     - [x] プログラム&ドキュメンテーション
+     - [ ] glslコードへのパラメータ伝搬ができるUI表示非表示のパタンを再利用をライブラリ化
+   - [ ] fluid01
+     - [ ] 解析
+     - [ ] program & documentation
+ - [ ] RUST
+ - [ ] RenderPass/full screen squad
+ - [ ] 泥/分子動力学
+   - [ ] [分子動力学テキスト](/algorithm/molecular_dynamics_text/)
+     - [x] 目次作成
+     - [ ] 中身を埋める
+     - [ ] [分子動力学の理解する目的の式](/algorithm/molecular_dynamics/)
+ - [ ] 熱力学
+   - [ ] ボルツマン定数を、微視的状態とエントロピーから導くメモをここか紙に作る
+   - [ ] エントロピー、エンタルピー、等を数式的に理解
+ - [ ] 流体力学
+   - [ ] オイラー保存形式勉強中
+   - [ ] ガウスの発散定理を通して理解する
+   - [ ] 物質微分微分連鎖律を通して理解する
+   - [ ] [せん断層の数値解析](/algorithm/eno/)
+   - [ ] 流体の保存則に基づく数値解法
+   - [ ] ナビエストークスに戻る、ドキュメント作成
+   
 <Box>
 - このページの更新には、update_indexを実行
 - TODOの追加は~/docs/todoを編集
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
-| ＊）GSAP x Three.js | [three/gsap.mdx](http://localhost:4321/three/gsap/) | Mar 31 01:59 |
+| ＊）Shader/法線マッピングなど | [glsl/shader-and-mapping.mdx](http://localhost:4321/glsl/shader-and-mapping/) | Apr 6 00:54 |
+| サブプロジェクト | [art/misc.mdx](http://localhost:4321/art/misc/) | Apr 6 00:14 |
+| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Apr 5 23:40 |
+| ＊）OpenGL/GLSL version | [glsl/version.mdx](http://localhost:4321/glsl/version/) | Apr 5 10:38 |
+| ＊）RUST勉強の始め方 | [tech/rust-tutorial.mdx](http://localhost:4321/tech/rust-tutorial/) | Apr 5 10:28 |
+| ＊）RenderPassとFullScreenSquad | [glsl/renderpass-fullscreensquad.mdx](http://localhost:4321/glsl/renderpass-fullscreensquad/) | Apr 4 11:54 |
+| ＊）ShaderPass | [glsl/shader-pass.mdx](http://localhost:4321/glsl/shader-pass/) | Apr 4 01:37 |
+| ＊）典型的なvertex shader | [glsl/typical-vertex-shader.mdx](http://localhost:4321/glsl/typical-vertex-shader/) | Apr 4 01:32 |
+| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Apr 3 22:20 |
+| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Apr 3 21:52 |
+| ＊）毎日のコマンド | [tech/everyday.mdx](http://localhost:4321/tech/everyday/) | Apr 3 20:37 |
+| ＊）GSAP x Three.js | [three/gsap.mdx](http://localhost:4321/three/gsap/) | Apr 3 20:01 |
+| ＊）ホームネットワーク管理 | [tech/home-netowork.mdx](http://localhost:4321/tech/home-netowork/) | Apr 3 19:56 |
 | MIDIでのnetworkingに関する検討 | [art/networking.mdx](http://localhost:4321/art/networking/) | Mar 31 00:39 |
 | 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | Mar 31 00:39 |
 | 音響スコア考察（なぜ？） | [art/score.mdx](http://localhost:4321/art/score/) | Mar 30 16:19 |
-| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Mar 28 21:11 |
-| 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Mar 22 03:18 |
 | ＊）ガウスの発散定理 | [math/divergence-theorem.mdx](http://localhost:4321/math/divergence-theorem/) | Mar 19 14:04 |
 | ＊）流体力学/オイラー保存形方程式 | [algorithm/eulerConservationForm.mdx](http://localhost:4321/algorithm/eulerConservationForm/) | Mar 19 11:56 |
 | 数学表記 | [mdx/katex.mdx](http://localhost:4321/mdx/katex/) | Mar 19 11:33 |
@@ -64,7 +116,6 @@ import {
 | 液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Mar 16 22:24 |
 | 一次元バネ | [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Mar 16 21:02 |
 | 泥 | [art/mud.mdx](http://localhost:4321/art/mud/) | Mar 16 21:00 |
-| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Mar 15 23:21 |
 | ＊）分子動力学/テキスト目次 | [algorithm/molecular_dynamics_text.mdx](http://localhost:4321/algorithm/molecular_dynamics_text/) | Mar 14 21:49 |
 | ＊）分子動力学 | [algorithm/molecular_dynamics.mdx](http://localhost:4321/algorithm/molecular_dynamics/) | Mar 13 16:30 |
 | ＊）環境マッピング | [three/env_mapping.mdx](http://localhost:4321/three/env_mapping/) | Mar 12 01:44 |
@@ -91,7 +142,6 @@ import {
 | ＊＊＊）パイプライン処理 | [glsl/rendering_pipeline.mdx](http://localhost:4321/glsl/rendering_pipeline/) | Feb 26 22:43 |
 | double spiral | [glsl/double_spiral.mdx](http://localhost:4321/glsl/double_spiral/) | Feb 26 17:58 |
 | ＊）各種変換 | [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 26 16:57 |
-| ＊＊＊）Shader+3D | [three/3D+shader.mdx](http://localhost:4321/three/3D+shader/) | Feb 22 01:58 |
 | 基本的な関数 | [algorithm/basic_functions.mdx](http://localhost:4321/algorithm/basic_functions/) | Feb 20 00:36 |
 | AI用指示文 | [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 18 16:54 |
 | ＊）blobスキームとその周辺 | [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 21:42 |
@@ -103,7 +153,6 @@ import {
 | ＊）sandbox/multi branch | [tech/git_branches.mdx](http://localhost:4321/tech/git_branches/) | Feb 11 03:47 |
 | Ｆ）Perlinノイズ | [algorithm/perlin.mdx](http://localhost:4321/algorithm/perlin/) | Feb 11 01:48 |
 | 液体 | [algorithm/fluid.mdx](http://localhost:4321/algorithm/fluid/) | Feb 11 01:46 |
-| ＊）ホームネットワーク管理 | [tech/home-netowork.mdx](http://localhost:4321/tech/home-netowork/) | Feb 4 15:55 |
 | (*)プルリク | [tech/pullRequest.mdx](http://localhost:4321/tech/pullRequest/) | Feb 4 06:47 |
 | ＊） fBM | [algorithm/fBM.mdx](http://localhost:4321/algorithm/fBM/) | Feb 1 14:36 |
 | ＊) Flickの拡散の法則 | [algorithm/flick.mdx](http://localhost:4321/algorithm/flick/) | Jan 28 22:31 |

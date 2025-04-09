@@ -3,90 +3,46 @@ title: ＊）ホームネットワーク管理
 description: 自分のうちは、把握しないと
 layout: '../../../layouts/BaseLayout.astro'
 ---
- <style>{`
-        .sl-markdown-content   div.ec-line {
-            margin-top: 0 !important;
-            font-size:10px;
-        }
-        .sl-markdown-content  {
-           font-size:15px;
-        }
-        .sl-markdown-content h1 {
-           font-size:  27px;
-           padding-left:0px;           
-           text-decoration: underline;
-           font-weight: bold
-        }
-        .sl-markdown-content h2 {
-           font-size:25px;
-           padding-left:5px;
-           font-weight: normal;
-           text-decoration: underline;
-        }
-        .sl-markdown-content h2 + p{
-         margin: 0px;
-        }
-        .sl-markdown-content h3 {
-           font-size:20px;
-           padding-left:10px;
-           font-weight: normal;
-           font-style: italic;
-           text-decoration: underline;
-        }
-        .sl-markdown-content h3 + p{
-         margin: 0px;
-        }
-        .sl-markdown-content h4 {
-           font-size:15px;
-           padding-left:14px;                      
-           font-weight: normal;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h4 + p{
-         margin: 0px;
-        }     
-        .sl-markdown-content h5 {
-           font-size:12px;
-           padding-left:16px;           
-           font-weight: bold;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h5 + p{
-         margin: 0px;
-       
-        .sl-markdown-content h6 {
-           font-size:10px;
-           padding-left:20px;
-           font-weight: bold;
-           font-style: italic;           
-           text-decoration: underline;
-        }
-        .sl-markdown-content h6 + p{
-         margin: 0px;
-        
-        h6::before {
-          content: "◇　";
-        }               
-        .sl-markdown-content th {
-           font-size:12px;
-        }
-        .sl-markdown-content td {
-           font-size:12px;
-        }
-        
- `}</style>
 
-import CodeTitle    from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp    from '../../../components/TimeStamp';
-import Box          from '../../../components/Box';
-import RedBox       from '../../../components/RedBox';
 
-<TimeStamp fileUrl={import.meta.url} />
-## ＴＯＤＯ
-- ホームネットワーク内の実際のデバイスとＩＰを確定させる
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+ - [ ] ホームネットワーク内の実際のデバイスとＩＰを確定させる
+ - [ ] ps1,batのプログラムにして、powershell -Command " "でaliasをdistroのように作ってubuntuから実行可能にしたい
+    - [ ] portとオプションでアドレスを指定して一発でwsl2からできるようにしたいな
+
+### TRDR;
+- vite側の設定
+  - 接続元アドレスの解除
+- powershellでコマンド二つ
+  - ポートフォワード
+  - fw設定（全ポートフォワードに対して一つでいい）
+  
+#### ポートフォワード設定
+- ipconfigでwifiのアドレスが192.168.1.131だったので
+```text
+netsh interface portproxy add v4tov4 listenaddress=192.168.1.131 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+```
+#### FW設定
+```text
+netsh advfirewall firewall add rule name="WSL2 Astro" dir=in action=allow protocol=TCP localport=4321
+```
+```text
+netsh advfirewall firewall add rule name="WSL2 vite three.js" dir=in action=allow protocol=TCP localport=4321
+```
+二つ作る必要はないけど
+
 
 
 ## astroをホームネットワーク内で見せる
@@ -96,8 +52,26 @@ import RedBox       from '../../../components/RedBox';
 4. その設定を常に許諾する設定を行う
 
 ### 要約結論
-- PS> netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=4321 connectaddress=172.20.172.143 connectport=4321
-- PS> netsh advfirewall firewall add rule name="WSL2 Astro" dir=in action=allow protocol=TCP localport=4321
+
+#### powershell
+
+有線LANのアドレス
+
+```text
+netsh interface portproxy add v4tov4 listenaddress=192.168.1.234 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+```
+
+wifiの時のアドレス
+
+```text
+netsh interface portproxy add v4tov4 listenaddress=192.168.1.131 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+```
+
+
+```text
+netsh advfirewall firewall add rule name="WSL2 Astro" dir=in action=allow protocol=TCP localport=4321
+```
+
 - vite.confかastro.config.mjsへ設定
 - firewall設定はwindowsの再起動後も設定が持続されるが、portフォワードは一過性の設定である
 

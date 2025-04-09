@@ -1,0 +1,332 @@
+---
+title: ＊）ShaderPass
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+# Three.jsにおけるShaderPassの実装技術
+
+## 概要
+
+Three.jsのポストプロセッシングシステムにおいて、ShaderPassはカスタムシェーダーエフェクトをレンダリングパイプラインに組み込むための基本的な仕組みである。本レポートではShaderPassの技術的特性と実装パターンを詳細に解説する。
+
+## ShaderPassの基本概念
+
+ShaderPassは既にレンダリングされた画像（テクスチャ）に対してGLSLシェーダーを適用するための機構である。
+
+- 主な特徴
+  - 前のレンダリングパスの結果をテクスチャとして受け取る
+  - 独自のGLSLシェーダーで処理を行う
+  - 結果を次のパスの入力または最終出力として渡す
+  - 内部的にはフルスクリーンクワッド（画面全体を覆う四角形）上でシェーダーを実行
+
+- 使用場面
+  - 色収差、グロー効果、ブラー、ビネット
+  - カラーグレーディング、色調補正
+  - ノイズ効果、スクリーンスペースエフェクト
+
+## 実装パターン
+
+### TypeScript (main.ts) における実装
+
+```typescript
+import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+
+// シーン、カメラ、レンダラーの設定
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// 基本的なシーン要素の追加
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// EffectComposerの設定
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// カスタムシェーダーパスの定義
+const myEffect = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uTime: { value: 0 },
+    uIntensity: { value: 0.5 }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform float uIntensity;
+    varying vec2 vUv;
+    
+    void main() {
+      vec2 distortedUv = vUv;
+      
+      // 波形ディストーション効果
+      distortedUv.x += sin(distortedUv.y * 10.0 + uTime) * 0.1 * uIntensity;
+      distortedUv.y += sin(distortedUv.x * 10.0 + uTime) * 0.1 * uIntensity;
+      
+      // 前のパスの結果をサンプリング
+      vec4 texel = texture2D(tDiffuse, distortedUv);
+      
+      gl_FragColor = texel;
+    }
+  `
+};
+
+// ShaderPassを作成して追加
+const myShaderPass = new ShaderPass(myEffect);
+myShaderPass.renderToScreen = true;
+composer.addPass(myShaderPass);
+
+// アニメーションループ
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // シーン内のオブジェクトを更新
+  cube.rotation.x += 0.01;
+  cube.rotation.y += 0.01;
+  
+  // シェーダーユニフォームを更新
+  myShaderPass.uniforms.uTime.value = clock.getElapsedTime();
+  
+  // EffectComposerでレンダリング
+  composer.render();
+}
+
+animate();
+
+// リサイズ対応
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+```
+
+### 具体的なシェーダーエフェクト例
+
+#### 色収差エフェクト (ChromaticAberration)
+
+```glsl
+// fragment.glsl
+uniform sampler2D tDiffuse;
+uniform float uStrength;
+uniform vec2 uResolution;
+
+varying vec2 vUv;
+
+void main() {
+  // 画面の中心からの距離と方向を計算
+  vec2 center = vec2(0.5);
+  vec2 direction = normalize(vUv - center);
+  float distance = length(vUv - center);
+  
+  // 色収差の強度を距離に応じて調整
+  float aberration = uStrength * distance;
+  
+  // 各色チャンネルで少しずつ異なるUV座標を計算
+  vec2 redUv = vUv - direction * aberration;
+  vec2 greenUv = vUv;
+  vec2 blueUv = vUv + direction * aberration;
+  
+  // 各チャンネルをサンプリング
+  float r = texture2D(tDiffuse, redUv).r;
+  float g = texture2D(tDiffuse, greenUv).g;
+  float b = texture2D(tDiffuse, blueUv).b;
+  float a = texture2D(tDiffuse, vUv).a;
+  
+  // 合成して出力
+  gl_FragColor = vec4(r, g, b, a);
+}
+```
+
+#### ノイズグレインエフェクト (FilmGrain)
+
+```glsl
+// fragment.glsl
+uniform sampler2D tDiffuse;
+uniform float uTime;
+uniform float uIntensity;
+
+varying vec2 vUv;
+
+// 疑似乱数生成関数
+float random(vec2 st) {
+  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+void main() {
+  // 前のパスの画像をサンプリング
+  vec4 texel = texture2D(tDiffuse, vUv);
+  
+  // 時間とUV座標に基づくノイズを生成
+  float noise = random(vUv + uTime) * uIntensity;
+  
+  // 画像にノイズを混合
+  texel.rgb += vec3(noise) - uIntensity * 0.5;
+  
+  gl_FragColor = texel;
+}
+```
+
+## ShaderPassの技術的詳細
+
+### 動作メカニズム
+
+1. テクスチャのパイプライン処理
+   - `tDiffuse` ユニフォーム変数が前のパスからのテクスチャを自動的に受け取る
+   - シェーダー処理後の結果が次のパスの `tDiffuse` 入力として渡される
+
+2. フルスクリーンクワッドの使用
+   - 内部的にシーン全体をカバーする単純な矩形ジオメトリを使用
+   - モデル変換を使わず、直接デバイス座標系でレンダリングする実装もある
+
+3. レンダリングターゲットの使用
+   - WebGLのフレームバッファ（テクスチャ）に結果を描画
+   - 最終パスは `renderToScreen = true` を設定して画面に直接出力
+
+### 主要な技術要素
+
+- ユニフォーム変数
+  - `tDiffuse`: 前のパスからのテクスチャ（必須）
+  - カスタムユニフォーム: 時間、強度、解像度など（オプション）
+
+- 基本的な頂点シェーダー
+  ```glsl
+  varying vec2 vUv;
+  
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+  ```
+
+- フラグメントシェーダーの基本構造
+  ```glsl
+  uniform sampler2D tDiffuse;
+  varying vec2 vUv;
+  
+  void main() {
+    // 入力テクスチャをサンプリング
+    vec4 texel = texture2D(tDiffuse, vUv);
+    
+    // 効果を適用
+    // ...
+    
+    // 結果を出力
+    gl_FragColor = texel;
+  }
+  ```
+
+## 実装上の注意点
+
+1. パフォーマンスの考慮
+   - 複数のパスを使用するとGPUメモリ帯域幅が制限になる場合がある
+   - 重いポストプロセスはモバイルデバイスで特に注意が必要
+
+2. パイプラインの順序
+   - パスの順序は結果に大きく影響する
+   - 例: ブルームエフェクト → 色収差 と 色収差 → ブルームエフェクト では異なる結果になる
+
+3. 解像度の管理
+   - レンダーターゲットの解像度はパフォーマンスと品質のトレードオフ
+   - ハーフ解像度でのレンダリングで性能向上が可能な場合がある
+
+4. エッジの処理
+   - 画面のエッジでテクスチャサンプリングが画面外を参照する場合の処理が必要
+   - `clamp` 関数などを使用してUV座標を制限する
+
+## EffectComposerとの連携
+
+ShaderPassは通常、EffectComposerというシステムと組み合わせて使用される。
+
+- 典型的なパイプライン構成
+  1. RenderPass: 3Dシーンの通常レンダリング
+  2. 各種エフェクトパス: ShaderPassを使用したエフェクト
+  3. 最終出力: 最後のパスで `renderToScreen = true` を設定
+
+- 複数のエフェクト制御
+  - 個々のシェーダーパスは `enabled` プロパティで有効/無効を切り替え可能
+  - パスの順序を動的に変更することも可能
+
+## 応用例と拡張
+
+- 複数テクスチャの使用
+  ```glsl
+  uniform sampler2D tDiffuse;  // 前のパスからの入力
+  uniform sampler2D tNoise;    // 追加のノイズテクスチャ
+  ```
+
+- パスの結果を変数として保存
+  ```typescript
+  // 中間結果を保存するための追加レンダーターゲットを使用
+  const renderTarget = new THREE.WebGLRenderTarget(width, height);
+  myShaderPass.renderToScreen = false;
+  myShaderPass.renderTarget = renderTarget;
+  ```
+
+- データの受け渡し
+  ```typescript
+  // 前のフレームのデータを次のフレームに渡す
+  const bufferShader = new ShaderPass({
+    uniforms: {
+      tDiffuse: { value: null },
+      tPrevious: { value: previousFrameTexture }
+    },
+    // シェーダーコード
+  });
+  ```
+
+## 用語説明
+
+- **ポストプロセッシング**: 3Dシーンのレンダリング後に適用される画像処理技術
+- **EffectComposer**: Three.jsでポストプロセッシングパイプラインを管理するクラス
+- **ShaderPass**: カスタムシェーダーを使用してポストプロセス効果を適用するパス
+- **RenderPass**: 3Dシーンを描画する基本パス
+- **フルスクリーンクワッド**: 画面全体を覆う四角形で、ポストプロセスシェーダーの描画対象
+- **tDiffuse**: シェーダーパスで前のパスの結果を受け取るための標準ユニフォーム変数
+- **レンダーターゲット**: テクスチャとして利用できるオフスクリーンバッファ
+
+## リファレンス
+
+- [Three.js EffectComposer Documentation](https://threejs.org/docs/#examples/en/postprocessing/EffectComposer)
+- [Three.js ShaderPass Documentation](https://threejs.org/docs/#examples/en/postprocessing/ShaderPass)
+- [WebGL Fundamentals - Post Processing](https://webglfundamentals.org/webgl/lessons/webgl-post-processing.html)
+- [The Book of Shaders - Image Processing](https://thebookofshaders.com/08/)

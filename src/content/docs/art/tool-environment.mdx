@@ -1,0 +1,102 @@
+---
+title: ＊）メディアアートのツールと実行環境
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+# メディアアートおよび演出制御ツールの実行環境と用途整理
+
+## 分類視点
+
+- アート制作：視覚・聴覚を中心とした作品生成、表現実験
+- 演出制御：外部機器連携、センサ制御、空間演出、同期出力
+- 本格性：表現力・拡張性・リアルタイム制御の自由度に基づく相対指標
+- 推奨環境：ツールの性能を引き出す実行プラットフォーム
+
+## アート制作向けツール一覧
+
+| ツール                 | 本格性 | 推奨実行環境                | 概要                                                             |
+|------------------------|--------|-----------------------------|------------------------------------------------------------------|
+| p5.js                  | 低     | ブラウザ（Chrome推奨）       | 初学者向け、軽量な2D表現とインタラクション                     |
+| three.js + GLSL + TS   | 中     | ブラウザ（Vite + WebGL）     | モダンな3D表現、GLSLとの統合、Web展開                          |
+| Processing (Java)      | 中     | Java環境を持つデスクトップ   | 2D/3D/音響処理、教育・スケッチ用途                             |
+| glslViewer             | 中     | Linux/macOS（GPU必要）       | GLSLスケッチ向け、OpenGLフルアクセス                           |
+| OpenCOLLIDER           | 中     | macOS/Linux/Windows          | 空間音響・アルゴリズミック音楽                                 || vvvv gamma             | 高     | Windows（.NET + GPU推奨）    | ノードベース、映像合成・GLSL可視化                             |
+| openFrameworks         | 高     | Linux/macOS/Windows          | C++、カスタム処理・高速描画、音響/映像処理                     |
+| SuperCollider          | 高     | macOS/Linux/Windows          | 実時間サウンド生成・パフォーマンス向け                         |
+| Csound                 | 高     | macOS/Linux/Windows          | 記述型音響合成、精密制御に強み                                  |
+| TouchDesigner          | 非常に高| Windows（GPU必須）          | 統合GUI環境、商用レベルの映像生成                              |
+
+
+## 演出制御向けツール一覧
+
+| ツール                 | 本格性 | 推奨実行環境                | 概要                                                             |
+|------------------------|--------|-----------------------------|------------------------------------------------------------------|
+| Processing (Java)      | 中     | Java環境を持つデスクトップ   | Arduinoや簡易センサとの連携可能                                |
+| three.js + Web API群   | 中     | ブラウザ（Web MIDI, OSC等）  | ブラウザ上でセンサ・音声制御（制限あり）                        |
+| OpenCOLLIDER           | 中     | macOS/Linux/Windows          | 空間音響制御に特化、パフォーマンス演出向け                     || openFrameworks         | 高     | Linux/macOS/Windows          | MIDI, OSC, DMX, Arduino制御に強い                               |
+| vvvv gamma             | 高     | Windows（.NET + GPU推奨）    | センサ入力から空間出力までをノードで統合                       |
+| SuperCollider          | 高     | macOS/Linux/Windows          | OSC連携による外部制御、リアルタイム応答が高精度                |
+| Csound                 | 高     | macOS/Linux/Windows          | MIDI/OSC入力制御、時間・構造制御に優れる                       | TouchDesigner          | 非常に高| Windows（GPU必須）          | OSC/DMX/MIDI/NDIを統合、空間演出全般に対応                     |
+|
+
+
+## 制作系で頻出する機能群
+
+- 動的描画（2D/3D/GLSL）
+  - ノイズ関数、パーティクル、ジオメトリ合成
+- 音響同期・音解析
+  - FFT、スペクトル、ビート検出
+- インタラクション
+  - マウス・タッチ・音声入力・カメラ
+- ファイル出力
+  - 静止画、映像、録音、データログ
+
+## 演出制御系で頻出する機能群
+
+- センサ入力
+  - MIDI, OSC, DMX, Serial, Arduino
+- 出力制御
+  - 複数映像出力、照明、プロジェクタ、スピーカ
+- トリガ/同期
+  - タイムライン、BPM、OSCイベント
+- 統合管理
+  - 自動起動、展示ループ、トラブルリカバリ
+
+## 用語
+
+- OSC: Open Sound Control、ネットワーク越しのリアルタイム通信プロトコル
+- DMX: 照明制御で用いられるデジタルプロトコル
+- FFT: 高速フーリエ変換、音声のスペクトル分析に使用
+- GLSL: OpenGL Shading Language、GPU側描画言語
+- Web MIDI / Web Audio API: ブラウザでMIDIや音声を制御するAPI群
+
+## リファレンス
+
+- https://p5js.org/
+- https://threejs.org/
+- https://processing.org/
+- https://glslviewer.dev/
+- https://vvvv.org/
+- https://openframeworks.cc/
+- https://derivative.ca/
+- https://supercollider.github.io/
+- https://csound.com/
+- https://opencollider.cc/
+

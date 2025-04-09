@@ -1,0 +1,51 @@
+---
+title: サブプロジェクト
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+### rtpMIDI
+- rtpで受信したMIDIをWeb MIDI API経由でTypescriptで受信、three.jsのアニメーションに反映させるコード
+<div style="display:flex; align-items:flex-end;gap:18px;padding-left:40px">
+ <div><img src="/subproject/rtpMIDI.png" width="820" style="display: block;"/></div>
+</div>
+
+### g-sandbox(glsl sandobx)
+- html.ts/g-sandbox
+#### 
+#### branch: uzu01
+- attractor/repellorを作って、そのポテンシャルを作って、ポテンシャル値に応じた背景色をHSVで塗る
+- 等高線を白色で作成し、fract(beatTime)で移動させる)。ちゃんとしたビートになっていないが
+- UIを表示してパラメータ変更などする
+- 等方的なポテンシャルに三角関数＋ノイズで非等方的に
+- ノイズ関数のutility
+- hide/UIのボタンで画面キャプチャできる。ダブルクリックもしくはスマホ2点ポイントでUI再表示。これは再利用が必要
+
+<div style="display:flex; align-items:flex-end;gap:18px;padding-left:40px">
+ <div><img src="/subproject/uzu01-1.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-2.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-3.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-4.png" width="120" style="display: block;"/></div>
+</div>
+
+- pattern1
+- pattern2
+- pattern3
+
+### 3-sandbox
