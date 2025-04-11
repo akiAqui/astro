@@ -47,11 +47,53 @@ sudo apt update
 sudo apt upgrade -y
 ```
 ### portforward
+
+- (powershell) port forward 設定
+  - どこからでもつながるようにする
+```txt
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+```
+```txt
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=5173 connectaddress=172.20.172.143 connectport=5173
+```
+- (powershell)port forward確認(されていることを確認するだけでいい何故なら、永続設定のはずなので）
+  - Addressが0.0.0.0のどこからでもつながるように設定されている
+```txt
+netsh interface portproxy show all
+```
+```txt
+PS C:\Users\aquis> netsh interface portproxy show all
+
+ipv4 をリッスンする:         ipv4 に接続する:
+
+Address         Port        Address         Port
+--------------- ----------  --------------- ----------
+192.168.1.234   80          172.20.172.143  80
+192.168.1.234   4321        172.20.172.143  4321
+192.168.1.234   5173        172.20.172.143  5173
+0.0.0.0         443         172.20.172.143  8080
+192.168.1.131   443         172.20.172.143  443
+0.0.0.0         4321        172.20.172.143  4321
+0.0.0.0         5173        172.20.172.143  5173
+
+PS C:\Users\aquis>
+
+```
+
+
 - (powershell) FW設定確認
 ```txt
 Get-NetFirewallRule | Where-Object DisplayName -like "*WSL2*" | Get-NetFirewallPortFilter | Select-Object Protocol, LocalPort
 ```
-
+```txt
+Protocol LocalPort
+-------- ---------
+TCP      4321
+TCP      5173
+TCP      4321
+TCP      5173
+TCP      4321
+```
 - (powershell) FW設定(astro)
 ```txt
 netsh advfirewall firewall add rule name="WSL2 astro" dir=in action=allow protocol=TCP localport=4321
@@ -63,10 +105,6 @@ netsh advfirewall firewall add rule name="WSL2 three.js" dir=in action=allow pro
 
 ```
 
-- (powershell)port forward確認(されていることを確認するだけでいい何故なら、永続設定のはずなので）
-```txt
-netsh interface portproxy show all
-```
 
 
 ### 開発中

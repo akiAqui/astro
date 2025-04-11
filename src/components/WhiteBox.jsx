@@ -16,7 +16,6 @@ const WhiteBox = ({ children }) => {
                      boxSizing: "border-box", // パディングを含めたサイズ調整
                      color: "#000000",
                      fontWeight: "bold",
-                     padding: "8px",
                      display: "inline-block"
                  }}>
                 {children}
