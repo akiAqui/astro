@@ -16,11 +16,47 @@ import {
 <StandardStyle />
 
 
+## FullScreenQuad/SDF
+- FSQだとmain.ts/three.js側でカメラをz方向(手前、奥行き)で動かしても意味がない。
+- 下記のようにベクトルを手動で制御する方法と、行列制御の方法がある
+
+<CodeTitle title="ベクトルでカメラ制御の例" id="vector" counter="01">
+```glsl
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - iResolution.xy) / iResolution.y;
+  uv*=2.1;                                  // 画面の拡大縮小
+  vec3 ro = vec3(0.0, 0.8, 0.9);            // Ray Origin/カメラ位置
+  vec3 rd = normalize(vec3(uv, -1.5));      // 視線ベクトル、方向
+  float epsilon=0.00000001;                 // 図形の精度。大きくすると荒くなる
+  
+  float t = 0.0;
+  float d;
+  vec3 p;
+  for (int i = 0; i < 128; i++) {
+    p = ro + t * rd;
+    d = map(p);
+    if (d < -epsilon) break;
+    if (d < +epsilon) break;
+    t += d;
+  }
+```
+</CodeTitle>
+
+<CodeTitle title="行列でカメラ制御の例" id="matrix" counter="02">
+```glsl
+float t = iTime;
+ro = vec3(sin(t), 0.8, cos(t)) * 1.5;
+vec3 lookAt = vec3(0.0);
+vec3 forward = normalize(lookAt - ro);
+vec3 right = normalize(cross(vec3(0,1,0), forward));
+vec3 up = cross(forward, right);
+mat3 camMat = mat3(right, up, forward);
+rd = camMat * normalize(vec3(uv, -1.5));
+```
+</CodeTitle>
 
 
-GLSLテクニックレシピ集（使用例付き）
-
-ライティングとシェーディング
+## ライティングとシェーディング
 
 - 輝度（Luminance）の強調
   色の明るさを数値化してグレースケールにする。
