@@ -1,0 +1,122 @@
+---
+title: git/orphan特殊ケース１
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+### 目的
+- うっかり前のブランチでgit switch -orphan `新ブランチ名`する前に作業始めてしまった！！
+- 現状の進んだ作業内容を退避させて前のブランチをきれいにして、新しいブランチに退避内容を持っていきたい
+
+### 前提条件
+- 元ブランチ：`sample/original`
+- 新ブランチ：`sample/renewed`
+- 目的：元ブランチの履歴を持たず、現在の作業内容のみを新ブランチに保存したい
+- `.gitignore` の影響を受けるファイルも、空ディレクトリやトラックされていないだろうconfigファイルなどもも安全に扱いたい
+
+### 手順概要
+- まずバックアップリポジトリに退避しておく
+- clean したときに削除される空ディレクトリを確認（追跡履歴のないものはstash -uされるので心配しなくていい）
+- 削除されたくないディレクトリに.gitkeepのダミーファイルを作って追跡できるようにする
+  - 空ディレクトリはgitでは追跡できない！
+- stash -uで追跡されていないファイルも含め、.gitignoreで無視するものは無視して、一次避難
+- 
+### 手順一覧
+
+- バックアップブランチを作成（現在の状態を確保）
+```
+git switch -c sample/original-backup
+```
+
+- 削除される予定のディレクトリを dry-run で確認
+```
+git clean -fdn
+```
+
+- ③ 削除対象に含まれていた新しいブランチに持っていきたい空ディレクトリには 
+  .gitkeep を作成して空でないディレクトリにする
+
+```
+touch public/.gitkeep assets/.gitkeep
+```
+
+- すべての作業状態を 「未追跡ファイルも含めて」 stash!
+- デフォルトでは未追跡ファイルはstashされない
+```
+git stash -u -m "stash before orphan"
+```
+
+- stash が正しく入ったか確認
+```
+git stash list
+```
+
+- 新しいorphan ブランチを作成（履歴なしの新ブランチ）
+```
+git switch --orphan sample/renewed
+```
+- 作業ディレクトリを完全に初期化（stash復元準備）
+```
+git reset --hard
+git clean -fd
+```
+
+- 状態確認（完全に空であること）
+```
+git status
+```
+
+-  stash を復元
+```
+git stash pop
+```
+
+
+-まだ一度もコミットしていない orphan ブランチは、Git に未登録の状態だから
+ git branch` に `sample/renewed` が表示されない
+
+-  conflict を解消後、add と commit を行う
+```
+git add .
+```
+
+```
+git commit -m "Initial commit for sample/renewed experiment"
+```
+
+- ブランチをリモートに push
+```
+git push -u origin sample/renewed
+```
+
+- stashにもしコンフリクトが生じていたらpopでstashは削除されない
+```
+git stash list
+```
+
+```
+git stash drop stash@{0}
+```
+
+
+- 問題なければバックアップブランチを強制削除
+```
+git branch -D sample/original-backup
+```
+
+
