@@ -50,7 +50,15 @@ export default defineConfig({
                 },                
                 {
                     label: 'csound, P5jsなど',
-                    autogenerate: {directory: 'misc'},
+                    autogenerate: {directory: 'accoustics'},
+                },                
+                {
+                    label: 'html',
+                    autogenerate: {directory: 'html'},
+                },                
+                {
+                    label: 'TypeScript, JavaScript',
+                    autogenerate: {directory: 'tsjs'},
                 },                
                 {
                     label: '技術レポート',
