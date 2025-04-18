@@ -61,7 +61,11 @@ export default defineConfig({
                     autogenerate: {directory: 'tsjs'},
                 },                
                 {
-                    label: '技術レポート',
+                    label: 'ネットワーク',
+                    autogenerate: {directory: 'network'},
+                },                
+                {
+                    label: 'その他技術レポート',
                     autogenerate: {directory: 'tech'},
                 },                
                 {

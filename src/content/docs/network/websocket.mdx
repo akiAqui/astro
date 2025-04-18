@@ -1,0 +1,244 @@
+---
+title: WebSocketとWebRTC
+description: http upgrade
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## WebSocket
+
+<WhiteBox>
+最重要ポイント
+ - http/1.1で導入されたUpgradeヘッダはhttpを起点に別のプロトコルへの切り替えをサポート
+ - WebSocketはその一例であり、最もよく知られる例である
+</WhiteBox>
+
+### 概要
+- WebSocketは、HTTP/1.1から導入されたUpgradeヘッダを利用したプロトコルの切り替え方式の上に構築された通信プロトコルである
+- ブラウザからHTTP GETメソッドにUpgradeヘッダ、Connectionヘッダ等を付加してWebSocket通信であることを指定しサーバに接続し、サーバからの応答まではHTTPプロトコルのルールに則って処理される
+- その後はすべてWebSocket独自の通信となる
+- WebSocket上では独自のアプリケーションプロトコルを構成する
+  - 別の言い方をすると、MIMEのようにアプリケーションプロトコルの種類を指定する標準的手段は存在しない。このため、アプリケーションプロトコルの種類の提示もなく、任意の形式で通信が始まる
+- WebSocketは、ペイロードとしてテキスト形式（UTF-8）および任意のバイナリ形式の両方に対応している
+- WebSocketでは、各フレームに付加された4ビットのopcodeによりフレーム種別（テキスト、バイナリ、制御など）を識別する
+  - 0x1: テキストデータ（UTF-8エンコード）
+  - 0x2: 任意のバイナリデータ
+  - 0x8: 接続終了（Close）
+  - 0x9: 接続確認要求（Ping）
+  - 0xA: Pingに対する応答（Pong）
+
+### 接続確立の流れ
+
+1. クライアントがHTTPリクエストを送り、UpgradeヘッダでWebSocket接続を要求
+2. サーバが101 Switching Protocolsで応答し、接続が確立
+3. 以後、TCPソケットはWebSocketフレームのやり取りに使われる
+
+例:
+```
+Client:  GET /ws HTTP/1.1
+         Upgrade: websocket
+         Connection: Upgrade
+         Sec-WebSocket-Key: base64==
+```
+- ヘッダの意味
+  - Upgrade: websocket / 切り替えたいプロトコルを明示（WebSocket）
+  - Connection: Upgrade / このUpgradeヘッダの指示に従うことを意味する
+  - Sec-WebSocket-Key  / セキュリティのための一時キー。応答時にサーバが検証に使う
+
+```
+Server:  HTTP/1.1 101 Switching Protocols
+         Upgrade: websocket
+         Connection: Upgrade
+         Sec-WebSocket-Accept: 3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+
+```
+- ヘッダの意味
+  - ステータスコード 101（Switching Protocols）は「プロトコルを切り替える」という意味
+  - Sec-WebSocket-Accept:  クライアントのキーをSHA-1 + Base64処理して返す（RFC 6455に準拠）
+
+
+Upgrade ヘッダは WebSocket以外にも、HTTP/2やTLSの拡張、独自プロトコルへの移行にも使われる
+ただし、WebSocket以外での一般的な利用は稀
+
+
+
+### ブラウザでの使用例
+
+```javascript
+const ws = new WebSocket("ws://localhost:8765/ws");
+ws.onopen = () => ws.send("ping");
+ws.onmessage = (event) => console.log(event.data);
+ws.onerror = (e) => console.error("WebSocket error", e);
+```
+
+- 接続先は `ws://` または `wss://`（TLS対応）で始まるURI
+- JavaScriptからのみ使用可能。アドレスバーなどから直接接続はできない
+
+
+### サーバ側実装例（aiohttp）
+
+```python
+from aiohttp import web
+
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    async for msg in ws:
+        if msg.type == web.WSMsgType.TEXT:
+            await ws.send_str(f"echo: {msg.data}")
+    return ws
+
+app = web.Application()
+app.router.add_get("/ws", websocket_handler)
+web.run_app(app, port=8765)
+```
+
+- aiohttpはHTTPとWebSocketの両方を非同期で処理できるPythonライブラリ
+- 明示的にWebSocketレスポンスを生成し、データを非同期ループで処理する
+
+
+### ポートとURL構成
+
+- WebSocketは任意のTCPポートを使用できる
+- 一般的なWebサーバと競合しないように、8080や8765などを使用
+- URLは `ws://ホスト:ポート/パス` の形式でJavaScriptから指定する
+- ブラウザのアドレスバーで直接WebSocketへ接続することはできない
+
+### WebSocketの応用例
+
+- シグナリングサーバ（WebRTCと連携）
+- オンラインチャットシステム
+- ゲームやIoT機器との状態同期
+- 金融取引所のリアルタイムデータストリーム
+- 協調編集ツールなどの状態共有
+
+### シグナリングの実際
+- SDPのoffer/answerにより、クライアントとサーバはそれぞれの通信能力を宣言し、互いに合意可能な条件を交渉する  
+  - 利用可能なメディア種別（音声・映像・アプリケーション）
+  - 利用可能なコーデック
+  - 対応プロファイル（RTP/SAVPFなど）  
+  - 暗号方式（DTLS/SRTPのフィンガープリント）
+  - MID（Media ID）、SSRCなどの識別情報
+- SDPレベルでコーデックや条件が一致しない場合、answerが生成されないか、生成されてもメディア定義行（m=行）が無効になることがある。
+  - ブラウザによってはエラーと見なされる（例：Safari）、無視される（例：Chrome）など挙動が異なる
+
+
+
+- ICE candidateは、通信経路の確立のために交換される情報である
+- 各ピアは自分の持つ複数のネットワーク候補（host, srflx, relay など）を相手に送信する
+- NAT越えが必要な場合には、STUN（Session Traversal Utilities for NAT）プロトコルを使用して外部アドレス候補（server reflexive candidate）の取得と、候補ペアの接続性確認（Binding Request）に用いられる
+- Trickle ICEを用いることで、candidateをSDP交換後に逐次送信する方式も一般的に採用されている
+- ICEは候補ペアごとに接続試行（STUN Binding Request）を行い、成功したペア（valid candidate pair）を選択する
+
+- SDPまたはICE candidateの交換によって合意に至らず、通信経路の確立に失敗した場合には、WebSocketなどのシグナリングチャネル上で `type: "reject"` や `type: "error"` といったアプリケーション独自のメッセージによって通知されることがある
+
+
+
+#### クライアント → サーバ（SDP offer）
+```
+{
+"type": "offer",
+"sdp": "v=0\r\no=- 46117317 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\n..."
+}
+```
+#### サーバ → クライアント（SDP answer）
+```
+{
+"type": "answer",
+"sdp": "v=0\r\no=- 58223344 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\n..."
+}
+
+```
+#### クライアント → サーバ（ICE candidate）
+
+```
+{
+"type": "candidate",
+"candidate": "candidate:842163049 1 udp 1677729535 192.168.1.10 5060 typ host"
+}
+
+```
+#### サーバ → クライアント（ICE candidate）
+
+```
+{
+"type": "candidate",
+"candidate": "candidate:3134787320 1 udp 2122260223 192.168.1.100 3478 typ host"
+}
+
+```
+
+
+
+## WebRTC
+
+### WebSocketを用いたWebRTC通信の開始
+- WebRTCは、音声・映像などのメディアコンテンツを1対1通信でリアルタイムに転送するための通信プロトコルである
+- トランスポート層には低遅延なUDPを使用し、DTLSおよびSRTPによって暗号化されたパケットを転送する
+- メディア伝送を開始する前段階で、SIPに類似した形でクライアント間の通信能力の交渉が行われる
+- WebRTC自身にはこの「シグナリング」機能は含まれていない
+- シグナリングでは、SDPによるoffer/answer交換を行い、その後ICE candidateを交換してWebRTC通信の準備を行う
+- WebRTCの通信終了は、プロトコル上はICE、DTLS、SRTPなどWebRTC内部の機構で完結する
+- ただし、相手にセッション終了の意思を明示的に伝える目的で、慣例としてシグナリングチャネル上に `type: "bye"` などのメッセージを送信することがある
+
+### WebRTC通信開始後の動作概要
+
+- ICE接続チェックの完了とcandidateペアの選定後、各ピアは、自身と相手のICE candidateのペアを生成し、それぞれにSTUN Binding Requestを送信し、双方向に疎通可能で、かつ最も良好な候補ペア（valid candidate pair）が選ばれる
+- この状態に達すると iceConnectionState が connected → completed に変化
+- DTLSハンドシェイクの開始（鍵交換）
+  - ICEチェックが完了した後、DTLS（Datagram Transport Layer Security）により暗号化のための鍵交換を実行
+  - このとき、SDP内で交換された a=fingerprint 情報と照合してピアの認証を行う
+- SRTPセッションの確立（メディア暗号化）
+  - DTLSで鍵交換が完了すると、その鍵をもとにSRTP（Secure RTP）を初期化
+  - 音声や映像のパケットはすべてSRTPで暗号化されて送受信されるようになる
+- MediaStream/DataChannelの開始
+  - 音声・映像のメディアストリームが確立し、再生が開始される
+  - 音声なら <audio srcObject>、映像なら <video srcObject> にストリームが渡される
+  - DataChannelを使っている場合は、SCTP（Stream Control Transmission Protocol） over DTLS が動作開始し、アプリケーションデータの送受信が可能になる
+
+
+
+## 今後について
+
+### プロトコル
+- WebTransportとQUICは従来のHTTP/WebSocket/WebRTC的な通信モデルを根本から見直す動きとして注目すべきである
+- WebTransport は「API仕様（クライアント側の使い方）」にフォーカスしており、非同期ストリームや双方向性をJavaScriptでどう扱うかに関わる
+- QUIC は「トランスポート層プロトコルそのもの」として、UDP上に信頼性・多重化・TLSを直接内包した全く新しい仕組み（TCP＋TLS＋HTTP/2の再設計）である
+- それぞれを学ぶために下記のような流れで学ぶ必要があるだろう
+- QUICの構造（UDP上のコネクション、TLS 1.3、パケット識別、フロー制御など）
+- WebTransport APIの使い方（ストリーム、セッション、接続管理など）
+- 既存プロトコルとの比較（WebRTC, HTTP/2, WebSocket）
+
+### 多ユーザ同時接続
+- WebRTCはP2P接続を前提にしている
+- アプリケーションレイヤで1：多接続が必要である場合は SFU（Selective Forwarding Unit）を導入し、複数のクライアントへパケットを転送する必要がある
+- 大多数と接続するのであれば、ファイルディスクリプタ数の制限を緩和するなどOS/Kernelレベルでの管理やnetworkカードを多数使っての帯域確保など別の技術が必要になる
+
+
+
+
+
+
+## 関連仕様と文献
+
+[1] https://datatracker.ietf.org/doc/html/rfc6455
+[2] https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
+[3] https://webrtc.org/getting-started/overview
+[4] https://tools.ietf.org/html/rfc6455
+[5] https://tools.ietf.org/html/rfc8825
+
+
