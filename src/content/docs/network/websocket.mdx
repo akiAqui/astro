@@ -15,9 +15,13 @@ import {
 
 <StandardStyle />
 
-##### TODOs
+## 全体の構成
+数のようにhttpから通信が始まりWebSocket上のシグナリングを経由してWebRTCにてメディアの通信を行うまでの説明を行う
 
- - [x] nothing
+<center>
+<img src="/WebSocket.png" width="80%" />
+</center>
+
 
 ## WebSocket
 
@@ -26,6 +30,8 @@ import {
  - http/1.1で導入されたUpgradeヘッダはhttpを起点に別のプロトコルへの切り替えをサポート
  - WebSocketはその一例であり、最もよく知られる例である
 </WhiteBox>
+
+
 
 ### 概要
 - WebSocketは、HTTP/1.1から導入されたUpgradeヘッダを利用したプロトコルの切り替え方式の上に構築された通信プロトコルである
@@ -207,7 +213,7 @@ web.run_app(app, port=8765)
   - 音声や映像のパケットはすべてSRTPで暗号化されて送受信されるようになる
 - MediaStream/DataChannelの開始
   - 音声・映像のメディアストリームが確立し、再生が開始される
-  - 音声なら <audio srcObject>、映像なら <video srcObject> にストリームが渡される
+  - 音声なら `<audio srcObject>`、映像なら `<video srcObject>` にストリームが渡される
   - DataChannelを使っている場合は、SCTP（Stream Control Transmission Protocol） over DTLS が動作開始し、アプリケーションデータの送受信が可能になる
 
 
@@ -228,6 +234,25 @@ web.run_app(app, port=8765)
 - アプリケーションレイヤで1：多接続が必要である場合は SFU（Selective Forwarding Unit）を導入し、複数のクライアントへパケットを転送する必要がある
 - 大多数と接続するのであれば、ファイルディスクリプタ数の制限を緩和するなどOS/Kernelレベルでの管理やnetworkカードを多数使っての帯域確保など別の技術が必要になる
 
+
+
+## (参考) HTTPのバージョンごとの主な仕様変更
+
+| バージョン | 機能・変更点 |
+|------------|--------------|
+| HTTP/1.1   | ・Keep-Aliveによる持続的接続（Connectionヘッダ） |
+|            | ・パイプライン化（順序保証あり） |
+|            | ・Hostヘッダの必須化 |
+|            | ・キャッシュ制御の明確化（Cache-Control） |
+| HTTP/2     | ・バイナリプロトコルに移行（テキストベースを廃止） |
+|            | ・ストリームの多重化（1接続で複数リクエストを並行処理） |
+|            | ・ヘッダ圧縮（HPACK） |
+|            | ・サーバプッシュ（Server Push） |
+| HTTP/3     | ・トランスポート層をTCPからQUIC（UDPベース）に変更 |
+|            | ・TLS 1.3を組み込み、接続と暗号化を統一 |
+|            | ・ストリーム単位でのエラー分離（他ストリームに影響を与えない） |
+
+注：HTTP/3はHTTP/2の機能的上位互換でありながら、トランスポート層を根本的に置き換えている点が特徴。
 
 
 

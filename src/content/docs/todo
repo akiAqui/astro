@@ -1,8 +1,11 @@
  - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
  - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
  - [x] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない(動いた。index.jsxファイルでdefault exportとexportの書き方が違うのでエラーだった。でも、*.astroファイルはexport/importはバレルではやはりできてない）[2025/03/19]
- - [ ] [泥](/art/mud/)
- - [ ] dum break
+ - art
+   - [ ] g-sandbox/3-sandbox
+   - [ ] [泥](/art/mud/)
+   - [ ] dum break
+   - [ ] webRTC/audio/FFT
  - [ ] transformを全部整理
  - [ ] finkの法則
  - [ ] 拡散方程式
@@ -61,4 +64,4 @@
    - [ ] [せん断層の数値解析](/algorithm/eno/)
    - [ ] 流体の保存則に基づく数値解法
    - [ ] ナビエストークスに戻る、ドキュメント作成
-   
+ 
