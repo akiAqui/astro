@@ -241,91 +241,170 @@ import StandardStyle from '../../../components/StandardStyle';
 </Right>
 </TwoColumn>
 
-## new mermaid
-````
-```mermaid
-graph TD
-    A[Start] --> B{Is it working?}
-    B -->|Yes| C[Great!]
-    B -->|No| D[Debug]
-    D --> B
-```
-````
-
-```mermaid
-graph TD
-    A[Start] --> B{Is it working?}
-    B -->|Yes| C[Great!]
-    B -->|No| D[Debug]
-    D --> B
-```
-
-````
-```js
-console.log(1);
-```
-````
-
-
-
 ## Mermaidコンポーネント
-
-
+- Flowchatと状態遷移図に少なくともテキストセンタリングのバグがある
+- このコンポーネントを使えば`<center></center>`で中央ぞろえできる。なんか冗長だけど。
+- さらに進めれば事前定義したところに`<center></center>`でカッコておけば問題は解決する。
+- しかし「エッジのラベル」と呼ばれる分岐の`Yes`や`No`みたいなものは事前定義できない。泣。
+- 当然先頭に`import MermaidChart from '../../../components/MermaidChart.astro';`が必要です
+- 本来なら、少なくともclassDefで下記コードで実現できるはずだが、中央ぞろえにならないのはmermaidの既存バグ
+```
+    classDef default text-align:center
+    class A,B,C,D,E,F,G,H,I default
+```
 
 
 <TwoColumn>
 <Left>
-```jsx
-import MermaidChart from '../../../components/MermaidChart.astro';
+````
+
 
 <MermaidChart code={`
-graph TD
-    A[Start] --> B[uuauau]
-    B --> C{Decision}
-    C -->|Yes| D[End]
+    C{<center>Decision</center>}
+    A[<center>Start</center>] --> B[<center>uuauau</center>]
+    B --> C
+    C -->|<center>Yes</center>| D[End]
     C -->|No| E[Retry]
+    classDef default  fill:#888888, stroke:#444444
+    classDef styleOne fill:#889933, stroke:#ff8822
+    classDef styleTwo fill:#9922ff, stroke:#995522, stroke-width: 4px
+    class A styleOne
+    class B styleTwo
 `} />
-```
+
+````
 </Left>
 <Right>
 <MermaidChart code={`
 graph TD
-    A[Start] --> B[uuauau]
-    B --> C{Decision}
-    C -->|Yes| D[End]
+    C{<center>Decision</center>}
+    A[<center>Start</center>] --> B[<center>uuauau</center>]
+    B --> C
+    C -->|<center>Yes</center>| D[End]
     C -->|No| E[Retry]
+    classDef default  fill:#888888, stroke:#444444
+    classDef styleOne fill:#889933, stroke:#ff8822
+    classDef styleTwo fill:#9922ff, stroke:#995522, stroke-width: 4px
+    class A styleOne
+    class B styleTwo
+    
 `} />
 
 </Right>
 </TwoColumn>
+- 事前定義で`<center></center>`してもいいし
+- 一部分だけを`<center>`で括ってもいい
+- エッジだけはエッジごとに`<center>`しないとだめ
+- class定義(スタイルの定義）は動いているようだ
 
-### mermaidの表示例
-
-#### シーケンスダイアグラム
+### シーケンスダイアグラム
+- センタリングバグはここにはない
+<TwoColumn>
+<Left>
+```
 <MermaidChart code={`
 sequenceDiagram
     Alice->>John: Hello John, how are you?
     John-->>Alice: Great!
     Alice-)John: See you later!
 `} />
+```
+</Left>
+<Right>
+<MermaidChart code={`
+sequenceDiagram
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    Alice-)John: See you later!
+`} />
+</Right>
+</TwoColumn>
 
-#### 状態遷移
 
+### 状態遷移図
+- センタリングのバグあり
+- 事前の状態定義で回避できるようである
+- 個別にセンタリングすると、<center>Still</center>とStilが別物として扱われるので止めた方がいい
+- クラス指定するとfillは動くtext-alignが動いていないことが分かる（下記の状態のCrash)
+
+<TwoColumn>
+<Left>
+```
 <MermaidChart code={`
 ---
 title: Simple sample
 ---
-stateDiagram
-    [*] --> Still
-    Still --> [*]
+ stateDiagram-v2
+    state "<center>Moving</center>" as Moving
+    state "<center>Still</center>" as Still
 
-    Still --> Moving
-    Moving --> Still
-    Moving --> Crash
+    Still --> [*]
+    [*] --> Still
+
+    Still --> Moving:<center>中央揃え</center>
+    Moving --> Still : 非中央揃え
+    Moving --> Crash : <font color="red">非中央揃え</font>
     Crash --> [*]
+
+    classDef cen fill: red, text-align:center
+    class Crash cen
+`} />
+```
+</Left>
+<Right>
+<MermaidChart code={`
+---
+title: Simple sample
+--- 
+ stateDiagram-v2
+    state "<center>Moving</center>" as Moving
+    state "<center>Still</center>" as Still
+
+    Still --> [*]
+    [*] --> Still
+
+    Still --> Moving:<center>中央揃え</center>
+    Moving --> Still : 非中央揃え
+    Moving --> Crash : <font color="red">非中央揃え</font>
+    Crash --> [*]
+
+    classDef cen fill: red, text-align:center
+    class Crash cen
+
 
 `} />
 
+</Right>
+</TwoColumn>
+
+### Mindmap
+- centeringの問題はなさそう
+
+<TwoColumn>
+<Left>
+```
+<MermaidChart code={`
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness<br/>and features
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+            Argument mapping
+    Tools
+      Pen and paper
+      Mermaid
+`} />
+```
+</Left>
+<Right>
 <MermaidChart code={`
 mindmap
   root((mindmap))
@@ -346,11 +425,53 @@ mindmap
       Mermaid
 `} />
 
+</Right>
+</TwoColumn>
+
+
+### mdxのmermaid対応
+mdxで直接mermaiが動作するようになった。自作Mermaidタグを使わなくても動く。でもセンタリングされないのでその点が難なので、まだ使わない。
+
+
+<TwoColumn>
+<Left>
+````
+```mermaid
+graph TD
+    A[<center>Start</center>] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B
+```
+````
+</Left>
+<Right>
+```mermaid
+graph TD
+    A[<center>Start</center>] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B
+```
+
+</Right>
+</TwoColumn>
+
+
+
+````
+```js
+console.log(1);
+```
+````
+
+
+
 
 
 ## MDXごとのstyleの変更
 - styleを作ってimportしても反映されなかった。mdxファイル冒頭に表記するとスタイルが反映される
-- 各MDXファイルで個別に変更しているが、共通化してインポートしたいが今のところできない
+- 各MDXファイルで個別に変更しているが、共通化してインポートしたいが今のところできない→バレル形式でできた！
 
 ```css
  <style>{`
@@ -397,7 +518,7 @@ import {Blue} from '../../../components/Blue';
 <Blue message='メッセージ'>nekonekone</Blue>
 
 
-## 6. mermaidの利用
+## 6. mermaidの利用までのinstall/設定方法
 - コンポーネントを利用する
 - クライアントサイドにjavascriptをダウンロードして画像が生成される
 

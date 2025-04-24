@@ -1,0 +1,126 @@
+---
+title: wsl/ディストロインスタンスの削除
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## WSL ディストリ削除によるディスク容量回復手順
+
+### 概要
+不要になった *Ubuntu?22.04* の VHDX を削除し、復元ポイント (シャドーコピー) を処理して確実に空き領域を取り戻す最短かつ安全なフロー。
+
+---
+
+### 手順
+
+1. **VHDX 手動削除**
+   ```
+   del "C:\Users\<User>\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu22.04LTS_*\LocalState\ext4.vhdx"
+   ```
+   - 目的: 物理ファイルを除去  
+   - リスク: パス誤りによる誤削除
+
+2. **WSL 完全停止**
+   ```
+   wsl --shutdown
+   ```
+   - 目的: ファイルハンドル解放  
+   - リスク: なし
+
+3. **登録削除**
+   ```
+   wsl --unregister Ubuntu-22.04
+   ```
+   - 目的: ディストリ一覧から抹消  
+   - リスク: ディストリ名誤指定で別ディストリ削除
+
+4. **シャドーコピー確認**
+   ```
+   vssadmin list shadows /for=C:
+   ```
+   - 目的: 削除済み VHDX のブロックを保持する復元ポイントの有無を確認
+
+5. **最古のシャドーコピー削除**
+   ```
+   vssadmin delete shadows /for=C: /oldest
+   ```
+   - 目的: 未開放クラスタを解放  
+   - リスク: 最新以外の復元ポイント消失
+
+6. **Windows 再起動**
+   - 目的: キャッシュ解放・容量確定  
+   - リスク: なし
+
+7. **空き容量確認**
+   ```
+   fsutil volume diskfree C:
+   ```
+   - 目的: 数値で増加を確認  
+   - リスク: なし
+
+---
+
+### 補足情報
+- VHDX は **シンプロビジョニング**。論理サイズ (例: 19?GB) と実際のディスク使用量は異なるため、増加がわずかでも正常。  
+- すべての復元ポイントを削除する場合は `/all` を使用。ただし **復元可能性が失われる** ため推奨しない。  
+- 残存ディストリ (*Ubuntu?24.04* など) をさらに圧縮したい場合のみ `sudo fstrim -av` → `Optimize?VHD -Mode Full` を実施 (本ケースでは不要)。
+
+---
+
+### 判断フロー
+<MermaidChart scale={60} code ={`
+flowchart TD
+    %% ノードの定義
+    A[<center>ext4.vhdx 削除</center>]
+    B[<center>wsl --shutdown</center>]
+    C[<center>wsl --unregister</center>]
+    D{<center>空き容量増加?</center>}
+    E[<center>完了</center>]
+    F[<center>vssadmin list shadows</center>]
+    G{<center>シャドーコピー存在?</center>}
+    H[<center>vssadmin delete shadows /oldest</center>]
+    I[<center>再起動</center>]
+    
+    %% 接続関係の定義
+    A --> B
+    B --> C
+    C --> D
+    D -- <center>Yes</center> --> E
+    D -- No --> F
+    F --> G
+    G -- <center>Yes</center> --> H
+    H --> I
+    I --> D
+    G -- <center>No</center> --> I
+`}/>
+
+---
+
+### 参考 CLI
+```
+# ディストリ一覧表示
+wsl -l -v
+
+# シャドーコピー世代表示
+vssadmin list shadows /for=C:
+
+# 空き容量確認
+fsutil volume diskfree C:
+```
+
+

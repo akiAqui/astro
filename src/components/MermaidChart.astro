@@ -4,18 +4,46 @@ import mermaid from 'mermaid';
 
 export interface MermaidProps {
   code: string;
+  scale: number;
 }
 
-const { code } = Astro.props;
----
+const { code, scale = 100, } = Astro.props;
 
-<div class="mermaid" style={{background:"#ffffff",width: "70%",textAlign:"center"}}>
+// mermaidの初期化設定をカスタマイズ
+const config = {
+  theme: 'forest',
+  themeCSS: '.node rect { min-height: 160px !important; }',
+  startOnLoad: true
+};
+
+
+---
+<div class="mermaid-container" style={{align:"center"}}>
+<div class="mermaid" style={{
+   background:"#ffffff",
+   textAlign:"center",
+   transform: `scale(${scale/100})`, 
+   transformOrigin: "center top",
+   }}>
   {code}
 </div>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "mermaid": "/node_modules/mermaid/dist/mermaid.esm.min.mjs"
+  }
+}
+</script>
 
-<script>
+<script define:vars={{ config }} type="module">
   import mermaid from 'mermaid';
+  mermaid.initialize(config);
+  /*
   mermaid.initialize({ startOnLoad: true });
   mermaid.contentLoaded();
+  */
+  mermaid.run();
 </script>
+
 
