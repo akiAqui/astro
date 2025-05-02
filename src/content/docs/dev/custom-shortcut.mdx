@@ -1,0 +1,73 @@
+---
+title: 独自文言入力@AI
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [ ] ChatGPT, ClaudeのProseMirrorEditorを入力画面で使っていることに着目し、chrome上でショートカットを定義し、いつも同じ指示文を出せるようにした。
+ - [ ] ショートカットキー変更機能が完了していない
+ 
+
+
+
+
+## 結論
+Chrome仕様変更により、content scriptから直接chrome.storage.localへアクセスできなくなったため、background経由に修正した。
+## 原因
+- content.js内でchrome.storage.local.getをawaitしていた
+- 直近のChromeアップデートにより、セキュリティ制約が強化
+- content scriptがページコンテキストに注入されるため、chrome APIの一部アクセスが制限
+- 特にセキュリティの高いサイト (ChatGPT, Claudeなど) 上で影響発生
+## 問題発生時の挙動
+- Alt-1押下時に、コンソールにTypeError発生
+- chrome.storage.localがundefined、もしくはアクセス不能
+- content.js全体の動作が停止し、ショートカット機能も無効化
+## 変更内容
+### background.js
+- 新たにmessage listenerを追加
+  - 受信: `{type: 'getShortcuts'}`
+  - 応答: chrome.storage.local.get('shortcuts') の結果を返却
+```javascript
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'getShortcuts') {
+    chrome.storage.local.get('shortcuts', (result) => {
+      sendResponse(result.shortcuts || {});
+    });
+    return true;
+  }
+});
+```
+### content.js
+- 直接chrome.storage.local.getするのを廃止
+- chrome.runtime.sendMessage`({type: 'getShortcuts'})`でbackgroundに問い合わせる形に変更
+- fetchShortcuts関数を新設し、insertShortcut内部で使用
+```javascript
+async function fetchShortcuts() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: 'getShortcuts' }, (response) => {
+            resolve(response);
+        });
+    });
+}
+```
+```javascript
+const shortcuts = await fetchShortcuts();
+const text = shortcuts[shortcutNumber];
+```
+## 背景情報
+- Manifest V3ではbackground.jsはservice_workerとして動作し、
+  content scriptとの通信はmessage passingが推奨される [Google Developer Documentation](https://developer.chrome.com/docs/extensions/mv3/messaging/)
+- chrome.storage APIの直接使用は引き続き許可されているが、context isolationが強いページでは動作保証されない [Chrome Extensions Documentation](https://developer.chrome.com/docs/extensions/mv3/content_scripts/#host-page-communication)

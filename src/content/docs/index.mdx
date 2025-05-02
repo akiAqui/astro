@@ -32,7 +32,7 @@ import {
    - Three.js / raw WebGL において new THREE.Texture(canvas) や gl.texImage2D(...) でアップロード
    - GLSLから sampler2D で uv = vec2(sdfID + 0.5 / texWidth, row) のように参照
  - sdf static
-   - [ ] 複数点光源
+   - 点光源バリエーション
      - [ ] 減衰曲線複数タイプ
      - [ ] 減衰曲線カスタムタイプ
      - [ ] softShadow for 点光源
@@ -41,13 +41,11 @@ import {
      - [ ] 透明度を導入
      - [ ] リフレクション
      - [ ] リフラクション(refraction)/屈折
-     - 各種反射モデルの実装
-     - 
-   - [ ] 
-   - [ ] 
-   
-   - [ ] 複数タイプ光源
-   - [ ] 
+   - 各種反射モデルバリエーション
+     - [ ] 
+     - [ ] 
+   - [ ] 複数点光源
+   - [ ] 環境光
    - [ ] 
    - [ ] 
    - [ ] 
@@ -121,6 +119,15 @@ import {
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
+| 材質モデルに関する数学的考察 | [algorithm/materialModel.mdx](http://localhost:4321/algorithm/materialModel/) | May 2 20:41 |
+| 曇りガラス | [algorithm/frostedGlass.mdx](http://localhost:4321/algorithm/frostedGlass/) | May 2 11:50 |
+| デシベル | [accoustics/db.mdx](http://localhost:4321/accoustics/db/) | May 2 03:03 |
+| 独自文言入力@AI | [dev/custom-shortcut.mdx](http://localhost:4321/dev/custom-shortcut/) | Apr 29 22:15 |
+| multi branch | [tech/git-branches.mdx](http://localhost:4321/tech/git-branches/) | Apr 27 00:12 |
+| data migration between dist | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Apr 25 21:22 |
+| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Apr 25 04:13 |
+| wsl/ディストロインスタンスの削除 | [tech/wsl-disk.mdx](http://localhost:4321/tech/wsl-disk/) | Apr 24 22:20 |
+| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Apr 24 21:26 |
 | 光源 | [three/light.mdx](http://localhost:4321/three/light/) | Apr 21 21:39 |
 | sandboxes | [art/misc.mdx](http://localhost:4321/art/misc/) | Apr 19 17:19 |
 | スパイス | [reports/spice.mdx](http://localhost:4321/reports/spice/) | Apr 19 13:28 |
@@ -140,12 +147,10 @@ import {
 | ＊）メディアアートのツールと実行環境 | [art/tool-environment.mdx](http://localhost:4321/art/tool-environment/) | Apr 7 15:42 |
 | ＊）アニメーションの方式比較 | [three/animation.mdx](http://localhost:4321/three/animation/) | Apr 6 05:22 |
 | ＊）Shader/法線マッピングなど | [glsl/shader-and-mapping.mdx](http://localhost:4321/glsl/shader-and-mapping/) | Apr 6 00:54 |
-| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Apr 5 23:40 |
 | ＊）OpenGL/GLSL version | [glsl/version.mdx](http://localhost:4321/glsl/version/) | Apr 5 10:38 |
 | ＊）RUST勉強の始め方 | [tech/rust-tutorial.mdx](http://localhost:4321/tech/rust-tutorial/) | Apr 5 10:28 |
 | ＊）ShaderPass | [glsl/shader-pass.mdx](http://localhost:4321/glsl/shader-pass/) | Apr 4 01:37 |
 | ＊）典型的なvertex shader | [glsl/typical-vertex-shader.mdx](http://localhost:4321/glsl/typical-vertex-shader/) | Apr 4 01:32 |
-| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Apr 3 21:52 |
 | ＊）GSAP x Three.js | [three/gsap.mdx](http://localhost:4321/three/gsap/) | Apr 3 20:01 |
 | ＊）ホームネットワーク管理 | [network/home-netowork.mdx](http://localhost:4321/network/home-netowork/) | Apr 3 19:56 |
 | MIDIでのnetworkingに関する検討 | [art/networking.mdx](http://localhost:4321/art/networking/) | Mar 31 00:39 |
@@ -164,7 +169,6 @@ import {
 | ＊）分子動力学 | [algorithm/molecular_dynamics.mdx](http://localhost:4321/algorithm/molecular_dynamics/) | Mar 13 16:30 |
 | ＊）環境マッピング | [three/env_mapping.mdx](http://localhost:4321/three/env_mapping/) | Mar 12 01:44 |
 | ＊＊＊）Material | [three/material.mdx](http://localhost:4321/three/material/) | Mar 11 16:35 |
-| ＊）data migration between dist. | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Mar 11 16:33 |
 | context menu ext | [dev/emacs-edit-extension.mdx](http://localhost:4321/dev/emacs-edit-extension/) | Mar 11 16:33 |
 | ＊）PDF, 各種変換 | [tech/doc-convert.mdx](http://localhost:4321/tech/doc-convert/) | Mar 10 09:46 |
 | ＊）emacs register etc | [tech/emacs-register.mdx](http://localhost:4321/tech/emacs-register/) | Mar 10 09:38 |
@@ -192,7 +196,6 @@ import {
 | Riemann Surface | [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 08:02 |
 | ＊）波形操作合成とWaveTerrainSynthesis | [algorithm/waveTerrainSynthesis.mdx](http://localhost:4321/algorithm/waveTerrainSynthesis/) | Feb 12 20:08 |
 | ＊）バイポーラ | [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 01:57 |
-| ＊）sandbox/multi branch | [tech/git-branches.mdx](http://localhost:4321/tech/git-branches/) | Feb 11 03:47 |
 | Ｆ）Perlinノイズ | [algorithm/perlin.mdx](http://localhost:4321/algorithm/perlin/) | Feb 11 01:48 |
 | 液体 | [algorithm/fluid.mdx](http://localhost:4321/algorithm/fluid/) | Feb 11 01:46 |
 | (*)プルリク | [tech/pullRequest.mdx](http://localhost:4321/tech/pullRequest/) | Feb 4 06:47 |

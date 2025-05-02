@@ -1,0 +1,129 @@
+---
+title: 材質モデルに関する数学的考察
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [ ] まだ全然理解できていない
+
+
+## 概要
+BRDF（双方向反射分布関数）は、3次元空間における光の反射特性を数式的に表す関数である。材質モデルの違いはBRDFの定義に帰着する。
+
+
+## 要約
+* BRDFは入射光と出射光の方向に基づいて、単位入射放射輝度あたりの出射輝度を定める関数
+* 材質モデル（Lambert, Phong, Cook-Torranceなど）は、異なるBRDFを定義することで反射特性を近似している
+* Lambertモデルは理想拡散、Phongモデルは経験的光沢、Cook-Torranceは物理ベース反射を再現する
+
+## BRDFの定義
+BRDF $f\_r$ は次式で定義される：
+$$
+f_r(x, \omega_i, \omega_o) = \frac{dL_o(x, \omega_o)}{dE_i(x, \omega_i)} = \frac{dL_o(x, \omega_o)}{L_i(x, \omega_i) (\omega_i \cdot n) d\omega_i}
+$$
+* $x$: 反射位置 \[m]
+* $\omega\_i$: 入射方向（単位ベクトル）
+* $\omega\_o$: 出射方向（単位ベクトル）
+* $L\_i$: 入射輝度 \[$\mathrm{W\cdot sr^{-1}\cdot m^{-2}}$]
+* $L\_o$: 出射輝度 \[$\mathrm{W\cdot sr^{-1}\cdot m^{-2}}$]
+* $dE\_i$: 入射放射照度の微小量
+* $n$: サーフェス法線（単位ベクトル）
+* $f\_r$: BRDF \[$\mathrm{sr^{-1}}$]
+
+## 材質モデルとそのBRDF
+| モデル名                   | BRDF式                                                                | 特徴                   | 代表例          |
+| ---------------------- | -------------------------------------------------------------------- | -------------------- | ------------ |
+| Lambert                | $f\_r = \frac{\rho}{\pi}$                                          | 等方的完全拡散反射、観測方向に依存しない | 白壁、チョーク、紙    |
+| Phong                  | $f\_r \propto (\mathbf{r} \cdot \mathbf{v})^s$                     | 経験的光沢モデル、鏡面方向近傍に集中   | プラスチック、陶器    |
+| Blinn-Phong            | $f\_r \propto (\mathbf{n} \cdot \mathbf{h})^s$                     | Phongの計算最適化型         | ガラス、艶消し金属    |
+| Cook-Torrance          | $f\_r = \frac{DGF}{4(\omega\_o \cdot n)(\omega\_i \cdot n)}$       | 物理ベース反射、マイクロファセット理論  | 金属、濡れた表面     |
+| Oren-Nayar             | Lambertの粗面拡張。解析式は長いため省略                                              | 拡散面の粗さ考慮             | 布、コンクリート     |
+| GGX / Trowbridge-Reitz | 分布D項に$D = \frac{\alpha^2}{\pi((n \cdot h)^2(\alpha^2 - 1) + 1)^2}$ | PBRで用いられる鏡面分布        | ゲームエンジンの標準材質 |
+| Perfect Specular       | $f\_r = \delta(\omega\_o - r(\omega\_i))$                          | 完全鏡面反射、デルタ関数         | 鏡、静水面        |
+
+* $\rho$: 拡散反射率（アルベド、無次元）
+* $\mathbf{r}$: 入射方向の鏡面反射ベクトル
+* $\mathbf{v}$: 観測方向ベクトル
+* $\mathbf{n}$: サーフェス法線
+* $\mathbf{h}$: ハーフベクトル（$\mathbf{h} = \frac{\omega\_i + \omega\_o}{|\omega\_i + \omega\_o|}$）
+* $s$: 光沢指数（Phongモデルにおける指数、無次元）
+* $\alpha$: 表面粗さパラメータ（GGX）
+* $D, G, F$: 分布項、幾何項、フレネル項（Cook-Torranceモデル）
+
+
+## 導出
+- Lambert
+- Phong
+- Blinn-Phong
+- Cook-Torrance
+
+#### Lambertモデルの導出
+拡散反射において、放射輝度 $L\_o$ は入射方向 $\omega\_i$ からの放射照度 $E\_i$ に比例し、すべての方向に等しく反射されると仮定する。
+$$
+L_o(x, \omega_o) = \frac{\rho}{\pi} E_i(x) = \frac{\rho}{\pi}
+\int_{\Omega} L_i(x, \omega_i) (\omega_i \cdot n) d\omega_i
+$$
+よって、BRDF $f\_r$ は：
+$$
+f_r(x, \omega_i, \omega_o) = \frac{\rho}{\pi}
+$$
+
+これは方向に依存しない定数であり、エネルギー保存性を持つ。
+
+#### Phongモデルの導出
+Phongモデルは経験的な鏡面ハイライトの近似であり、反射ベクトル $\mathbf{r}$ と視線方向 $\mathbf{v}$ の間の角度 $\theta$ に依存して次のように表される：
+$$
+f_r(\omega_i, \omega_o) \propto (\max(\mathbf{r} \cdot \mathbf{v}, 0))^s
+$$
+ここで $s$ は光沢指数であり、大きいほど鏡面反射が鋭くなる。
+正規化には以下のようにエネルギー保存則を仮定してスケーリング係数を導入する：
+$$
+f_r(\omega_i, \omega_o) = \frac{s + 2}{2\pi} (\max(\mathbf{r} \cdot \mathbf{v}, 0))^s
+$$
+
+
+#### Blinn-Phongモデルの導出
+Blinn-Phongは反射ベクトルの代わりにハーフベクトル $\mathbf{h}$ を用いる。
+$$
+f_r(\omega_i, \omega_o) = \frac{s + 8}{8\pi} (\max(\mathbf{n} \cdot \mathbf{h}, 0))^s
+$$
+この式もエネルギー保存性のための正規化係数を含む。$\mathbf{h}$ は以下のように定義される：
+$$
+\mathbf{h} = \frac{\omega_i + \omega_o}{\| \omega_i + \omega_o \|}
+$$
+
+#### Cook-Torranceモデルの導出
+Cook-Torranceモデルはマイクロファセット理論に基づき、以下の3要素で構成される：
+$$
+f_r = \frac{D(\mathbf{h}) G(\omega_i, \omega_o, \mathbf{h}) F(\omega_i)}{4(\omega_i \cdot n)(\omega_o \cdot n)}
+$$
+* $D$: 法線分布関数（NDF）
+* $G$: 幾何項（遮蔽・マスキング）
+* $F$: フレネル反射係数（Schlick近似等）
+代表的なGGX分布：
+$$
+D_{GGX}(\mathbf{h}) = \frac{\alpha^2}{\pi((n \cdot \mathbf{h})^2(\alpha^2 - 1) + 1)^2}
+$$
+幾何項（Smith近似）：
+$$
+G_{Smith}(\omega) = \frac{2(n \cdot v)}{(n \cdot v) + \sqrt{\alpha^2 + (1 - \alpha^2)(n \cdot v)^2}}
+$$
+フレネル項（Schlick近似）：
+$$
+F(\omega_i) = F_0 + (1 - F_0)(1 - (\omega_i \cdot \mathbf{h}))^5
+$$
+
+以降、各項目の物理的意味、エネルギー保存の証明、Fresnel完全式との比較などを必要に応じて展開可能である。

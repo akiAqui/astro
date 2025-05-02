@@ -9,7 +9,7 @@
    - Three.js / raw WebGL において new THREE.Texture(canvas) や gl.texImage2D(...) でアップロード
    - GLSLから sampler2D で uv = vec2(sdfID + 0.5 / texWidth, row) のように参照
  - sdf static
-   - [ ] 複数点光源
+   - 点光源バリエーション
      - [ ] 減衰曲線複数タイプ
      - [ ] 減衰曲線カスタムタイプ
      - [ ] softShadow for 点光源
@@ -18,13 +18,11 @@
      - [ ] 透明度を導入
      - [ ] リフレクション
      - [ ] リフラクション(refraction)/屈折
-     - 各種反射モデルの実装
-     - 
-   - [ ] 
-   - [ ] 
-   
-   - [ ] 複数タイプ光源
-   - [ ] 
+   - 各種反射モデルバリエーション
+     - [ ] 
+     - [ ] 
+   - [ ] 複数点光源
+   - [ ] 環境光
    - [ ] 
    - [ ] 
    - [ ] 
