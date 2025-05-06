@@ -39,17 +39,20 @@ export default defineConfig({
                 {
                     label: 'GLSL',
                     autogenerate: {directory: 'glsl'},
-                },                
+                },
                 {
+                    label: '流体力学',
+                    autogenerate: {directory: 'hydrodynamics'},
+                },                                {
                     label: '各種アルゴリズム',
                     autogenerate: {directory: 'algorithm'},
-                },                
+                },
                 {
                     label: '数学',
                     autogenerate: {directory: 'math'},
                 },                
                 {
-                    label: 'csound, P5jsなど',
+                    label: '音響',
                     autogenerate: {directory: 'accoustics'},
                 },                
                 {
