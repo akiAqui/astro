@@ -1,120 +1,19 @@
 ---
-title: レンダリングプロセスとWebGLRender
+title: レンダリングプロセス
 description: WebGLRenderer
 layout: '../../../layouts/BaseLayout.astro'
 ---
- <style>{`
 
-.sl-markdown-content > main > hr:not(:where(.not-content *)) {
-  border: none !important;
-  border-bottom: 4px double white !important;
-  margin-bottom: 14px;
-}
- 
-.sl-markdown-content div.ec-line {
-margin-top: 0 !important;
-font-size:10px;
-}
-.sl-markdown-content{
- font-size:15px;
-}
-
-.sl-markdown-content p,table,div.expressive-code {
- padding:0em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-.sl-markdown-content p {
- text-indent: 1em;
-}
-.sl-markdown-content li p {
-  text-indent: 0;
-  margin-left:0 !important;
-}
-
-.sl-markdown-content ul,ol,li::marker {
- padding-left:2em;
- margin-top: 0em !important;
- margin-left: 1em !important;
-}
-
-
-.sl-markdown-content h3::before {
-content: "> ";
-} 
-.sl-markdown-content h4::before {
-content: ">> ";
-} 
-.sl-markdown-content h5::before {
-content: ">>> ";
-} 
-.sl-markdown-content h6::before {
-content: ">>>> ";
-} 
-
-h1,h2,h3,h4,h5,h6 {
- margin-top: 1em !important;
-
-}
-
-figure pre {
- margin-top: 0.4em !important;
-}
-.sl-markdown-content h1 {
- font-size:27px;
- text-decoration: underline;
- font-weight: bold
-}
-
-.sl-markdown-content h2 {
- font-size:26px;
- font-weight: normal;
- text-decoration: underline;
-}
-
-.sl-markdown-content h3 {
- font-size:24px;
- font-weight: normal;
- font-style: italic;
- text-decoration: underline;
-}
-
-.sl-markdown-content h4 {
- font-size:22px;
- font-weight: normal;
- font-style: italic; 
- text-decoration: underline;
- margin-top: 2px;
-}
-.sl-markdown-content h5 {
- font-size:18px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-.sl-markdown-content h6 {
- font-size:15px;
- font-weight: bold;
- font-style: italic; 
- text-decoration: underline;
-}
-
-.sl-markdown-content th {
- font-size:13px;
-}
-.sl-markdown-content td {
- font-size:13px;
-}
-`}</style>
-
-import CodeTitle from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
-import Box from '../../../components/Box';
-import RedBox from '../../../components/RedBox';
 
-<TimeStamp fileUrl={import.meta.url} />
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
 
 ##### TODOs
 
@@ -123,6 +22,7 @@ import RedBox from '../../../components/RedBox';
 ------------------------------------------------------------------------------------------------------------
 
 ### THREE.js/WebGL のレンダリングプロセス
+
 1. CPU 側で WebGL のセットアップ
    - `THREE.WebGLRenderer()`でHTMLのcanvas要素の生成or設定とrendererを生成
    - シーンの作成(オブジェクト、ライトなど）
@@ -131,6 +31,7 @@ import RedBox from '../../../components/RedBox';
      - MeshStandardMaterial や MeshBasicMaterial などの組み込みマテリアルは GLSL シェーダーを内部で保持している
    - renderer.render(scene,camera)で描画命令
    - WebGL API を介して GPU にデータを送信
+
 2. GPU での処理
    - 頂点シェーダー（Vertex Shader）
      - 3D 座標をスクリーン座標へ変換
@@ -148,6 +49,7 @@ import RedBox from '../../../components/RedBox';
    - フレームバッファへの出力
      - フラグメントシェーダーの結果を GPU のフレームバッファへ保存
      - 画面にレンダリングされる
+
 ### フレームバッファ
 フレームバッファ（Framebuffer）は、GPU が描画結果を一時的に格納するメモリ領域である。
 すべてのレンダリング結果（ピクセルデータ、深度情報、ステンシルバッファなど）がここに保存され、

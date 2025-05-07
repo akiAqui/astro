@@ -1,7 +1,7 @@
 // @ts-check    
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-
+import sidebar from './src/sidebar.js';
 
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
@@ -11,6 +11,10 @@ import remarkMermaid from 'remark-mermaidjs';
 import rehypeKatex from 'rehype-katex';
 import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
+
+
+console.debug('sidebar updated:', sidebar) // 無意味に見えても参照が必要
+
 export default defineConfig({
   i18n: {
     locales: ["es", "en", "pt-br"],
@@ -27,63 +31,7 @@ export default defineConfig({
             social: {
                 github: 'https://github.com/withastro/starlight',
             },
-            sidebar: [
-                {
-                    label: 'アートプロジェクト',
-                    autogenerate: {directory: 'art'},
-                },                
-                {
-                    label: 'THREE.js',
-                    autogenerate: {directory: 'three'},
-                },                
-                {
-                    label: 'GLSL',
-                    autogenerate: {directory: 'glsl'},
-                },
-                {
-                    label: '流体力学',
-                    autogenerate: {directory: 'hydrodynamics'},
-                },                                {
-                    label: '各種アルゴリズム',
-                    autogenerate: {directory: 'algorithm'},
-                },
-                {
-                    label: '数学',
-                    autogenerate: {directory: 'math'},
-                },                
-                {
-                    label: '音響',
-                    autogenerate: {directory: 'accoustics'},
-                },                
-                {
-                    label: 'html',
-                    autogenerate: {directory: 'html'},
-                },                
-                {
-                    label: 'TypeScript, JavaScript',
-                    autogenerate: {directory: 'tsjs'},
-                },                
-                {
-                    label: 'ネットワーク',
-                    autogenerate: {directory: 'network'},
-                },                
-                {
-                    label: 'その他技術レポート',
-                    autogenerate: {directory: 'tech'},
-                },                
-                {
-                    label: 'その他開発',
-                    autogenerate: {directory: 'dev'},
-                },                
-                {
-                    label: 'その他',
-                    autogenerate: {directory: 'reports'},
-                },                
-                {
-                    label: 'mdx',
-                    autogenerate: {directory: 'mdx'},
-                },                
-            ],
+            sidebar: sidebar,
         })
     ],
     markdown: {

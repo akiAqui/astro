@@ -53,6 +53,11 @@ import {
 - GSAPをベースに・・・
 - JSONに記載されたスコアを読み込むことで環境定義、デバッグ設定、オブジェクト定義、グループ定義、アニメーション定義を行う。
 - JSONの記載が困難を伴う場合は外部プログラムを別途開発する可能性もある
+- setIndex, setDrawRangeの利用
+
+
+
+
 
 ### 採用技術
 - テクスチャはcanvasにプログラム生成することを想定し
@@ -178,6 +183,87 @@ A5 := b4, b5, b6
 - １つ種類の１つのの3Dオブジェクトに対応する型を汎用型から継承された型として定義する
 - 
 
+------
+
+## 結論
+setIndexとsetDrawRangeを組み合わせた構成は、点・線・ポリゴンを柔軟かつ高効率に制御できる。Point/Line系専用の描画よりも表現範囲が広く、アニメーションや表示切替にも向いている。
+---
+## VertexIDと呼び出し制御
+* vertex shaderは描画時にindexに基づいて呼び出される
+* 非インデックス描画（gl.drawArrays）では `gl_VertexID` が直接増加する
+* インデックス描画（gl.drawElements）では `setIndex` による指定で描画対象が制御される
+* 呼び出し回数は `setDrawRange(start, count)` により制限可能
+---
+## setIndexの役割と利点
+* 頂点の再利用によるメモリ節約
+* 描画順や構造の切替がインデックス列だけで可能
+* 同じpositionバッファを複数用途（点/線/面）に使い回せる
+* 表示対象を切り替える場合にも `setIndex([...])` の差し替えで即対応可能
+---
+## setDrawRangeの役割
+* index列の連続部分のみを描画対象に限定する
+* 部分描画、LOD制御、表示アニメーションなどに使用
+* 非連続な構造には不向き（その場合はindex列を切り替える）
+---
+## Point/Line構成との比較
+* THREE.Points, LineSegments はgl.POINTS / gl.LINESとして解釈される
+* いずれもBufferGeometryのposition属性を用い、setDrawRangeで部分表示は可能
+* 複合表現（点から線、線からポリゴン）には、setIndex方式の方が柔軟
+* 描画種別（点・線・面）は使用するクラスで決定（Mesh, Points, LineSegmentsなど）
+---
+## アニメーション・表現拡張
+* 点→線、線→面などの遷移は、同一positionバッファに対し複数の描画クラスを用意して切り替えることで実現可能
+* 表示範囲や構成要素の変更は、setDrawRangeとsetIndexの併用で高効率に行える
+* 表現の幅、パフォーマンス、メモリ効率の観点からも、setIndexを基軸とした設計が有利
+---
+## 実践コード例：同一頂点から点・線・ポリゴンを描く
+```ts
+const vertices = new Float32Array([
+  -1, -1,  0,   0, -1,  0,   1, -1,  0,
+  -1,  0,  0,   0,  0,  0,   1,  0,  0,
+  -1,  1,  0,   0,  1,  0,   1,  1,  0,
+   0,  2,  0,   0, -2,  0
+]); // 20頂点（vec3 * 20 = 60要素）
+const geometry = new THREE.BufferGeometry();
+geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+// ポイント描画
+const pointIndices = Array.from({ length: 20 }, (_, i) => i);
+geometry.setIndex(pointIndices);
+geometry.setDrawRange(0, 20);
+const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.1, color: 0xff0000 }));
+scene.add(points);
+// 線描画（10本の線分）
+const lineIndices = [
+  0, 1, 1, 2,
+  3, 4, 4, 5,
+  6, 7, 7, 8,
+  9,10,10,11,
+  12,13,13,14
+];
+geometry.setIndex(lineIndices);
+geometry.setDrawRange(0, lineIndices.length);
+const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x00ff00 }));
+scene.add(lines);
+// 三角形描画（ポリゴン面：4枚）
+const triIndices = [
+  0, 1, 4,  0, 4, 3,
+  1, 2, 5,  1, 5, 4,
+  3, 4, 7,  3, 7, 6,
+  4, 5, 8,  4, 8, 7
+];
+geometry.setIndex(triIndices);
+geometry.setDrawRange(0, triIndices.length);
+const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff, side: THREE.DoubleSide, wireframe: true }));
+scene.add(mesh);
+```
+* `setIndex([...])` を差し替えることで、描画対象（点・線・面）を即座に切り替え可能
+* `setDrawRange(0, N)` によって各構成の一部のみを描画する制御も可能
+
+
+
+
+
+------
 ## アニメーションエンジン
 
 設計の指示文

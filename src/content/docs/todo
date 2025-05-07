@@ -1,6 +1,8 @@
  - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
  - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
  - [x] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない(動いた。index.jsxファイルでdefault exportとexportの書き方が違うのでエラーだった。でも、*.astroファイルはexport/importはバレルではやはりできてない）[2025/03/19]
+ - [ ] ~/astro/src/sidebar.jsの考え方をまとめる。mdx/sidebar.mdxというファイルにまとめようかな
+ - [ ] clamp()とか、基本関数をきちんと理解する。どうやって記憶するか、記憶の仕方から考える
  - [ ] glslでテクスチャでのデータ渡し。
    - display=noneのcanvasを作る
    - JSONでデータを作る
@@ -19,19 +21,17 @@
      - [ ] リフレクション
      - [ ] リフラクション(refraction)/屈折
    - 各種反射モデルバリエーション
-     - [ ] 
-     - [ ] 
    - [ ] 複数点光源
    - [ ] 環境光
-   - [ ] 
-   - [ ] 
-   - [ ] 
  - art
-   - [ ] g-sandbox/3-sandbox
+   - [ ] g-sandbox/pingpong/boudsの整理、二つのマテリアルをどう使うのか？しかもpingpongバッファ。新しいテクニックだ！
+     - [ ] webgl2十1の差とか議論したが理解していないのでまとめる必要がある。
+   - [ ] 新しい表現/彫刻アニメーション実装
+   - [ ] 新しい表現/曇りガラス表現
    - [ ] [泥](/art/mud/)
-   - [ ] dum break
    - [ ] webRTC/audio/FFT
- - [ ] transformを全部整理
+   - [ ] dum break
+   - [ ] transformを全部整理
  - [ ] finkの法則
  - [ ] 拡散方程式
  - [ ] 水面に映った文字が水の揺れで壊れてゆく。これを逆にすれば、ロゴ表現にできる
@@ -57,7 +57,7 @@
    - [ ] 5.4まで学習する
  - [ ] networking.mdx[2025/3/30開始]
    - [x] OSC確認(不要になった）[2025/3/30]
-   - [ ] Bluetooth LE/MIDIを試したので実験結果を考察に残す
+   - [x] Bluetooth LE/MIDIを試したので実験結果は遅くてダメ。詳細は残さない
    - [ ] rtpMIDIまとめ(art/misc.mdx)
  - [ ] 点と線
    - [ ] MIDIイベントをどうやってスコアにマップさせるかの考察
