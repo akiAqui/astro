@@ -24,6 +24,8 @@ import {
  - [x] glslViewerバイナリが動いてない、make installできない(普通に動いた）
  - [x] styleが膨れ上がった。BasicLayoutに入れられるものを明確にして調整する(StandardStyleというコンポーネントを作ってdivでスタイルを挟んだらうごいた！！TimeStampコンポーネントも含めた！)
  - [x] さらに改善を加えようとコンポーネントディレクトリのindex.jsのバレルパターンを試したが動いていない(動いた。index.jsxファイルでdefault exportとexportの書き方が違うのでエラーだった。でも、*.astroファイルはexport/importはバレルではやはりできてない）[2025/03/19]
+ - [ ] ~/astro/src/sidebar.jsの考え方をまとめる。mdx/sidebar.mdxというファイルにまとめようかな
+ - [ ] clamp()とか、基本関数をきちんと理解する。どうやって記憶するか、記憶の仕方から考える
  - [ ] glslでテクスチャでのデータ渡し。
    - display=noneのcanvasを作る
    - JSONでデータを作る
@@ -42,19 +44,17 @@ import {
      - [ ] リフレクション
      - [ ] リフラクション(refraction)/屈折
    - 各種反射モデルバリエーション
-     - [ ] 
-     - [ ] 
    - [ ] 複数点光源
    - [ ] 環境光
-   - [ ] 
-   - [ ] 
-   - [ ] 
  - art
-   - [ ] g-sandbox/3-sandbox
+   - [ ] g-sandbox/pingpong/boudsの整理、二つのマテリアルをどう使うのか？しかもpingpongバッファ。新しいテクニックだ！
+     - [ ] webgl2十1の差とか議論したが理解していないのでまとめる必要がある。
+   - [ ] 新しい表現/彫刻アニメーション実装
+   - [ ] 新しい表現/曇りガラス表現
    - [ ] [泥](/art/mud/)
-   - [ ] dum break
    - [ ] webRTC/audio/FFT
- - [ ] transformを全部整理
+   - [ ] dum break
+   - [ ] transformを全部整理
  - [ ] finkの法則
  - [ ] 拡散方程式
  - [ ] 水面に映った文字が水の揺れで壊れてゆく。これを逆にすれば、ロゴ表現にできる
@@ -80,7 +80,7 @@ import {
    - [ ] 5.4まで学習する
  - [ ] networking.mdx[2025/3/30開始]
    - [x] OSC確認(不要になった）[2025/3/30]
-   - [ ] Bluetooth LE/MIDIを試したので実験結果を考察に残す
+   - [x] Bluetooth LE/MIDIを試したので実験結果は遅くてダメ。詳細は残さない
    - [ ] rtpMIDIまとめ(art/misc.mdx)
  - [ ] 点と線
    - [ ] MIDIイベントをどうやってスコアにマップさせるかの考察
@@ -119,8 +119,31 @@ import {
 </Box>
 | title | file name | last modified |
 |:------|:---------|:--------------|
-| 彫刻 | [glsl/engrave.mdx](http://localhost:4321/glsl/engrave/) | May 6 04:16 |
-| inkscape | [tech/inkscape.mdx](http://localhost:4321/tech/inkscape/) | May 5 11:33 |
+| インドとパキスタン 停戦で合意も維持されるか不安定な情勢 NHK NHK | [reports/インド.mdx](http://localhost:4321/reports/インド/) | May 23 04:55 |
+| 液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | May 23 04:51 |
+| ライブシステム | [art/system.mdx](http://localhost:4321/art/system/) | May 13 20:00 |
+| SuperCollider, SuerDirt | [accoustics/supercollider.mdx](http://localhost:4321/accoustics/supercollider/) | May 13 19:52 |
+| バッファオブジェクト | [three/buffer-object.mdx](http://localhost:4321/three/buffer-object/) | May 12 01:01 |
+| inkscape | [tech/inkscape.mdx](http://localhost:4321/tech/inkscape/) | May 9 21:16 |
+| Material | [three/material.mdx](http://localhost:4321/three/material/) | May 9 21:16 |
+| Texture | [three/texture.mdx](http://localhost:4321/three/texture/) | May 9 21:15 |
+| テクニック・レシピ | [glsl/technique.mdx](http://localhost:4321/glsl/technique/) | May 9 21:14 |
+| 作曲・音響環境概観 | [accoustics/platforms.mdx](http://localhost:4321/accoustics/platforms/) | May 9 21:14 |
+| 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | May 8 22:28 |
+| sandboxes | [art/misc.mdx](http://localhost:4321/art/misc/) | May 7 23:22 |
+| レイトレーシング概論 | [algorithm/rayTracing.mdx](http://localhost:4321/algorithm/rayTracing/) | May 7 18:22 |
+| GSAP | [three/gsap.mdx](http://localhost:4321/three/gsap/) | May 7 10:01 |
+| このemacsの説明 | [emacs/emacs.mdx](http://localhost:4321/emacs/emacs/) | May 7 09:19 |
+| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | May 7 09:03 |
+| Quaternion | [three/quaternion.mdx](http://localhost:4321/three/quaternion/) | May 7 08:52 |
+| レンダリングプロセス | [three/rendering-system.mdx](http://localhost:4321/three/rendering-system/) | May 7 08:50 |
+| パーティクル | [three/particle.mdx](http://localhost:4321/three/particle/) | May 7 08:47 |
+| Light・光源 | [three/light.mdx](http://localhost:4321/three/light/) | May 7 08:45 |
+| Texture/Canavasでテクスチャ生成 | [three/texture-gen.mdx](http://localhost:4321/three/texture-gen/) | May 7 08:44 |
+| Texture/環境マッピング | [three/texture-env-mapping.mdx](http://localhost:4321/three/texture-env-mapping/) | May 6 22:14 |
+| Texture/advanced | [three/texture-advanced.mdx](http://localhost:4321/three/texture-advanced/) | May 6 22:14 |
+| 彫刻 | [glsl/engrave.mdx](http://localhost:4321/glsl/engrave/) | May 6 21:50 |
+| GLSL performance | [three/glsl_performance.mdx](http://localhost:4321/three/glsl_performance/) | May 6 21:39 |
 | 波形操作合成とWaveTerrainSynthesis | [accoustics/waveTerrainSynthesis.mdx](http://localhost:4321/accoustics/waveTerrainSynthesis/) | May 3 20:40 |
 | csound 型、定数、変数 | [accoustics/csound-types.mdx](http://localhost:4321/accoustics/csound-types/) | May 3 00:37 |
 | 基本的な関数 | [algorithm/basic_functions.mdx](http://localhost:4321/algorithm/basic_functions/) | May 3 00:15 |
@@ -130,11 +153,7 @@ import {
 | 独自文言入力@AI | [dev/custom-shortcut.mdx](http://localhost:4321/dev/custom-shortcut/) | Apr 29 22:15 |
 | multi branch | [tech/git-branches.mdx](http://localhost:4321/tech/git-branches/) | Apr 27 00:12 |
 | data migration between dist | [tech/migration.mdx](http://localhost:4321/tech/migration/) | Apr 25 21:22 |
-| このemacsの説明 | [mdx/emacs.mdx](http://localhost:4321/mdx/emacs/) | Apr 25 04:13 |
 | wsl/ディストロインスタンスの削除 | [tech/wsl-disk.mdx](http://localhost:4321/tech/wsl-disk/) | Apr 24 22:20 |
-| astro/mdxマニュアル | [mdx/template.mdx](http://localhost:4321/mdx/template/) | Apr 24 21:26 |
-| 光源 | [three/light.mdx](http://localhost:4321/three/light/) | Apr 21 21:39 |
-| sandboxes | [art/misc.mdx](http://localhost:4321/art/misc/) | Apr 19 17:19 |
 | スパイス | [reports/spice.mdx](http://localhost:4321/reports/spice/) | Apr 19 13:28 |
 | WebSocketとWebRTC | [network/websocket.mdx](http://localhost:4321/network/websocket/) | Apr 19 01:53 |
 | WebDAV/iphoneからwindowsにコピー | [network/webdav.mdx](http://localhost:4321/network/webdav/) | Apr 19 01:37 |
@@ -144,22 +163,18 @@ import {
 | git/memo | [tech/git.mdx](http://localhost:4321/tech/git/) | Apr 18 04:30 |
 | git/orphan特殊ケース１ | [tech/git-orphan.mdx](http://localhost:4321/tech/git-orphan/) | Apr 18 04:12 |
 | Project Manager Technical Interview Guide | [reports/scrum.mdx](http://localhost:4321/reports/scrum/) | Apr 14 18:13 |
-| ＊）GLSLレシピ集 | [glsl/technique.mdx](http://localhost:4321/glsl/technique/) | Apr 12 01:06 |
 | ＊）毎日のコマンド | [tech/everyday.mdx](http://localhost:4321/tech/everyday/) | Apr 11 20:50 |
 | ＊）人体保存料 | [reports/reserve.mdx*](http://localhost:4321/reports/reserve.mdx*/) | Apr 10 17:34 |
 | ＊）RenderPassとFullScreenSquad | [glsl/fullscreenquad.mdx](http://localhost:4321/glsl/fullscreenquad/) | Apr 7 18:40 |
 | 更新ログ | [reports/logs.mdx](http://localhost:4321/reports/logs/) | Apr 7 15:48 |
 | ＊）メディアアートのツールと実行環境 | [art/tool-environment.mdx](http://localhost:4321/art/tool-environment/) | Apr 7 15:42 |
-| ＊）アニメーションの方式比較 | [three/animation.mdx](http://localhost:4321/three/animation/) | Apr 6 05:22 |
 | ＊）Shader/法線マッピングなど | [glsl/shader-and-mapping.mdx](http://localhost:4321/glsl/shader-and-mapping/) | Apr 6 00:54 |
 | ＊）OpenGL/GLSL version | [glsl/version.mdx](http://localhost:4321/glsl/version/) | Apr 5 10:38 |
 | ＊）RUST勉強の始め方 | [tech/rust-tutorial.mdx](http://localhost:4321/tech/rust-tutorial/) | Apr 5 10:28 |
 | ＊）ShaderPass | [glsl/shader-pass.mdx](http://localhost:4321/glsl/shader-pass/) | Apr 4 01:37 |
 | ＊）典型的なvertex shader | [glsl/typical-vertex-shader.mdx](http://localhost:4321/glsl/typical-vertex-shader/) | Apr 4 01:32 |
-| ＊）GSAP x Three.js | [three/gsap.mdx](http://localhost:4321/three/gsap/) | Apr 3 20:01 |
 | ＊）ホームネットワーク管理 | [network/home-netowork.mdx](http://localhost:4321/network/home-netowork/) | Apr 3 19:56 |
 | MIDIでのnetworkingに関する検討 | [art/networking.mdx](http://localhost:4321/art/networking/) | Mar 31 00:39 |
-| 点と線 | [art/point_and_line.mdx](http://localhost:4321/art/point_and_line/) | Mar 31 00:39 |
 | 音響スコア考察（なぜ？） | [art/score.mdx](http://localhost:4321/art/score/) | Mar 30 16:19 |
 | ＊）ガウスの発散定理 | [math/divergence-theorem.mdx](http://localhost:4321/math/divergence-theorem/) | Mar 19 14:04 |
 | ＊）流体力学/オイラー保存形方程式 | [hydrodynamics/eulerConservationForm.mdx](http://localhost:4321/hydrodynamics/eulerConservationForm/) | Mar 19 11:56 |
@@ -167,19 +182,15 @@ import {
 | 物質微分と微分の連鎖律 | [math/material_derivatives.mdx](http://localhost:4321/math/material_derivatives/) | Mar 19 01:46 |
 | ＊）せん断層数値解析 | [hydrodynamics/uzu.mdx](http://localhost:4321/hydrodynamics/uzu/) | Mar 18 11:31 |
 | ＊）流体の保存則に基づく数値解法 | [hydrodynamics/eno.mdx](http://localhost:4321/hydrodynamics/eno/) | Mar 18 09:48 |
-| 液滴 | [art/ekiteki.mdx](http://localhost:4321/art/ekiteki/) | Mar 16 22:24 |
 | 一次元バネ | [art/spring-1d.mdx](http://localhost:4321/art/spring-1d/) | Mar 16 21:02 |
 | 泥 | [art/mud.mdx](http://localhost:4321/art/mud/) | Mar 16 21:00 |
 | ＊）分子動力学/テキスト目次 | [algorithm/molecular_dynamics_text.mdx](http://localhost:4321/algorithm/molecular_dynamics_text/) | Mar 14 21:49 |
 | ＊）分子動力学 | [algorithm/molecular_dynamics.mdx](http://localhost:4321/algorithm/molecular_dynamics/) | Mar 13 16:30 |
-| ＊）環境マッピング | [three/env_mapping.mdx](http://localhost:4321/three/env_mapping/) | Mar 12 01:44 |
-| ＊＊＊）Material | [three/material.mdx](http://localhost:4321/three/material/) | Mar 11 16:35 |
 | context menu ext | [dev/emacs-edit-extension.mdx](http://localhost:4321/dev/emacs-edit-extension/) | Mar 11 16:33 |
 | ＊）PDF, 各種変換 | [tech/doc-convert.mdx](http://localhost:4321/tech/doc-convert/) | Mar 10 09:46 |
 | ＊）emacs register etc | [tech/emacs-register.mdx](http://localhost:4321/tech/emacs-register/) | Mar 10 09:38 |
 | 暫）wslネットワーク | [network/wsl-network.mdx](http://localhost:4321/network/wsl-network/) | Mar 9 02:42 |
 | ＊）インストール設定 | [tech/install.mdx](http://localhost:4321/tech/install/) | Mar 9 01:47 |
-| ＊）Texture - advanced | [three/texture_advanced.mdx](http://localhost:4321/three/texture_advanced/) | Mar 7 01:35 |
 | セキュアな業務環境の構築 | [tech/pc_env.mdx](http://localhost:4321/tech/pc_env/) | Mar 3 03:44 |
 | ＊）TCBスプライン基礎 | [math/tcb_spline_basic.mdx](http://localhost:4321/math/tcb_spline_basic/) | Mar 3 03:04 |
 | ベジェ曲線 | [math/bezier.mdx](http://localhost:4321/math/bezier/) | Mar 2 00:15 |
@@ -195,7 +206,6 @@ import {
 | ＊）各種変換 | [algorithm/transforms.mdx](http://localhost:4321/algorithm/transforms/) | Feb 26 16:57 |
 | AI用指示文 | [tech/ai_instructions.mdx](http://localhost:4321/tech/ai_instructions/) | Feb 18 16:54 |
 | ＊）blobスキームとその周辺 | [tech/blob.mdx](http://localhost:4321/tech/blob/) | Feb 17 21:42 |
-| レンダリングプロセスとWebGLRender | [three/webgl_renderer.mdx](http://localhost:4321/three/webgl_renderer/) | Feb 17 21:40 |
 | style用sandbox | [mdx/style.mdx](http://localhost:4321/mdx/style/) | Feb 17 21:38 |
 | Riemann Surface | [algorithm/riemann_surface.mdx](http://localhost:4321/algorithm/riemann_surface/) | Feb 15 08:02 |
 | ＊）バイポーラ | [algorithm/bipola.mdx](http://localhost:4321/algorithm/bipola/) | Feb 12 01:57 |
@@ -212,17 +222,12 @@ import {
 | f) Performanceテスト | [tech/performance_test.mdx](http://localhost:4321/tech/performance_test/) | Jan 26 01:07 |
 | o) double buffering | [three/double_buffering.mdx](http://localhost:4321/three/double_buffering/) | Jan 25 19:10 |
 | F) 映像音声の録画 | [three/record.mdx](http://localhost:4321/three/record/) | Jan 22 22:42 |
-| o) GLSL performance | [three/glsl_performance.mdx](http://localhost:4321/three/glsl_performance/) | Jan 22 22:11 |
-| f) Canavasでテクスチャ生成 | [three/gen_texture.mdx](http://localhost:4321/three/gen_texture/) | Jan 22 03:39 |
-| Textureの詳細、 | [three/texture.mdx](http://localhost:4321/three/texture/) | Jan 22 03:37 |
 | (*) vite.config.tsについて | [tech/vite_conf_ts.mdx](http://localhost:4321/tech/vite_conf_ts/) | Jan 17 02:27 |
 | (*) ボリュームレンダリング | [algorithm/vrender.mdx](http://localhost:4321/algorithm/vrender/) | Jan 14 01:49 |
 | (*)画像変形技術 | [algorithm/morphing.mdx](http://localhost:4321/algorithm/morphing/) | Jan 14 01:49 |
 | (r)数値積分手法 | [algorithm/nint.mdx](http://localhost:4321/algorithm/nint/) | Jan 14 01:49 |
 | (*)四元数とデュアルクォータニオン | [math/quaternion.mdx](http://localhost:4321/math/quaternion/) | Jan 14 01:49 |
-| (*) Three.jsにおけるパーティクルシステム関連 | [three/particle.mdx](http://localhost:4321/three/particle/) | Jan 14 01:49 |
 | (*)shaderコード | [three/shader.mdx](http://localhost:4321/three/shader/) | Jan 14 01:49 |
-| (*) Three.jsでのQuaternionの扱い方 | [three/threejs+quaternion.mdx](http://localhost:4321/three/threejs+quaternion/) | Jan 14 01:49 |
 | プロジェクトセットアップと運用ガイド, typescript+three.js+csound | [tech/pjsetup.mdx](http://localhost:4321/tech/pjsetup/) | Jan 14 01:49 |
 | tsconfig.jsonについて | [tech/tsconfig_json.mdx](http://localhost:4321/tech/tsconfig_json/) | Jan 14 01:49 |
 | DualQuaternionクラス定義 | [dev/dual_quaternion.mdx](http://localhost:4321/dev/dual_quaternion/) | Jan 14 01:49 |

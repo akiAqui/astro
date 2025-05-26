@@ -44,16 +44,6 @@ const config = [
         pinned: []
     },
     {
-        dir: 'math',
-        label: '数学',
-        pinned: []
-    },
-    {
-        dir:'hydrodynamics',
-        label:'流体力学',
-        pinned:[]
-    },
-    {
         dir:'algorithm',
         label:'アルゴリズム',
         pinned:[]
@@ -66,6 +56,11 @@ const config = [
     {
         dir:'accoustics',
         label:'音響',
+        pinned:[]
+    },
+    {
+        dir:'hydrodynamics',
+        label:'流体力学',
         pinned:[]
     },
     {

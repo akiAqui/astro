@@ -2,6 +2,11 @@
 title: ＊）ガウスの発散定理
 description: 説明文など
 layout: '../../../layouts/BaseLayout.astro'
+sidebar:
+ order:
+ badge:
+  text: new
+  variant: tip
 ---
 
 import CC  from "../../../components/c-c.astro";

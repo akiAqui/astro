@@ -2,19 +2,27 @@
 title: 液滴
 description: 液滴の形状を計算する
 layout: '../../../layouts/BaseLayout.astro'
+sidebar:
+ order: 1
+ badge: 
+  text: うひゃ
+  variant: tip
 ---
 
-import CC from "../../../components/c-c.astro";
-import CodeTitle from '../../../components/CodeTitle';
+import CC  from "../../../components/c-c.astro";
 import MermaidChart from '../../../components/MermaidChart.astro';
-import TimeStamp from '../../../components/TimeStamp';
-import Box from '../../../components/Box';
-import RedBox from '../../../components/RedBox';
-import WhiteBox from '../../../components/WhiteBox';
-import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
-import StandardStyle from '../../../components/StandardStyle';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
 
 <StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
 
 ##### TODOs
 
@@ -27,12 +35,12 @@ import StandardStyle from '../../../components/StandardStyle';
 
 
 ## はじめに
-- 曲線を描くことを目的とする
-- 生成するjavascriptはp5jsを利用する
-- 数学的処理は全てMathの関数を利用
-- index.htmlの中に一つだけ呼び出されるsketch.jsというファイルを出力する
+- 目的：液体の界面のような曲線を描く
+- 構成：index.htmlの中に一つだけ呼び出されるsketch.jsというファイルを出力する
+- 技術：生成するjavascriptはp5jsを利用、数学的処理は全てMathの関数を利用
+- アルゴリズム：ランダムな点をスプライン曲線で滑らかにつなぐ
 
-ステップ
+### 詳細なプログラムの動作
 - キャンバスの大きさを決定
   - 定数WIDTH=400, HEIGHT=400で定義
 - キャンバスの大きさの矩形内に乱数で頂点をＮ個生成。
@@ -114,7 +122,8 @@ function orderPoints() {
 - 曲線Ｑは閉曲線である
 - この閉曲線は閉曲線内に
 
----
+## 次のステップ
+- 目標：
 ## 初期条件の設定:
 
 ### シミュレーション領域の定義
@@ -123,8 +132,8 @@ function orderPoints() {
 - シミュレーション単位時間を決定
 
 ### 液滴の初期形状の定義
-- レベルセット関数$φ(x,y,z)$を用いて液滴の初期形状を表現
-- $φ < 0$が液滴内部、$φ > 0$が外部、$φ = 0$が界面を表す
+- レベルセット関数$\phi(x,y,z)$を用いて液滴の初期形状を表現
+- $\phi< 0$が液滴内部、$\phi> 0$が外部、$\phi = 0$が界面を表す
 
 ### 初期速度場の設定
 - 全領域で初期速度$u(x,y,z)$を$(0,0,0)$と定義
@@ -137,18 +146,19 @@ function orderPoints() {
 
 
 ## 時間発展のメインループ:
-- 各時間ステップ$Δt$ごとに以下の操作を繰り返す
+- 各時間ステップ$\delta t$ごとに以下の操作を繰り返す
 
 ### レベルセット関数の更新
-- レベルセット方程式 $∂φ/∂t + u・∇φ = 0 $を解く
-- 下記に説明するいずれかの数値スキームを用いて離散化
-- 必要に応じて再初期化を行い、符号付き距離関数の性質を保持
-
-#### レベルセット関数の数値スキーム
-- 以下のスキームのうちどれかを採用する
+- レベルセット方程式を解く
+$$
+ \frac{\partial\phi}{\partial t} + u \cdot \nabla \phi = 0
+$$
+- いずれかの数値スキームを用いて離散化
   - ENO(Essentially Non-Oscillatory)
   - WENO (Weighted Essentially Non-Oscillatory)
   - MUSCL (Monotonic Upstream-Centered Scheme for Conservation Laws) 法
+- 必要に応じて再初期化を行い、符号付き距離関数の性質を保持
+
 
 #### 用語説明（このセクションは指示文ではなく人間が読むためのセクションである)
 

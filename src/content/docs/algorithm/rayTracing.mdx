@@ -34,10 +34,10 @@ import {
 * レイマーチング：数値的手法。形状の交差が距離関数などで定義される場合に使用
 ---
 #### レイキャスティング（Ray Casting）
-* レイ \$\mathbf{r}(t) = \mathbf{o} + t \mathbf{d}\$ を物体に対して解析的に交差判定する
-* \$\mathbf{o}\$：カメラ位置（レイの始点）
-* \$\mathbf{d}\$：正規化されたレイ方向ベクトル
-* \$t \in \[t\_{min}, t\_{max}]\$：スカラー距離範囲
+* レイ $\mathbf{r}(t) = \mathbf{o} + t \mathbf{d}$ を物体に対して解析的に交差判定する
+* $\mathbf{o}$：カメラ位置（レイの始点）
+* $\mathbf{d}$：正規化されたレイ方向ベクトル
+* $t \in \[t\_{min}, t\_{max}]$：スカラー距離範囲
 適用例：
 * 三角形メッシュ（BVH構造による加速）
 * 球、平面、円柱などの解析幾何
@@ -46,13 +46,13 @@ import {
 * レイ上に一定ステップで点を進め、各点で最短距離を測りながら進行する数値的交差探索法
 * 特にSDF（Signed Distance Field）を使う場合に最適
 アルゴリズム：
-1. 初期点 \$\mathbf{p}\_0 = \mathbf{o}\$
-2. 距離関数 \$d\_i = f(\mathbf{p}\_i)\$ を評価
-3. \$\mathbf{p}\_{i+1} = \mathbf{p}\_i + d\_i \cdot \mathbf{d}\$
-4. \$d\_i < \varepsilon\$ または \$i > N\_{max}\$ で終了
+1. 初期点 $\mathbf{p}\_0 = \mathbf{o}$
+2. 距離関数 $d\_i = f(\mathbf{p}\_i)$ を評価
+3. $\mathbf{p}\_{i+1} = \mathbf{p}\_i + d\_i \cdot \mathbf{d}$
+4. $d\_i < \varepsilon$ または $i > N\_{max}$ で終了
 特徴：
 * 通常のメッシュではなく、形状が距離関数で定義される
-* 精度はステップと \$\varepsilon\$ に依存
+* 精度はステップと $\varepsilon$ に依存
 * 数値誤差（overshoot）や自己交差、影のバンディングを生む可能性あり
 ---
 #### 比較表

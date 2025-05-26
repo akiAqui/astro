@@ -21,19 +21,21 @@ import {
 頂点バッファ、インデックスバッファ、uniform、データテクスチャをchromeの現時点の環境では利用できる
 
 
-| バッファ                       | GLSLでの使用               | Three.jsでの記述                | 特徴と制限（WebGL）        |
-|--------------------------------|----------------------------|---------------------------------|----------------------------|
-| VBO （頂点バッファ）           | `in vec3 position`         | `geometry.setAttribute`         | 使える（WebGL1/2）         |
-| EBO（インデックスバッファ）    | 自動                       | `geometry.setIndex()`           | 使える（WebGL1/2）         |
-| uniform                        | `uniform float time`       | `material.uniforms.time.value ` | 制限：uniform数に上限あり  |
-| テクスチャ（データテクスチャ） | `sampler2D` + `.r/.g/...`  | `DataTexture` など              | WebGL1/2で安全な代替手段   |
-| UBO（uniformブロック）         | `uniform MyBlock { ... };` | Three.js非対応                  | WebGL2のみ／Three.js未対応 |
-| SSBO（read/write buffer）      | `buffer MyData { ... };`   | WebGL非対応                     | OpenGL 4.3以上のみ（不可） |
+| バッファ                    | GLSLでの使用               | Three.jsでの記述                | 特徴と制限（WebGL）        |
+|-----------------------------|----------------------------|---------------------------------|----------------------------|
+| VBO （頂点バッファ）        | `in vec3 position`         | `geometry.setAttribute`         | 使える（WebGL1/2）         |
+| uniform                     | `uniform float time`       | `material.uniforms.time.value ` | 制限：uniform数に上限あり  |
+| DataTexture                 | `sampler2D` + `.r/.g/...`  | `DataTexture` など              | WebGL1/2で安全な代替手段   |
+| EBO（インデックスバッファ） | 自動                       | `geometry.setIndex()`           | 使える（WebGL1/2）         |
+| UBO（uniformブロック）      | `uniform MyBlock { ... };` | Three.js非対応                  | WebGL2のみ／Three.js未対応 |
+| SSBO（read/write buffer）   | `buffer MyData { ... };`   | WebGL非対応                     | OpenGL 4.3以上のみ（不可） |
 
 - Vertex Buffer Object (VBO)：頂点座標や法線、UVなどを格納
-- Element Buffer Object (EBO)：インデックス情報を格納
-- Uniform Buffer Object (UBO)：uniform変数群を構造化して格納。chromeでは使えない
-- Shader Storage Buffer Object (SSBO)：GLSLから読み書き可能な大容量バッファ。chromeでは使えない
+- uniform: 
+- DataTexture: GPU上のテクスチャとして格納される
+- Element Buffer Object (EBO)：面を定義するインデックス情報を格納。vertexのIDを3つ単位で使って三角ポリゴンを生成
+- Uniform Buffer Object (UBO)：複数のuniform変数を構造化して転送。WebGL2以降、Threejsでは未対応
+- Shader Storage Buffer Object (SSBO)：GLSLから読み書き可能な大容量バッファ。WebGL未対応なのでchromeでは使えない
 
 #### VBO
 <CodeTitle title="Three.js側">
@@ -79,5 +81,21 @@ uniform sampler2D uDataTex;
 void main() {
   vec4 v = texture2D(uDataTex, vec2(0.1, 0.0)); // X=0.1の位置のデータ取得
 }
+```
+</CodeTitle>
+
+### EBO
+- 頂点の再利用をするために頂点にインデックス番号をつけて三角ポリゴンを定義する
+- インデックスバッファそのものにGLSLから直接アクセスはできない
+<CodeTitle title="" counter="" id="">
+```
+const vertices = [
+  0, 0, 0,  // 頂点0
+  1, 0, 0,  // 頂点1
+  1, 1, 0,  // 頂点2
+  0, 1, 0   // 頂点3
+];
+geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+geometry.setIndex([0, 1, 2, 0, 2, 3]); // 三角形を2枚定義（0-1-2, 0-2-3）
 ```
 </CodeTitle>

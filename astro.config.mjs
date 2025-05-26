@@ -1,7 +1,7 @@
 // @ts-check    
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import sidebar from './src/sidebar.js';
+//import sidebar from './src/sidebar.js';
 
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
@@ -13,7 +13,7 @@ import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
 
 
-console.debug('sidebar updated:', sidebar) // 無意味に見えても参照が必要
+//console.debug('sidebar updated:', sidebar) // 無意味に見えても参照が必要
 
 export default defineConfig({
   i18n: {
@@ -28,10 +28,132 @@ export default defineConfig({
         expressiveCode(),
         mdx(), sitemap(), starlight({
             title: 'ドキュメント',
-            social: {
-                github: 'https://github.com/withastro/starlight',
-            },
-            sidebar: sidebar,
+//            sidebar: sidebar
+
+            sidebar: [
+                {
+                    label: 'art projects',
+                    autogenerate:
+                    {
+                        directory: 'art',
+                    },
+                },
+                {
+                    label: 'THREE.js',
+                    autogenerate:
+                    {
+                        directory: 'three',
+                    },
+                },
+                {
+                    label: 'GLSL',
+                    autogenerate:
+                    {
+                        directory: 'glsl',
+                    },
+                },
+                {
+                    label: 'アルゴリズム',
+                    autogenerate:
+                    {
+                        directory: 'algorithm',
+                    },
+                },
+                {
+                    label: '数学',
+                    autogenerate:
+                    {
+                        directory: 'math',
+                    },
+                },
+                {
+                    label: '音響',
+                    autogenerate:
+                    {
+                        directory: 'accoustics',
+                    },
+                },
+                {
+                    label: '流体力学',
+                    autogenerate:
+                    {
+                        directory: 'hydrodynamics',
+                    },
+                },                
+                {
+                    label: 'HTML',
+                    autogenerate:
+                    {
+                        directory: 'html',
+                    },
+                },
+                {
+                    label: 'Typescript',
+                    autogenerate:
+                    {
+                        directory: 'tsjs',
+                    },
+                },
+                
+                {
+                    label: 'ネットワーク',
+                    autogenerate:
+                    {
+                        directory: 'network',
+                    },
+                },
+                {
+                    label: 'その他技術',
+                    autogenerate:
+                    {
+                        directory: 'tech',
+                    },
+                },
+                
+                {
+                    label: '開発',
+                    autogenerate:
+                    {
+                        directory: 'dev',
+                    },
+                },
+                
+                {
+                    label: 'その他',
+                    autogenerate:
+                    {
+                        directory: 'reports',
+                    },
+                },
+                {
+                    label: 'emacs',
+                    autogenerate:
+                    {
+                        directory: 'emacs',
+                    },
+                },
+                
+                {
+                    label: '使い方',
+                    autogenerate:
+                    {
+                        directory: 'mdx',
+                    },
+                },
+                
+                {
+                    label: '',
+                    autogenerate:
+                    {
+                        directory: '',
+                    },
+                },
+                
+
+
+
+            ],
+
         })
     ],
     markdown: {
