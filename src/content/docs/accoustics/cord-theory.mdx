@@ -1,0 +1,182 @@
+---
+title: コード進行
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+sidebar:
+ order: 1
+ badge:
+  text: new
+  variant: tip
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+### 結論
+コード進行は「調（スケール）」上の度数と和音機能に基づいて体系化できる。
+各コードは主（トニック）、下属（サブドミナント）、
+属（ドミナント）などの機能を持ち、進行には一般原則と、
+意図的に逸脱した独自進行がある。
+これらは数学的構造・群論や写像の考えでも分析できる。
+
+### 1. コード表記と機能の原則
+- 度数表記：スケールの何番目の音かをローマ数字で表す（I, II, III...）。
+- コードの種類：和音の性格（メジャー/マイナー/セブンス/テンションなど）
+- 機能：
+  - トニック（T）：安定・解決（例：I, Im, Im7）
+  - サブドミナント（SD）：中間・不安定（例：IV, IVm, IVm7）
+  - ドミナント（D）：緊張・解決への推進（例：V, V7, Vm7）
+
+
+#### 例：Cマイナー（ハ短調）
+スケール：C D Eb F G Ab Bb
+| 度数       | 和音        | 機能      |
+| -------- | --------- | ------- |
+| Im7      | C Eb G Bb | トニック    |
+| IIm7(b5) | D F Ab C  | サブドミナント |
+| IVm7     | F Ab C Eb | サブドミナント |
+| Vm7      | G Bb D F  | ドミナント   |
+
+
+### 2. 一般的なコード進行例（原則に忠実なもの）
+- Im7 → IVm7 → Vm7 → Im7
+- Im7 → IIm7(b5) → Vm7 → Im7
+- Im7 → IVm7 → IIm7(b5) → Vm7 → Im7
+
+
+### 3. 独特なコード進行例（原則からの逸脱）
+- Im7 → bVIImaj7 → IVm7 → Im7
+- Im7 → bVImaj7 → IVm7 → Vm7 → Im7
+- Im7 → III7 → bVImaj7 → Vm7 → Im7
+（例：Cマイナーなら Im7 = Cm7, bVImaj7 = Abmaj7, bVIImaj7 = Bbmaj7, III7 = E7 など）
+
+
+### 4. 数学的観点
+- コード進行は写像・群作用として抽象化できる：
+  - 各度数 $n$ に和音 $f(n)$ を対応させる。
+  - 進行を集合 $S$ 上の操作列 $T: S \to S$ と捉えられる。
+  - 和音間の遷移行列 $M$ を定義し、状態遷移の連鎖 $v_{n+1} = M v_n$ と表現可能。
+- 例：トニック（T）→ サブドミナント（SD）→ ドミナント（D）→ トニック（T）の繰り返し。
+
+$$
+\text{進行} = (T \rightarrow SD \rightarrow D \rightarrow T)^{n}
+$$
+
+
+### コード
+- Cを基音（ルート）とするコードを網羅的に列挙
+
+#### 1. メジャー系
+- C（メジャー）：C E G
+- C6：C E G A
+- Cmaj7：C E G B
+- Cmaj9：C E G B D
+- Cmaj13：C E G B D A
+
+#### 2. マイナー系
+- Cm（マイナー）：C Eb G
+- Cm6：C Eb G A
+- Cm7：C Eb G Bb
+- Cm9：C Eb G Bb D
+- Cm11：C Eb G Bb D F
+- Cm13：C Eb G Bb D F A
+
+#### 3. セブンス系
+- C7（ドミナント7th）：C E G Bb
+- C9：C E G Bb D
+- C11：C E G Bb D F
+- C13：C E G Bb D A
+
+#### 4. サスフォー（sus4）/ サスツー（sus2）
+- Csus4：C F G
+- Csus2：C D G
+- C7sus4：C F G Bb
+- C9sus4：C F G Bb D
+
+#### 5. ディミニッシュ系
+- Cdim：C Eb Gb
+- Cdim7：C Eb Gb A
+
+#### 6. オーギュメント系
+- Caug（C+）：C E G#
+- C7#5：C E G# Bb
+- Cmaj7#5：C E G# B
+
+#### 7. その他のテンションや特殊コード
+- Cadd9：C E G D
+- Cadd11：C E G F
+- C7b9：C E G Bb Db
+- C7#9：C E G Bb D#
+- C7b5：C E Gb Bb
+- C7#5：C E G# Bb
+- Cm7b5（ハーフディミニッシュ）：C Eb Gb Bb
+- C6/9：C E G A D
+
+
+#### 細かいテンション・特殊ジャズコード（Cルート）
+
+- Cmaj7(9)：C E G B D
+- Cmaj7(13)：C E G B A
+- Cmaj7(9,13)：C E G B D A
+- Cmaj7(#11)：C E G B F#
+- Cmaj7(9,#11,13)：C E G B D F# A
+- C7(9,13)：C E G Bb D A
+- C7(b9)：C E G Bb Db
+- C7(#9)：C E G Bb D#
+- C7(b13)：C E G Bb Ab
+- C7(#5)：C E G# Bb
+- C7(b9,#9)：C E G Bb Db D#
+- C7(#9,#5)：C E G# Bb D#
+- C7(b9,b13)：C E G Bb Db Ab
+- C7(#11)：C E G Bb F#
+- C7(b5)：C E Gb Bb
+- C7(#11,b13)：C E G Bb F# Ab
+- C7(b5,b9)：C E Gb Bb Db
+- C7(#5,b9)：C E G# Bb Db
+- C9(#11)：C E G Bb D F#
+- C9(b13)：C E G Bb D Ab
+- C13(b9)：C E G Bb D Ab A
+- C13(#11)：C E G Bb D F# A
+- C13(b9,#11)：C E G Bb Db F# A
+- Cm(maj7)：C Eb G B
+- Cm(maj7,9)：C Eb G B D
+- Cm(maj7,11)：C Eb G B F
+- Cm(9)：C Eb G Bb D
+- Cm(11)：C Eb G Bb D F
+- Cm(13)：C Eb G Bb D F A
+- Cm7(b5,9)：C Eb Gb Bb D
+- Cm(add9)：C Eb G D
+- Cm7(add13)：C Eb G Bb A
+- C(add9,#11)：C E G D F#
+- C(add#11,13)：C E G F# A
+- C7sus4(13)：C F G Bb A
+- C7sus4(b9)：C F G Bb Db
+- C7alt（オルタード）：C E G# Bb Db D# Ab
+  （任意にb9, #9, b5, #5などを混在させたコード）
+- C7(b9,#9,b13)：C E G Bb Db D# Ab
+- C7(#9,b13)：C E G Bb D# Ab
+- C6/9：C E G A D
+- Cmaj9(#11)：C E G B D F#
+
+### 参考
+- onコード例：C/E, C/G, C/Bb など（ベース音指定）
+- クラスター：Caddb9（C E G Db）なども稀に使用
+- 完全なalteredコード：C7alt（全テンションaltered）
+
+
+## 補足
+- 度数表記・機能論により、世界中の音楽の進行構造を抽象的に理解できる。
+- ジャズや現代音楽では、原則を逸脱した進行も「期待とズレ」で独自の雰囲気を生み出す。

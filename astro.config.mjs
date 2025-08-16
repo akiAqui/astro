@@ -16,12 +16,18 @@ import expressiveCode from 'astro-expressive-code';
 //console.debug('sidebar updated:', sidebar) // 無意味に見えても参照が必要
 
 export default defineConfig({
-  i18n: {
-    locales: ["es", "en", "pt-br"],
-    defaultLocale: "en",
-  },
+    site: 'http://ahoraria.uk',
+    base: '/docs/',
+    build: {
+        outDir: new URL('./dist/docs/',import.meta.url)
+    },
+    i18n: {
+        locales: ["es", "en", "pt-br"],
+        defaultLocale: "en",
+    },
     server: {
-      host: true, // または '0.0.0.0'
+        host: true, // または '0.0.0.0'
+        allowedHosts:['ahoraria.uk'],
     },
     integrations: [// ここを最初に配置
         react(),
