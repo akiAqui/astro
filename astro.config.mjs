@@ -163,7 +163,7 @@ export default defineConfig({
         })
     ],
     markdown: {
-        remarkPlugins: [remarkMath,remarkMermaid],
+        remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
     },
 });
