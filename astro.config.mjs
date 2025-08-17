@@ -17,14 +17,14 @@ import expressiveCode from 'astro-expressive-code';
 
 export default defineConfig({
     site: 'http://ahoraria.uk',
-    base: '/docs/',
-    build: {
-        outDir: new URL('./dist/docs/',import.meta.url)
-    },
-    i18n: {
-        locales: ["es", "en", "pt-br"],
-        defaultLocale: "en",
-    },
+//    base: '/docs/',
+//    build: {
+//        outDir: new URL('./dist/docs/',import.meta.url)
+//    },
+//    i18n: {
+//        locales: ["es", "en", "pt-br"],
+//        defaultLocale: "en",
+//    },
     server: {
         host: true, // または '0.0.0.0'
         allowedHosts:['ahoraria.uk'],
