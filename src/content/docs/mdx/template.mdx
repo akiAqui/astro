@@ -6,7 +6,6 @@ layout: '../../../layouts/BaseLayout.astro'
 
 import CC from "../../../components/c-c.astro";
 import CodeTitle from '../../../components/CodeTitle';
-import MermaidChart from '../../../components/MermaidChart.astro';
 import TimeStamp from '../../../components/TimeStamp';
 import Box from '../../../components/Box';
 import RedBox from '../../../components/RedBox';
@@ -22,7 +21,7 @@ import StandardStyle from '../../../components/StandardStyle';
 
 ##### TODOs
 
- - [ ] mermaidの状態遷移図のテキスト、フローチャートのテキストが右寄りになる
+ - [ ] mermaidの状態遷移図のテキスト、フローチャートのテキストが右寄りになる->やめ
  - [ ] 左右のコンテンツの分け方がいびつになる。これでいいのか。
 
 <TimeStamp fileUrl={import.meta.url} />
@@ -275,7 +274,7 @@ import StandardStyle from '../../../components/StandardStyle';
 ````
 </Left>
 <Right>
-<MermaidChart code={`
+```txt
 graph TD
     C{<center>Decision</center>}
     A[<center>Start</center>] --> B[<center>uuauau</center>]
@@ -288,7 +287,7 @@ graph TD
     class A styleOne
     class B styleTwo
     
-`} />
+```
 
 </Right>
 </TwoColumn>
@@ -352,6 +351,7 @@ title: Simple sample
 ```
 </Left>
 <Right>
+```txt
 <MermaidChart code={`
 ---
 title: Simple sample
@@ -373,7 +373,7 @@ title: Simple sample
 
 
 `} />
-
+```
 </Right>
 </TwoColumn>
 

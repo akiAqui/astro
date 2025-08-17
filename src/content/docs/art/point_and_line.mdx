@@ -5,7 +5,6 @@ layout: '../../../layouts/BaseLayout.astro'
 ---
 
 import CC  from "../../../components/c-c.astro";
-import MermaidChart from '../../../components/MermaidChart.astro';
 
 import {
          Box, RedBox, WhiteBox, MemoBox, 
@@ -294,7 +293,7 @@ scene.add(mesh);
 
 #### クラス図
 
-<MermaidChart code={`
+```txt
 classDiagram
     class IntegratedSystem {
         -scene: THREE.Scene
@@ -402,11 +401,11 @@ classDiagram
     
     note for Behavior "Abstract base class for<br />object behaviors. Defines<br />common movement patterns."
 
-`} />
+```
 
 #### シーケンス図
-<MermaidChart code={`
 
+```txt
 sequenceDiagram
     participant Main
     participant System as IntegratedSystem
@@ -490,7 +489,7 @@ sequenceDiagram
 
     Note over Main,Behavior: System supports extensible patterns<br/>for object generation and grouping.<br/>Behaviors can be dynamically<br/>assigned to objects.
 
-`} />
+```
 
 #### アニメーション追加後の想定クラス図
 
@@ -504,7 +503,7 @@ sequenceDiagram
 - IntegratedSystem: AnimationControllerとの連携追加
 
 
-<MermaidChart code={`
+```txt
 classDiagram
     class 更IntegratedSystem {
         -scene: THREE.Scene
@@ -673,11 +672,11 @@ classDiagram
     note for 新AnimationController "Orchestrates all animations<br/>and their dependencies"
 
 
-`} />
+```
 
 #### アニメーション追加後の想定シーケンス図
 
-<MermaidChart code={`
+```txt
 
 sequenceDiagram
     participant Main
@@ -765,7 +764,7 @@ sequenceDiagram
     Note over Main,Behavior: Animation system combines:<br/>1. Physical behaviors (Behavior)<br/>2. GSAP animations<br/>3. Dependency management<br/>4. Sequential execution
 
 
-`} />
+```
 
 ### アニメーション検討時の想定する変更点
 

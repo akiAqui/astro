@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
 import starlight from '@astrojs/starlight';
 import remarkMath from 'remark-math';
-import remarkMermaid from 'remark-mermaidjs';
+//import remarkMermaid from 'remark-mermaidjs';
 import rehypeKatex from 'rehype-katex';
 import expressiveCode from 'astro-expressive-code';
 // https://astro.build/config
