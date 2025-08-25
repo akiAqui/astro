@@ -1,0 +1,324 @@
+---
+title: テクニック・レシピ
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+## Three.jsとGLSL間のデータのやり取り
+
+##
+##
+
+
+## FullScreenQuad/SDF
+- カメラ位置から
+### カメラ制御
+- FSQだとmain.ts/three.js側でカメラをz方向(手前、奥行き)で動かしても意味がない。
+- 下記のようにベクトルを手動で制御する方法と、行列制御の方法がある
+
+<CodeTitle title="ベクトルでカメラ制御の例" id="vector" counter="01">
+```glsl
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - iResolution.xy) / iResolution.y;
+  uv*=2.1;                                  // 画面の拡大縮小
+  vec3 ro = vec3(0.0, 0.8, 0.9);            // Ray Origin/カメラ位置
+  vec3 rd = normalize(vec3(uv, -1.5));      // 視線ベクトル、方向
+  float epsilon=0.00000001;                 // 図形の精度。大きくすると荒くなる
+  
+  float t = 0.0;
+  float d;
+  vec3 p;
+  for (int i = 0; i < 128; i++) {
+    p = ro + t * rd;
+    d = map(p);
+    if (d < -epsilon) break;
+    if (d < +epsilon) break;
+    t += d;
+  }
+```
+</CodeTitle>
+
+<CodeTitle title="行列でカメラ制御の例" id="matrix" counter="02">
+```glsl
+float t = iTime;
+ro = vec3(sin(t), 0.8, cos(t)) * 1.5;
+vec3 lookAt = vec3(0.0);
+vec3 forward = normalize(lookAt - ro);
+vec3 right = normalize(cross(vec3(0,1,0), forward));
+vec3 up = cross(forward, right);
+mat3 camMat = mat3(right, up, forward);
+rd = camMat * normalize(vec3(uv, -1.5));
+```
+</CodeTitle>
+
+
+## ライティングとシェーディング
+
+- 輝度（Luminance）の強調
+  色の明るさを数値化してグレースケールにする。
+  ```glsl
+  vec3 color = texture(iChannel0, uv).rgb;
+  float lum = dot(color, vec3(0.299, 0.587, 0.114));
+  fragColor = vec4(vec3(lum), 1.0);
+  ```
+
+- リムライティング
+  キャラクターや輪郭を際立たせる。
+  ```glsl
+  vec3 viewDir = normalize(cameraPos - fragPos);
+  float rim = 1.0 - max(dot(normal, viewDir), 0.0);
+  rim = pow(rim, 2.0);
+  fragColor.rgb += vec3(1.0, 0.8, 0.6) * rim;
+  ```
+
+- ハーフランバート拡散照明
+  単調な陰影にやわらかさを加える。
+  ```glsl
+  float NdotL = max(dot(normal, lightDir), 0.0);
+  float diff = NdotL * 0.5 + 0.5;
+  fragColor.rgb = baseColor * diff;
+  ```
+
+- トーンマッピング（Reinhard）
+  ハイダイナミックレンジの色をディスプレイ向けに調整。
+  ```glsl
+  vec3 hdr = vec3(2.0, 1.0, 0.5);
+  vec3 ldr = hdr / (hdr + vec3(1.0));
+  fragColor = vec4(ldr, 1.0);
+  ```
+
+距離関数とSDF表現
+
+- 球のSDFとレンダリング例
+  ```glsl
+  float sphereSDF(vec3 p, float r) {
+    return length(p) - r;
+  }
+  float map(vec3 p) {
+    return sphereSDF(p, 1.0);
+  }
+  vec3 rayOrigin = vec3(0, 0, 5);
+  vec3 rayDir = normalize(vec3(uv, -1.0));
+  float t = 0.0;
+  for (int i = 0; i < 64; i++) {
+    vec3 p = rayOrigin + t * rayDir;
+    float d = map(p);
+    if (d < 0.001) break;
+    t += d;
+  }
+  if (t < 10.0) {
+    fragColor = vec4(vec3(1.0 - t * 0.1), 1.0);
+  } else {
+    fragColor = vec4(0.0);
+  }
+  ```
+
+- チューブ（円柱）のSDF例
+  ```glsl
+  float tubeSDF(vec3 p, float r) {
+    return length(p.xz) - r;
+  }
+  // map関数に組み込み可能
+  ```
+
+- スムーズなブーリアン合成
+  なめらかに2形状をブレンド
+  ```glsl
+  float opSmoothUnion(float d1, float d2, float k) {
+    float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+    return mix(d2, d1, h) - k * h * (1.0 - h);
+  }
+  ```
+
+- 法線の近似とライティング
+  ```glsl
+  vec3 estimateNormal(vec3 p) {
+    float d = map(p);
+    vec2 e = vec2(0.001, 0);
+    return normalize(vec3(
+      map(p + e.xyy) - d,
+      map(p + e.yxy) - d,
+      map(p + e.yyx) - d
+    ));
+  }
+  vec3 normal = estimateNormal(hitPos);
+  ```
+
+ノイズの応用
+
+- 時間をz軸に加える3Dノイズ
+  パターンが時間とともに流動的に変化
+  ```glsl
+  float noise3D(vec2 uv, float t) {
+    return snoise(vec3(uv * 3.0, t));
+  }
+  float val = noise3D(uv, iTime);
+  fragColor = vec4(vec3(val), 1.0);
+  ```
+
+- フラクタルノイズ（fbm）
+  山や雲など自然の模様生成
+  ```glsl
+  float fbm(vec2 p) {
+    float f = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 5; i++) {
+      f += amp * snoise(p);
+      p *= 2.0;
+      amp *= 0.5;
+    }
+    return f;
+  }
+  fragColor = vec4(vec3(fbm(uv * 4.0)), 1.0);
+  ```
+
+- カーリングノイズ
+  渦のある流体風パターン生成
+  ```glsl
+  vec2 curl(vec2 p) {
+    float e = 0.1;
+    float dx = snoise(p + vec2(0, e)) - snoise(p - vec2(0, e));
+    float dy = snoise(p + vec2(e, 0)) - snoise(p - vec2(e, 0));
+    return vec2(dy, -dx);
+  }
+  vec2 flow = curl(uv * 2.0 + iTime);
+  fragColor = vec4(vec3(length(flow)), 1.0);
+  ```
+
+数学的テクニック
+
+- 回転行列
+  ```glsl
+  mat2 rot(float a) {
+    float c = cos(a), s = sin(a);
+    return mat2(c, -s, s, c);
+  }
+  uv = rot(iTime) * uv;
+  ```
+
+- ドメイン反復によるタイリング
+  ```glsl
+  vec2 tile(vec2 p, float n) {
+    return fract(p * n) - 0.5;
+  }
+  uv = tile(uv, 4.0);
+  ```
+
+- 擬似ランダム（hash）
+  ```glsl
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+  float val = hash(floor(uv * 10.0));
+  fragColor = vec4(vec3(val), 1.0);
+  ```
+
+- パルス波生成
+  ```glsl
+  float pulse(float x, float freq) {
+    return step(fract(x * freq), 0.5);
+  }
+  float p = pulse(iTime, 2.0);
+  fragColor = vec4(vec3(p), 1.0);
+  ```
+
+立体感・空間表現
+
+- フォグ（depthベース）
+  ```glsl
+  float fog = exp(-t * 0.1);
+  fragColor.rgb = mix(vec3(0.1), fragColor.rgb, fog);
+  ```
+
+- スクリーンスペース陰影（SSAO的）
+  ```glsl
+  float ao = clamp(dot(normal, vec3(0.0, 1.0, 0.0)), 0.3, 1.0);
+  fragColor.rgb *= ao;
+  ```
+
+- 視差マッピング（簡易）
+  ```glsl
+  vec2 offset = viewDir.xy * texture(heightMap, uv).r * 0.05;
+  vec3 texColor = texture(diffuseMap, uv - offset).rgb;
+  fragColor = vec4(texColor, 1.0);
+  ```
+
+- ガラス・液体の屈折
+  ```glsl
+  vec3 R = refract(-viewDir, normal, 1.0 / 1.33);
+  vec3 refractedColor = texture(iChannel0, uv + R.xy).rgb;
+  fragColor = vec4(refractedColor, 1.0);
+  ```
+
+
+
+### 立体感・空間表現
+
+- フォグ（depthベース）
+  遠くの物体を空気感でぼかして奥行き感を与える。
+  ```glsl
+  float fogAmount = exp(-t * 0.1); // t はレイ長
+  vec3 fogColor = vec3(0.1, 0.1, 0.1);
+  vec3 surfaceColor = vec3(1.0);
+  fragColor.rgb = mix(fogColor, surfaceColor, fogAmount);
+  fragColor.a = 1.0;
+  ```
+
+- スクリーンスペース陰影（SSAO的）
+  地面や凹み部分を暗くして立体感を強調。
+  ```glsl
+  vec3 normal = estimateNormal(p); // SDFから求めた法線
+  float ambient = clamp(dot(normal, vec3(0.0, 1.0, 0.0)), 0.2, 1.0);
+  vec3 color = vec3(1.0, 0.8, 0.6);
+  fragColor = vec4(color * ambient, 1.0);
+  ```
+
+- 視差マッピング（簡易）
+  凹凸テクスチャの奥行き感をUV補正で表現。
+  ```glsl
+  vec3 viewDir = normalize(vec3(0.0, 0.0, -1.0));
+  vec2 heightUv = uv;
+  float height = texture(heightMap, heightUv).r;
+  vec2 offsetUv = uv - viewDir.xy * height * 0.05;
+  vec3 texColor = texture(diffuseMap, offsetUv).rgb;
+  fragColor = vec4(texColor, 1.0);
+  ```
+
+- ガラス・液体の屈折
+  屈折率を使って背景画像を曲げてサンプル。
+  ```glsl
+  vec3 normal = estimateNormal(p);
+  vec3 viewDir = normalize(cameraPos - p);
+  float ior = 1.33; // 水の屈折率
+  vec3 refractDir = refract(-viewDir, normal, 1.0 / ior);
+  vec2 refractUv = uv + refractDir.xy * 0.1;
+  vec3 refractedColor = texture(iChannel0, refractUv).rgb;
+  fragColor = vec4(refractedColor, 1.0);
+  ```
+
+用語
+
+- SDF: Signed Distance Function
+- SSAO: Screen Space Ambient Occlusion
+- FBM: Fractal Brownian Motion
+- snoise: simplex noise
+
+リファレンス
+
+- https://iquilezles.org/
+- https://thebookofshaders.com/
+- https://shaderfrog.com/
+- https://github.com/patriciogonzalezvivo/glslViewer
+- https://github.com/mrdoob/three.js
+

@@ -1,0 +1,189 @@
+---
+title: WebRTC経由での音声受信によるアニメーション生成
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+# オーディオ同期VJアーキテクチャ構成レポート
+
+## システム目的と構成概要
+
+- 同一LAN内において、1台のmacOS端末（Logic Pro X使用）が音声を再生する
+- 再生された音声を同一ネットワーク内の別端末がWebRTC経由で受信し、FFT解析を行う
+- 解析結果をThree.jsでビジュアライズする
+- シグナリングサーバを含むWebRTCベースの構成を採用
+
+
+## 採用アーキテクチャと通信プロトコル
+
+- 送信側: macOS + Logic Pro + Soundflower + GStreamer
+- シグナリング: Python aiohttp WebSocketサーバ
+- 受信側: WindowsまたはmacOS + Chromeブラウザ + AudioContext + Three.js
+
+### システム構成図（論理図）
+
+```
+[macOS: Logic Pro X]                                [Windows/macOS: Chrome]
+     │                                                        ▲
+     │ (音声出力)                                             │ WebRTC: RTP over UDP + DTLS-SRTP
+     ▼                                                        │
+[Soundflower: 仮想オーディオデバイス]                         │
+     │ (カーネルレベルルーティング)                             │
+     ▼                                                        │
+[GStreamer: webrtcbin送信 + signalingクライアント]             │
+     │ (SDP/ICE via WebSocket over TCP)                        │
+     ▼                                                        │
+[Signaling Server: Python aiohttp @ Ubuntu/macOS]?──────────────┘
+```
+
+- Logic Pro は macOS 上で Soundflower へ PCM 音声を出力
+- Soundflower からの音声は GStreamer が `autoaudiosrc` で取得
+- GStreamer は opus + RTP パケットとしてエンコードし、WebRTCストリームとして送信
+- Signaling Server は SDP, ICE candidate を WebSocket 経由で GStreamer と Chrome 間で仲介
+- Chrome 側は MediaStream を AudioContext に接続し、リアルタイムFFT解析を実行
+
+
+## サブシステム一覧
+
+### 送信側: macOS
+
+- ハードウェア: MacBook Pro / macOS
+- アプリ:
+  - Logic Pro X（音声生成）
+  - Soundflower（音声を仮想出力デバイスとしてルーティング）
+  - GStreamer（`webrtcbin`使用, WebRTCストリーム生成）
+- 設定:
+  - Logic Pro の出力を Soundflower に設定
+  - GStreamerがSoundflowerを`autoaudiosrc`経由でキャプチャ
+  - GStreamerは signaling server と WebSocketで接続し SDP/ICE candidate を送受信
+
+
+### シグナリングサーバ: Python aiohttp
+
+- ハードウェア/OS: Ubuntu または macOS で動作可能
+- アプリ: Python 3.x + aiohttp + `signaling-server.py`
+- 通信:
+  - クライアント（GStreamer・Chrome）と WebSocket over TCP 通信
+  - SDP交換, ICE candidate交換を仲介
+
+### 受信側: Chromeブラウザ
+
+- ハードウェア: 任意のPC（Windows/macOS/Linux）
+- アプリ: Chromeブラウザ + Webアプリケーション
+- 通信:
+  - Signaling Serverと WebSocket over TCP
+  - 送信側GStreamerと WebRTC (DTLS/SRTP)
+- 処理:
+  - WebRTCで音声ストリーム受信
+  - AudioContextの`MediaStreamAudioSourceNode`でFFT解析
+  - Three.jsと連携してグラフィック描画
+
+
+## 添付すべき参考アーティファクト
+
+- `webrtc-sendrecv.py` (GStreamer公式サンプル)
+- `signaling-server.py`（aiohttpベース）
+- `client.html`（ブラウザ側受信サンプル）
+- GStreamerパイプライン例（opus + webrtcbin）:
+  ```
+  gst-launch-1.0 autoaudiosrc ! audioconvert ! audioresample ! opusenc ! rtpopuspay ! \
+    application/x-rtp,media=audio,encoding-name=OPUS,payload=96 ! \
+    webrtcbin name=sendrecv
+  ```
+
+
+## システムの制約と利点
+
+### 制約
+
+- GStreamerのコマンドおよびスクリプト知識が必要
+- シグナリングサーバの常時起動が前提
+- SoundflowerはmacOS専用、M1以降のサポート状況に注意
+
+### 利点
+
+- LAN内で構成完結、外部依存なし
+- 高速なリアルタイム音声同期と描画が可能
+- Web Audio API と Three.js による表現力の高い構成
+
+
+## 拡張性と今後の展望
+
+### 複数クライアントによる同時受信
+
+- SFU（Selective Forwarding Unit）を使用すれば1送信に対して複数受信可能
+- 例: Mediasoup, Janus, ion-sfu
+- パフォーマンスネック:
+  - SFU導入による追加サーバ負荷
+  - 多数セッション時のブラウザデコード性能
+
+### クライアントからの制御信号の送信
+
+- ChromeからWebSocketでシグナリングサーバへメッセージ送信
+- GStreamerにJSONで通知し、動的にパイプラインを変更可
+- 送信例: DataChannelまたは追加WebSocketチャネル
+- 応用: ユーザー操作で音声ミックス、ビジュアル切替など
+
+
+## 参考: HLSとWebRTCの違いと使い分け
+
+### HLSの仕組み
+
+- **HLS（HTTP Live Streaming）**はAppleが策定したHTTPベースの動画ストリーミング方式
+- 配信されるメディアは数秒単位に分割され、`.m3u8`形式のプレイリストが再生順序を管理
+- クライアントはプレイリストを取得し、順次HTTPリクエストで`.ts`または`.mp4`断片をダウンロードして再生する
+- 主に動画配信やライブ中継、オンデマンド用途で使用され、YouTubeやTwitchなどの大規模サービスでも広く採用されている
+- HTTPSで提供されるため、データは暗号化され改ざんも防止されるが、**UDPは使わず、TCP経由でのストリーミング**
+
+### WebRTCとの比較
+
+| 項目                     | HLS                         | WebRTC                            |
+|--------------------------|------------------------------|------------------------------------|
+| 通信方式                | HTTP over TCP               | UDP + DTLS/SRTP（暗号化必須）     |
+| 対応用途                | 動画配信、ライブ中継       | 音声通話、P2Pストリーム転送      |
+| 遅延                    | 数秒?10秒以上              | 数十ミリ秒?数百ミリ秒           |
+| ブラウザ再生互換        | 高い（videoタグで可能）     | 高い（WebRTC API）               |
+| P2P構成                 | 不可（中央サーバ経由）      | 可（1対1接続またはSFU中継）       |
+| 任意データ送信（Data） | 不可                        | 可能（DataChannel）              |
+| 同期処理との親和性      | 低い（遅延不定、バッファあり）| 高い（即時再生、解析しやすい）   |
+
+### なぜVJ用途ではHLSが不適切なのか
+
+- HLSは**断片（セグメント）をダウンロードして再生**するため、再生タイミングが数秒単位で後ろ倒しになる
+- **同期性が悪く、リアルタイムな反応（ビート検出、解析など）が不可能**
+- また、`.ts`や`.mp4`形式は**ブラウザでリアルタイム解析しづらく、再エンコードや遅延も生じる**
+- 対してWebRTCは、**圧倒的に低遅延でかつMediaStreamやAudio APIとの連携が容易**
+- VJのような「音に即反応する」用途では、**WebRTCの即時性が決定的に重要**
+
+## 参考: Pion
+
+- Go製WebRTCライブラリであり、単一バイナリで完結可能
+- GStreamerとの統合は非公式で、SDP/ICE制御を手動実装する必要がある
+- signalingサーバの完全自作が前提で学習コストが高い
+- 高性能・軽量・本番環境向けだが、試作用途では負担が大きい
+
+
+## 参考文献
+
+[1] https://gitlab.freedesktop.org/gstreamer/gst-examples/-/tree/master/webrtc/sendrecv
+[2] https://webrtc.org/getting-started/overview
+[3] https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection
+[4] https://github.com/pion/webrtc
+[5] https://github.com/medooze/media-server
+
+

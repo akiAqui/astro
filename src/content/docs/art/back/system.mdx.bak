@@ -1,0 +1,43 @@
+---
+title: ライブシステム
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+ - [ ] まだ冗長性とPA付近がうまく表現できていない
+
+### システム前提条件
+#### 遅延とタイミング
+
+ | 系統               | レイテンシ/タイミング | 揺らぎ | 備考                                        |
+ |--------------------|-----------------------|--------|---------------------------------------------|
+ | GLSL shader内反映  | -1ms                  | 極小   | `uniform`受信後即反映（シェーダ自体は正確） |
+ | USB MIDI           | 0.5-1ms               | 極小   | 実質ノイズなし、ハードMIDI推奨              |
+ | rtpMIDI            | 2-3ms                 | 小     | LAN環境で変動、宅内Wi-Fiで安定              |
+ | WebSocket（Wi-Fi） | 10-40ms（平均20ms）   | 中     | TCPバッファ・iOS処理待ちで変動あり          |
+ | MIDI Clock@160bpm  | 15.62ms               | 小     |                                             |
+ | 描画フレーム単位   | 16.6ms                | 小-中  | `requestAnimationFrame` ≒ 60fps想定         |
+ | MIDI Clock@120bpm  | 20.8ms                | 小     |                                             |
+ | 160BPMの16分音符   | 93.75ms               |        | 375ms（拍） ÷ 4                             |
+ | 120BPMの16分音符   | 125ms                 |        | 500ms（拍） ÷ 4                             |
+
+- MIDI Clockは24PPQN(Pulses Per Quater Note)、1拍を24分解
+-
+
+<center>
+<img src="/system.png"/>
+</center>

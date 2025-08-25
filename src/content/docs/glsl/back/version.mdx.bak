@@ -1,0 +1,195 @@
+---
+title: ＊）OpenGL/GLSL version
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+# GLSL バージョン別 機能導入と使用不可機能一覧レポート
+
+本レポートでは、GLSL（OpenGL Shading Language）のバージョンごとに導入された新機能を整理し、特定バージョン（とくにGLSL ES 3.00）から見て「使用できない機能」を網羅的に明示する。
+
+本PCのOpenGL/WebGL/GLSL バージョン情報
+- WebGL バージョン:WebGL 2.0 (OpenGL ES 3.0 Chromium)
+- GLSL バージョン:WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)
+- 推定 OpenGL バージョン:OpenGL ES 3.0 or higher
+- 実際のGPUベンダー:Google Inc. (Intel)
+- 実際のGPUレンダラー:ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)
+- WebGL2/OpenGL ES 3.0 の追加情報
+
+
+
+---
+
+## 1. 概要：GLSLバージョンと対応関係
+| OpenGL バージョン | GLSL バージョン | WebGL バージョン | 備考 |
+|-------------------|------------------|------------------|------|
+| 2.0               | 1.10             | 非対応           | 初期版（Web未対応） |
+| 2.1               | 1.20             | 非対応           | `gl_PointCoord` 等追加 |
+| 3.0               | 1.30             | 非対応           | `in/out` 構文導入 |
+| 3.1               | 1.40             | 非対応           | UBO追加 |
+| 3.2               | 1.50             | 非対応           | Geometry Shader |
+| 3.3               | 3.30             | 非対応           | `layout(location)` 等 |
+| 4.0               | 4.00             | 非対応           | Tessellation Shader |
+| 4.3               | 4.30             | 非対応           | Compute Shader, SSBO |
+| 4.5               | 4.50             | 非対応           | DSA, 高度最適化構文 |
+| 4.6               | 4.60             | 非対応           | Subgroup等最新機能 |
+| ES 2.0            | 1.00 ES          | WebGL 1.0        | `attribute/varying` 文法 |
+| ES 3.0            | 3.00 ES          | WebGL 2.0        | `in/out`, `layout`, `uint` 対応 |
+| ES 3.1            | 3.10 ES          | 非対応           | Compute Shader等（未対応） |
+| ES 3.2            | 3.20 ES          | 非対応           | Geometry, Tessellation等含む |
+
+---
+
+## 2. 各バージョンで導入された主要機能一覧
+
+### GLSL 1.10（OpenGL 2.0）
+- `attribute`, `varying`, `uniform` などの基本文法
+- 頂点/フラグメントシェーダの最小構成
+
+### GLSL 1.20（OpenGL 2.1）
+- 三角関数などの内蔵関数追加
+- `gl_PointCoord` 追加
+
+### GLSL 1.30（OpenGL 3.0）
+- `in` / `out` 構文導入（`attribute`/`varying` の代替）
+- 整数型 `int`, `uint`, `bitwise演算` 対応
+- `texture2D()` → `texture()` 関数に統一
+
+### GLSL 1.40（OpenGL 3.1）
+- `uniform buffer object (UBO)`
+- `discard` の使用が強化
+- `struct` の使用改善
+
+### GLSL 1.50（OpenGL 3.2）
+- Geometry Shader の導入
+- `gl_PrimitiveID`、`gl_InvocationID`
+- `in/out` interface block
+
+### GLSL 3.30（OpenGL 3.3）
+- `layout(location = x)` によるバインディング明示
+- `switch/case` 文の改善
+
+### GLSL 4.00（OpenGL 4.0）
+- Tessellation Shader
+- double型 (`double`, `dvec*`) 対応
+
+### GLSL 4.30（OpenGL 4.3）
+- Compute Shader
+- Shader Storage Buffer Object (SSBO)
+
+### GLSL 4.50?4.60
+- Subgroup操作 (`gl_Subgroup*`)
+- DSA対応、Bindless Texture
+
+---
+
+## 3. GLSL ES 3.00（WebGL 2.0）から見た「使用不可機能」一覧
+
+| 不可機能                  | 導入バージョン | 理由 |
+|---------------------------|----------------|------|
+| Geometry Shader           | 1.50           | 未対応構文・出力構文不備 |
+| Tessellation Shader       | 4.00           | ES未対応 |
+| Compute Shader            | 4.30           | ES未対応 |
+| SSBO                      | 4.30           | `buffer` 構文なし |
+| double型                  | 4.00           | ESに存在しない型 |
+| `#version 330` 以降       | 3.30+          | `#version 300 es` のみ有効 |
+| `subroutine`              | 4.00+          | ESに未定義 |
+| `imageLoad/imageStore`    | 4.20+          | 画像バッファ未対応 |
+| `layout(binding=...)`     | 4.20+          | UBO以外では制限あり |
+| `interface block`         | 1.50+          | 部分的サポートのみ（UBOに限る）|
+| `early_fragment_tests`    | 4.20+          | 明示不可 |
+| `gl_Subgroup...`          | 4.60           | WebGL未対応 |
+
+---
+
+## 4. まとめ：GLSL ES 3.00（WebGL 2.0）基準での未対応一覧
+
+GLSL ES 3.00 の視点で、使用できない主な文法・機能一覧：
+- Geometry / Tessellation / Compute Shader 全般
+- double型, subroutine, SSBO, imageStore 系
+- GLSL 330以降の advanced layout 指定
+- interface block や構造体の高機能的な使い方
+- 任意の `buffer` 定義や動的配列アクセス
+- Bindless Texture や Direct State Access 関連
+
+これらを使いたければ WebGPU またはネイティブ OpenGL 4.x 環境が必要。
+
+---
+
+## 5. WebGL から WebGPU への移行とネイティブOpenGL検討の指針
+
+| 技術       | GLSLバージョン範囲 | 高度機能対応            | 備考 |
+|------------|---------------------|--------------------------|------|
+| WebGL 1.0  | GLSL ES 1.00        | ×（低レベルのみ）       | attribute/varyingのみ |
+| WebGL 2.0  | GLSL ES 3.00        | △（UBO, MRT など）     | Geometry/Compute不可 |
+| WebGPU     | WGSL (新言語)       | ◎（Compute, Storage可）| GPUネイティブ制御が可能 |
+| OpenGL 4.x | GLSL 4.00?4.60     | ◎（すべて対応）         | C++/Rust等の環境必須 |
+
+Webベース開発の制約： GLSL 300 es に限定されるため、Geometry Shader や Compute Shader は使えない。
+より高度な制御（粒子演算・GPGPU・可変構造体管理）などを行いたい場合、C/C++等によるネイティブOpenGL開発またはWebGPUが現実的な選択肢となる。
+
+---
+
+## 6. WebGPU 対応状況レポート（2025年4月時点）
+
+### 対応状況（主要ブラウザ）
+| ブラウザ        | 対応状況         | 備考 |
+|------------------|------------------|------|
+| Chrome (v113?)  | ◎ デフォルト有効 | 主要サポート完了済み |
+| Edge (v113?)    | ◎ デフォルト有効 | Chromeと同様 |
+| Firefox (Nightly)| ○ 試験的対応     | v141付近で正式対応予定 |
+| Safari           | × 未対応         | Metal対応だが未サポート |
+
+### 特徴と設計方針
+- GPUネイティブAPIとの対応：Direct3D 12 / Metal / Vulkan にマッピング
+- 汎用GPU計算：GPGPU、ML推論処理にも対応
+- 新言語WGSL：型安全性とシンプルな構文
+
+### 注意点
+- まだ実験的機能：API仕様が流動的で、移行には設計コストも発生
+- ブラウザ間の差異あり：特にSafariで非対応
+
+WebGPUは将来の高性能Webグラフィクス/計算APIの中核として注目されるが、導入には依然としてブラウザと仕様の成熟を待つ必要がある。
+
+
+## 7. WGSL（WebGPU Shading Language）とは？
+
+WGSL（WebGPU Shading Language）は、WebGPU向けに設計された新しいシェーディング言語であり、GLSLの後継ではなく完全に別の構文設計を持つ。型安全性や可読性を重視しており、GLSLやHLSLの複雑さを排除しつつ、VulkanのSPIR-Vに変換しやすい仕様となっている。
+
+### 主な特徴
+- 型安全性が高い：明示的な型定義とチェック
+- 構文がシンプル：GLSLと比べて一貫性のあるキーワード設計
+- 標準関数群が限定的で明確
+- entry pointは`@vertex`, `@fragment`, `@compute` で指定
+- レイアウト指定は属性で行う（例：`@location(0)`）
+
+### GLSLとの主な違い
+| 項目             | GLSL                    | WGSL                     |
+|------------------|--------------------------|--------------------------|
+| 言語の設計       | C言語風                  | Rust風（安全性重視）    |
+| シェーダ指定     | `void main()`            | `@vertex fn main() -> ...` |
+| layout構文       | `layout(location=0)`     | `@location(0)`           |
+| 変数のスコープ   | やや緩い                 | 厳密にスコープ管理       |
+| シェーダ型       | GLSL固有                 | `@vertex`, `@fragment` 属性指定 |
+
+### 位置づけ
+WGSLはGLSLの上位互換ではなく、WebGPUのために一から設計された別言語である。GLSLコードはWGSLに変換できないことが多く、WGSLでの再設計が前提となる。
+
+---
+
+

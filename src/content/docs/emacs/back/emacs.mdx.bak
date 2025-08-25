@@ -1,0 +1,180 @@
+---
+title: このemacsの説明
+description: markdown, cdlatex, yasnippet
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+#### サマリー
+- cdlatexではTABでexpandするように設定
+- yasnipetではC-c yで expandキーを設定
+  - TwoColumnの自動入力はyas-expand(or C-c y)でtwo C-c y
+- cdlatexの定義は他で使えないので共通定義はしない
+- 基本この環境は.emacs, .emacs.d/配下のファイルで復元可能
+
+
+
+
+#### 代表的なコマンド
+
+| command入力　 | 何ができるか                   |表示内容| 実現方法|
+|:--------------|:-------------------------------|:------------------|-------------|
+| C-c C-s t     | 表挿入                         || <font color="#66aaff">markdown-mode</font>
+| C-c shift-↓   | 作った表に一行挿入             || <font color="#66aaff">markdown-mode</font>
+|               |                                ||
+|               |                                ||
+| lbr TAB       | 中カッコで式をまとめるmath入力 || <font color="#ffaacc">cdlatex+.emacs</font>
+| ova TAB       | 上に矢印のベクトル             |$\overrightharpoon{AB}$|<font color="#ffaacc">cdlatex+.emacs</font>
+|               |                                ||<font color="#ffaacc">cdlatex+.emacs</font>
+| dot TAB       | 一階微分                       |$\dot{x}$|<font color="#ffaacc">cdlatex+.emacs</font>
+| ddt TAB       | 二階微分                       |$\ddot{x}$|<font color="#ffaacc">cdlatex+.emacs</font>
+|               |                                ||
+| C-c ` f       | ファイ                         |$\phi$  |<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c ` l       | ラムダ                         |$\lambda$  |<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c ` p       | パイ                           |$\pi$        |<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c ` q       | シータ                         |$\theta$|<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c ` o       | オメガ                         |$\omega$|<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c `` d      | 偏微分                         |$\partial$  |<font color="#ffaacc">cdlatex+.emacs</font>
+| C-c `` D      | ナブラ                         |$\nabla$  |<font color="#ffaacc">cdlatex+.emacs</font>
+|               |                                |                 |
+| M-y(alt-y)    | browse-kill-ling               ||<font color="#ccaaff">browse-kill-ring</font>
+|               |                                |                 |
+| two C-cy      | astroコンポーネントtwocolumn   ||<font color="#ccaaff">yasunipett</font>
+
+
+
+## はじめに
+- matrixや左中カッコで式を複数書いてそろえるようなalignの入力を
+すべてキー入力するのは面倒なので、
+cdlatexのショートカット入力を使えるように、
+majorモードをmarkdown-mode, miniorモードに
+cdlatex-modeを指定した。
+```text
+C-c `           cdlatex-math-symbol
+C-c {           cdlatex-environment
+```
+- cdlatex-modeは完璧でない、pmatrix等は結局カスタマイズして加える必要がある。.emacsでカスタマイズする。pma+TABで以下のようにショートカット入力
+```text
+\begin{pmatrix}
+
+\end{pmatrix}
+```
+- こういうまとめたのも、lbr+TABで入力
+```text
+$$
+\left\{ \, \begin{aligned}
+ &=
+   
+\end{aligned}\right.
+$$
+- 
+```
+
+## query-replace-regexp
+
+### サブセクションのレベルをあげる
+
+```
+^\(#+\)
+```
+```
+\1#
+```
+
+### サブセクションのレベルを下げる
+
+```
+^\(#+\)#
+```
+```
+\1
+```
+
+## yasunippet
+
+- ~/.emacs.d/snippet/markdown-mode/*に設定
+```
+/home/akihisa/.emacs.d/snippets
+└── /home/akihisa/.emacs.d/snippets/markdown-mode
+    └── /home/akihisa/.emacs.d/snippets/markdown-mode/twocolumn
+```
+twocolumnファイルの内容
+```
+# name: TwoColumn Tag
+# key: two
+# --
+<TwoColumn>
+<Left>
+$0
+</Left>
+<Right>
+</Right>
+</TwoColumn>
+```
+
+
+#### 設定ファイル
+
+## .emacsの設定例
+
+```text
+;; パッケージのインストール
+(package-install 'markdown-mode)
+(package-install 'cdlatex)
+
+;; mdxファイルの設定
+(add-to-list 'auto-mode-alist '("\\.mdx\\'" . markdown-mode))
+
+;; 通常は`の入力3回でmath symbolのショートカットだが
+;; markdownモードではコードブロックやmermaidを```で入力するので
+;; C-c `でmath-symbolにした
+;; cdlatexの`キーバインディングを完全に解除
+(with-eval-after-load 'cdlatex
+  (define-key cdlatex-mode-map (kbd "`") nil))
+
+;; markdown-modeでcdlatexを有効化（.mdと.mdx両方に適用）
+(add-hook 'markdown-mode-hook 'turn-on-cdlatex)
+
+;; 再度定義
+(with-eval-after-load 'cdlatex
+  (define-key cdlatex-mode-map (kbd "C-c `") 'cdlatex-math-symbol))
+
+
+
+(with-eval-after-load 'cdlatex
+  (setq cdlatex-command-alist
+        '(
+          ("pma" "Insert a PMATRIX environment template" ""
+           cdlatex-environment ("pmatrix") t t)
+          ("bma" "Insert a BMATRIX environment template" ""
+           cdlatex-environment ("bmatrix") t t)
+          ("vma" "Insert a VMATRIX environment template" ""
+           cdlatex-environment ("vmatrix") t t)
+          ("ali" "Insert a alignment environment template" ""
+           cdlatex-environment ("alignment") t t)
+          ("cas" "Insert a cases environment template" ""
+           cdlatex-environment ("cases") t t)
+          ("ova" "Insert a \\overrightharpoon{} statement" "\\overrightharpoon{?}"
+           cdlatex-position-cursor nil t nil)
+          ("dot" "Insert a \\dot{} statement" "\\dot{?}"
+           cdlatex-position-cursor nil t nil)
+          ("ddt" "Insert a \\ddot{} statement" "\\ddot{?}"
+           cdlatex-position-cursor nil t nil)
+          ("lrb" "Insert left brace with aligned" "\\left\\{ \\, \\begin{aligned}\n  ? \n\\end{aligned}\\right."
+           cdlatex-position-cursor nil t nil)
+          )))
+```
+

@@ -1,0 +1,212 @@
+---
+title: MIDIでのnetworkingに関する検討
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+##### TODOs
+
+ - [x] nothing
+
+## 本レポートの目標
+VJ的な方向性を自分のプラットフォームで実現することを目標としている。
+ただし、楽曲は一般的にwavファイルであり、楽曲はMIDIデータから構成されることもある。
+この楽曲と同期させアニメーションを作ることを0から考える。
+
+
+
+音響データとThree.jsのリアルタイム同期をすることを目的とする。
+二つの方向性が考えられる。
+
+1. wavファイルを読み込みFFT（周波数帯分析）、ボリューム、位相という音の3要素を使ってアニメーションを作成する
+
+
+## 要約
+Csound、iPad/iPhoneの作曲ソフト、リアルタイムパフォーマンスソフトをOSC (UDP) を介してThree.jsと統合し、音と映像をリアルタイムに同期する手法を整理する。  
+CsoundはOSCの受信と送信を行い、Three.jsはNode.js経由でOSCメッセージを処理する。  
+iOSアプリはOSCで指令を送るだけでなく、音響データを解析しThree.jsと相互作用できる。  
+
+---
+
+# CsoundとThree.jsのリアルタイム同期
+
+## Csoundの音響解析をThree.jsに適用
+- Csoundで生成した音響データをリアルタイム解析し、Three.jsに送信
+- 解析対象:
+  - 振幅: `rms`
+  - ピッチ: `pitch`
+  - スペクトル: `pvsanal`
+
+### Csound側
+```csound
+instr 1
+  kAmp rms a1
+  kFreq pitch a1
+  kFFT pvsanal a1, 1024, 256, 1024, 1
+
+  OSCsend kAmp, "/amplitude", "f"
+  OSCsend kFreq, "/frequency", "f"
+endin
+```
+
+### Three.js側 (Node.jsでOSC受信)
+```javascript
+const osc = require("osc");
+const udpPort = new osc.UDPPort({
+    localAddress: "0.0.0.0",
+    localPort: 57121
+});
+
+udpPort.open();
+
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/amplitude") {
+        object.scale.set(oscMsg.args[0], oscMsg.args[0], oscMsg.args[0]);
+    }
+    if (oscMsg.address === "/frequency") {
+        object.material.color.setHSL(oscMsg.args[0] / 1000, 1, 0.5);
+    }
+});
+```
+
+---
+
+## CsoundスコアデータをThree.jsに送信
+- Csoundのスコアデータ (`sco`) にビジュアル用のパラメータを含めOSC送信
+- Three.js側で受信し、オブジェクトの変化を制御
+
+### Csoundスコア
+```csound
+i 1 0 1 440 1.0  0.5
+i 1 1 1 660 0.8  0.7
+```
+
+### Csound側
+```csound
+instr 1
+  kFreq = p4
+  kAmp = p5
+  kScale = p6
+
+  OSCsend kFreq, "/freq", "f"
+  OSCsend kAmp, "/amp", "f"
+  OSCsend kScale, "/scale", "f"
+endin
+```
+
+### Three.js側
+```javascript
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/scale") {
+        object.scale.set(oscMsg.args[0], oscMsg.args[0], oscMsg.args[0]);
+    }
+    if (oscMsg.address === "/freq") {
+        object.rotation.y += oscMsg.args[0] * 0.0001;
+    }
+});
+```
+
+---
+
+# iPad/iPhoneの作曲・パフォーマンスソフトとの連携
+
+## iPad/iPhoneのOSC送信 → Three.js
+- **対応アプリ**
+  - TouchOSC / Lemur
+  - Audiobus / AUM
+  - Launchpad (MIDI → OSC変換)
+
+### TouchOSCのスライダー操作 → Three.jsのパラメータ変更
+```javascript
+udpPort.on("message", function (oscMsg) {
+    if (oscMsg.address === "/filter") {
+        object.scale.y = oscMsg.args[0] * 2;
+    }
+});
+```
+
+---
+
+## iPad/iPhoneのOSC送信 → Csound
+- **TouchOSC / Lemur:** フィルター、LFO、エンベロープパラメータの送信
+- **AUM / Audiobus:** 音響エフェクトのリアルタイム制御
+
+### Csound側
+```csound
+instr 1
+  kFilterCutoff OSClisten 1, "/filter", "f"
+  kReverb OSClisten 1, "/reverb", "f"
+
+  aSig oscil 0.5, 440
+  aFiltered moogladder aSig, kFilterCutoff, 0.8
+  aReverbed reverbsc aFiltered, kReverb, 0.8, 10000
+
+  out aReverbed
+endin
+```
+
+---
+
+# CsoundとThree.jsの双方向連携
+
+## Three.jsの動き → Csoundの音響変化
+- Three.jsのオブジェクトの位置、回転、スケールをOSCで送信し、Csoundの音をリアルタイムに変更
+
+### Three.js側 (OSC送信)
+```javascript
+udpPort.send({
+    address: "/modulation",
+    args: [object.rotation.x]
+});
+```
+
+### Csound側
+```csound
+instr 2
+  kModulation OSClisten 1, "/modulation", "f"
+  aSig oscil 0.5, 440 + (kModulation * 100)
+  out aSig
+endin
+```
+
+---
+
+# 応用例
+- FFT解析結果をThree.jsの頂点変形に適用
+- 振幅データでGLSLエフェクトを操作
+- MIDIノートデータでThree.jsのオブジェクト生成
+- ピッチの変化でパーティクルの方向を変更
+
+---
+
+# 用語説明
+- OSC (Open Sound Control): UDPベースの通信プロトコル
+- rms: 振幅解析
+- pitch: ピッチ検出
+- pvsanal: FFT解析
+- moogladder: Moogスタイルのフィルター
+- reverbsc: スペクトル領域のリバーブ
+
+---
+
+# 参考
+- [OSC.js (Node.js用OSCライブラリ)](https://www.npmjs.com/package/osc)
+- [Csound公式ドキュメント](https://csound.com/docs/)
+- [TouchOSC公式サイト](https://hexler.net/touchosc)
+- [Audiobus公式サイト](https://audiob.us/)
+
+

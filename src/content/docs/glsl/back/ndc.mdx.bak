@@ -1,0 +1,502 @@
+---
+title: ＊）ワールド座標からNDCの算出方法
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+# 3D座標変換処理: ワールド座標からNDCへの流れ
+
+## 要約
+
+3D空間の点をスクリーン上に描画するためには、一連の座標変換が必要となる。本レポートでは、まず3D座標変換の理論と数式を説明し、次に具体例として点(1,1,1)がカメラ位置(5,0,0)からどのように変換されるかを示す。最後にこれらの変換を実装するサンプルコードを提示する。
+
+## 座標変換の理論
+
+### 前提
+3Dグラフィックスでは、右手座標系を標準として使用することが多い。
+
+- 右手座標系: 
+  - X軸: 右方向が正
+  - Y軸: 上方向が正
+  - Z軸: 奥から手前へ向かう方向が正（観察者に向かう方向）
+
+この右手座標系に基づいて議論をする
+
+### 座標系の定義
+- ワールド座標系
+  - 3D空間全体の基準となる右手座標系
+- ビュー座標系
+  - カメラ座標系とも呼ばれることがある
+  - カメラを原点とし、カメラの向きに基づいた座標系。
+  - カメラのZ軸は一般的にカメラから見た奥行きの逆方向（つまりカメラに向かう方向）を表す
+- クリップ空間
+  - 射影変換後の4次元座標空間
+- 正規化デバイス座標(NDC)
+  - クリップ空間から透視除算後の3次元座標空間
+
+### 3Dレンダリングパイプラインにおける座標変換の流れ
+- ビュー行列による変換
+  - ワールド座標系 → ビュー座標系 
+- 射影行列による変換
+  - ビュー座標系 → クリップ空間
+- 透視除算による変換
+  - クリップ空間 → 正規化デバイス座標(NDC) 
+
+### ビュー座標系
+<Box>
+- ビュー座標系のZ軸
+  - カメラから対象を見る方向の逆（カメラに向かう方向、正規化）
+- ビュー座標系のX軸
+  - 上方向ベクトルとZ軸の外積（正規化）
+- ビュー座標系のY軸
+  - Z軸とX軸の外積
+</Box>
+
+これらの軸と位置を元に、ビュー行列が構築される:
+
+$$
+V = \begin{bmatrix} 
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+-\mathbf{p} \cdot \mathbf{x} & -\mathbf{p} \cdot \mathbf{y} & -\mathbf{p} \cdot \mathbf{z} & 1
+\end{bmatrix}
+$$
+
+ここで、$\mathbf{x}=(x_x,y_x,z_x)$、$\mathbf{y}=(x_y,y_y,z_y)$、$\mathbf{z}=(x_z,y_z,z_z)$
+はカメラ座標系の各軸ベクトル、$\mathbf{p}$はカメラの位置ベクトルを表す。
+
+
+### (参考) ビュー行列の導出
+- ビュー変換は同次座標系を用いたアフィン変換として定義できる。
+- 具体的には「ワールド座標系からカメラ座標系への回転変換」と「カメラ位置を原点へ移動させる平行移動変換」の合成写像として表現される。
+
+
+#### 平行移動変換
+
+カメラ位置 $\mathbf{p}$ を原点に移動させる行列:
+
+$$
+T = \begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+-p_x & -p_y & -p_z & 1
+\end{bmatrix}
+$$
+
+#### 回転変換
+
+カメラ座標系からワールド座標系への回転行列:
+
+$$
+R_{world\_from\_camera} = \begin{bmatrix}
+x_x & x_y & x_z & 0 \\
+y_x & y_y & y_z & 0 \\
+z_x & z_y & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+$$
+
+ワールド座標系からカメラ座標系への回転行列(直交行列なので転置):
+
+$$
+R_{camera\_from\_world} = R_{world\_from\_camera}^T = \begin{bmatrix}
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+$$
+
+#### 導出
+
+ビュー行列 $V$ は回転と平行移動の合成:
+
+$$
+V = R_{camera\_from\_world} \cdot T
+$$
+
+行列の積を計算:
+
+$$
+V = \begin{bmatrix}
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+-p_x & -p_y & -p_z & 1
+\end{bmatrix}
+$$
+
+積の結果:
+
+$$
+V = \begin{bmatrix}
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+-(x_x p_x + x_y p_y + x_z p_z) & -(y_x p_x + y_y p_y + y_z p_z) & -(z_x p_x + z_y p_y + z_z p_z) & 1
+\end{bmatrix}
+$$
+
+内積表記で整理:
+
+$$
+V = \begin{bmatrix} 
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+-\mathbf{p} \cdot \mathbf{x} & -\mathbf{p} \cdot \mathbf{y} & -\mathbf{p} \cdot \mathbf{z} & 1
+\end{bmatrix}
+$$
+
+この行列によりワールド座標系の点をカメラ座標系へ変換できる。
+
+
+### 射影変換の数学的定義
+
+透視射影変換は、カメラの視野角、アスペクト比、近平面、遠平面に基づいて定義される:
+
+$$
+P = \begin{bmatrix} 
+\frac{f}{aspect} & 0 & 0 & 0 \\
+0 & f & 0 & 0 \\
+0 & 0 & \frac{far+near}{near-far} & -1 \\
+0 & 0 & \frac{2 \cdot far \cdot near}{near-far} & 0
+\end{bmatrix}
+$$
+
+ここで:
+- $f = \cot(\frac{fov}{2}) = \frac{1}{\tan(\frac{fov}{2})}$
+- $fov$ は視野角
+- $aspect$ はアスペクト比
+- $near$ は近平面の距離
+- $far$ は遠平面の距離
+
+### 透視除算とNDC
+
+クリップ空間の座標 $(x, y, z, w)$ から正規化デバイス座標(NDC)への変換は次式で行われる:
+
+$$
+NDC = 
+  \begin{pmatrix}
+    \frac{x}{w} \\
+    \frac{y}{w} \\ 
+    \frac{z}{w} 
+  \end{pmatrix}
+$$
+
+通常、NDC座標は $[-1, 1]^3$ の立方体内に収まるように設計される。
+
+## 具体例: 点(1,1,1)の変換
+
+### 前提条件
+
+- 右手座標系を使用
+  - X軸: 右方向が正
+  - Y軸: 上方向が正
+  - Z軸: 奥から手前へ向かう方向が正（観察者に向かう方向）
+- カメラ設定
+  - 位置: $(5,0,0)$
+  - 注視点: 原点$(0,0,0)$
+  - 上方向: $(0,1,0)$
+- 変換対象の点: $(1,1,1)$
+- 射影パラメータ
+  - 視野角: $45°$
+  - アスペクト比: $1.0$
+  - 近平面: $0.1$
+  - 遠平面: $100.0$
+
+### カメラ座標系の構築
+
+1. Z軸の計算:
+   カメラから注視点への方向の逆ベクトル: $(5,0,0) - (0,0,0) = (5,0,0)$
+   正規化すると: $(1,0,0)$
+
+2. X軸の計算:
+   上方向$(0,1,0)$とZ軸$(1,0,0)$の外積: $(0,0,-1)$
+
+3. Y軸の計算:
+   Z軸$(1,0,0)$とX軸$(0,0,-1)$の外積: $(0,1,0)$
+
+### ビュー行列の値
+
+上記の計算結果から、ビュー行列の値は次のようになる:
+
+$
+V = \begin{bmatrix} 
+0 & 0 & -1 & 0 \\
+0 & 1 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+$
+
+### 射影行列の値
+
+パラメータを元に計算すると $f = \frac{1}{\tan(22.5°)} \approx 2.414$ となり、射影行列は:
+
+$$
+P = \begin{bmatrix} 
+2.414 & 0 & 0 & 0 \\
+0 & 2.414 & 0 & 0 \\
+0 & 0 & -1.002 & -1 \\
+0 & 0 & -0.200 & 0
+\end{bmatrix}
+$$
+
+### 座標変換の過程
+
+1. ワールド座標系の点$(1,1,1)$を同次座標$(1,1,1,1)$で表現
+
+2. ビュー変換:
+   $$
+   V \cdot \begin{pmatrix} 1 \\ 1 \\ 1 \\ 1 \end{pmatrix} = \begin{pmatrix} -1 \\ 1 \\ 1 \\ 6 \end{pmatrix}
+   $$
+
+3. 射影変換:
+   $$
+   P \cdot \begin{pmatrix} -1 \\ 1 \\ 1 \\ 6 \end{pmatrix} = \begin{pmatrix} -2.414 \\ 2.414 \\ -7.002 \\ -0.200 \end{pmatrix}
+   $$
+
+4. 透視除算によるNDC変換:
+   $$
+   \begin{pmatrix} \frac{-2.414}{-0.200} \\ \frac{2.414}{-0.200} \\ \frac{-7.002}{-0.200} \end{pmatrix} = \begin{x} 12.059 \\ -12.059 \\ 34.975 \end{pmatrix}
+   $$
+
+### 結果の解釈
+
+- 得られたNDC座標$(12.059, -12.059, 34.975)$は$[-1, 1]^3$の範囲を大きく超えており、点$(1,1,1)$はビューフラスタムの外部にある
+- また$w$成分が負値$(-0.200)$であることから、この点はカメラの背後に位置していることがわかる
+
+## サンプルコード
+
+以下は上記の変換を実装するJavaScriptコードである:
+
+```javascript
+// ベクトルと行列の計算に使用する関数
+function multiplyMatrixVector(matrix, vector) {
+  const result = [0, 0, 0, 0];
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      result[i] += matrix[i * 4 + j] * vector[j];
+    }
+  }
+  return result;
+}
+
+function normalizeVector(vector) {
+  const length = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
+  return [vector[0] / length, vector[1] / length, vector[2] / length];
+}
+
+function crossProduct(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+}
+
+// カメラの設定
+const cameraPosition = [5, 0, 0];
+const target = [0, 0, 0];  // 原点を見る
+const up = [0, 1, 0];      // 上方向ベクトル
+
+// カメラ座標系の計算
+// Z軸: カメラから対象への方向の逆（右手座標系ではカメラに向かう方向が正）
+const zAxis = normalizeVector([
+  cameraPosition[0] - target[0],
+  cameraPosition[1] - target[1],
+  cameraPosition[2] - target[2]
+]);
+
+// X軸: 上方向ベクトルとZ軸の外積
+const xAxis = normalizeVector(crossProduct(up, zAxis));
+
+// Y軸: Z軸とX軸の外積
+const yAxis = crossProduct(zAxis, xAxis);
+
+// ビュー行列の作成
+const viewMatrix = [
+  xAxis[0], yAxis[0], zAxis[0], 0,
+  xAxis[1], yAxis[1], zAxis[1], 0,
+  xAxis[2], yAxis[2], zAxis[2], 0,
+  -(xAxis[0] * cameraPosition[0] + xAxis[1] * cameraPosition[1] + xAxis[2] * cameraPosition[2]),
+  -(yAxis[0] * cameraPosition[0] + yAxis[1] * cameraPosition[1] + yAxis[2] * cameraPosition[2]),
+  -(zAxis[0] * cameraPosition[0] + zAxis[1] * cameraPosition[1] + zAxis[2] * cameraPosition[2]),
+  1
+];
+
+// 射影行列の作成（透視投影）
+const fov = 45 * Math.PI / 180;  // 視野角（ラジアン）
+const aspect = 1.0;              // アスペクト比
+const near = 0.1;                // 近平面
+const far = 100.0;               // 遠平面
+
+const f = 1.0 / Math.tan(fov / 2);
+const projectionMatrix = [
+  f / aspect, 0, 0, 0,
+  0, f, 0, 0,
+  0, 0, (far + near) / (near - far), -1,
+  0, 0, (2 * far * near) / (near - far), 0
+];
+
+// 元の点の設定と変換
+const originalPoint = [1, 1, 1, 1];  // 同次座標系で表現
+
+// ビュー変換
+const pointInViewSpace = multiplyMatrixVector(viewMatrix, originalPoint);
+
+// 射影変換
+const pointInClipSpace = multiplyMatrixVector(projectionMatrix, pointInViewSpace);
+
+// NDCへの変換
+const ndcPoint = [
+  pointInClipSpace[0] / pointInClipSpace[3],
+  pointInClipSpace[1] / pointInClipSpace[3],
+  pointInClipSpace[2] / pointInClipSpace[3]
+];
+
+console.log("ビュー空間での点:", pointInViewSpace);
+console.log("クリップ空間での点:", pointInClipSpace);
+console.log("NDC座標:", ndcPoint);
+```
+
+## 用語説明
+
+- ビュー行列（View Matrix）: ワールド座標からカメラ座標への変換行列
+- 射影行列（Projection Matrix）: カメラ座標からクリップ空間への変換行列
+- クリップ空間（Clip Space）: 射影変換後の4次元空間で、透視除算前の座標空間
+- 正規化デバイス座標（NDC）: クリップ空間からw成分による除算後の座標で、通常は $[-1, 1]^3$ の立方体内に収まる
+- 透視除算（Perspective Division）: クリップ空間座標のxyz成分をw成分で割る操作
+- ビューフラスタム（View Frustum）: カメラから見える3D空間の領域を表す切頭四角錐
+
+## リファレンス
+
+- [OpenGL Transformation](https://www.khronos.org/opengl/wiki/Transformations)
+- [Learn OpenGL - Coordinate Systems](https://learnopengl.com/Getting-started/Coordinate-Systems)
+- [GLSL Programming - Applying Matrix Transformations](https://en.wikibooks.org/wiki/GLSL_Programming/Applying_Matrix_Transformations)

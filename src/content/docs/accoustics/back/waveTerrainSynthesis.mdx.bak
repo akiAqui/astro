@@ -1,0 +1,934 @@
+---
+title: 波形操作合成とWaveTerrainSynthesis
+description: 波形操作合成
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## 基本概念
+
+Wave Terrain Synthesis（WTS）は、2次元または3次元の数学的な地形（terrain）上を、
+軌道（trajectory）に沿って動くことで音を生成する手法である。
+
+軌道の周期性によって音の周波数成分を与えることもできるし、
+地形の形状によって音の周波数成分が与えられることもある。
+
+$$
+s(t)=f(x(t),y(t))
+$$
+
+としてs(t)自体が最終的に出力される音になるが、関数s(t)の形式、x(t),y(t)で表される
+軌道の形や軌道上の移動速度は定義されておらずその自由度から多様な音響的な合成が可能となる。
+
+例えば、
+$$
+ \left\{ \,
+  \begin{aligned}
+& f(x,y) = x+y\\
+& x(t) = A \cdot sin(\omega t)\\
+& y(t) = B \cdot sin(2\omega t)
+ \end{aligned} 
+ \right.
+$$
+
+であれば、地形はz=x+yの平面上で、軌道は1:2のリサージュ図形となる。
+
+$$
+ f(x,y)= A sin(\omega t) + B sin(2 \omega t)
+$$
+
+単純に倍音の関係にある二つのサイン波の加算合成音であると言える。
+軌道の周波数成分が音の性質を決定していると言ってよいだろう。
+
+一方、下記のように定義した場合には、
+$$
+ \left\{ \,
+ \begin{aligned}
+ & f(x,y)&=& A sin(x) + B sin(y)\\
+ & x(t)  &=& \omega t\\
+ & y(t)  &=& 2x= 2 \omega t
+ \end{aligned} 
+ \right.
+$$
+地形はx,yに依存した正弦波が合成された地形となり、
+軌道は$y=2x$直線で、
+
+$$
+\begin{aligned}
+v=&\sqrt{(\frac{dx}{dt})^2 + (\frac{dy}{dt})^2 }\\
+ =& \sqrt{5} \omega
+\end{aligned}
+$$
+
+速度$\sqrt{5} \omega$の等速直線運動となる。
+
+しかし生成する音は、
+
+$$
+ f(x,y)= A sin(\omega t) + B sin(2 \omega t)
+$$
+
+となり、先ほどの結果と同じ音を生成することが分かる。
+
+これより、WTSは異なる地形と軌道の組み合わせで同じ音が生成される場合もあり得る。
+
+
+一方、同じ地形に対して、軌道が単振動となるように設定すると、音色が大きく変わることを以下に示す。
+
+$$
+ \left\{ \,
+ \begin{aligned}
+ & f(x,y)=  A sin(\omega x) + B sin(2 \omega y)\\
+ & x(t)=x_0 sin( \omega_m t)\\
+ & y(t)=y_0 = 0
+ \end{aligned} 
+ \right.
+$$
+
+この結果、生成される音は、
+
+$$
+ f(x,y)= A sin(\omega_0 x_0 sin(\omega_m t))
+$$
+
+となり、複雑な音を生成することが分かる。
+
+この波形はFM合成音にも式の形が似ているが厳密には異なっている。
+FM合成音は下記のように定義される。
+
+$$
+s(t)=Asin(\omega_c t+I sin(\omega_m t))
+$$
+
+
+- $\omega_c$はキャリア周波数（carrier frequency）
+- $\omega_m$はモジュレーター周波数（modulator frequency）
+- $I$ は変調インデックス（modulation index）[変調の強さを決める]
+である。
+
+
+## 応用
+### 地形
+前節の説明により、自由な地形と自由な軌道の組み合わせにより豊かな音響表現が可能であることが分かった。
+移行、地形の例、軌道の例としてどのようなものが考えられるかを検討する。
+
+
+$$
+ \left\{ \,
+ \begin{align}
+  & h(x,y) = \sin(2\pi x)\sin(2\pi y) & \tag{1}\\
+  & h(x,y) = \sin(2\pi x)\cos(3\pi y) + \cos(4\pi x)\sin(5\pi y) & \tag{2}\\
+  & h(x,y) = \sum_{i=0}^{n} \frac{1}{2^i}P(\omega^i x, \omega^i y) & \tag{3}\\
+  & h(x,y,t) = \sin(2\pi x + \phi(t))\sin(2\pi y + \psi(t)) & \tag{4}\\
+ \end{align} 
+ \right.
+$$
+
+- $P(x,y)$はパーリンノイズ関数
+- $\omega$は周波数倍率
+- $n$はオクターブ数
+- $\phi(t)$と$\psi(t)$は時間変化する位相関数
+
+
+#### 考察
+
+例えばTHREE.JSでfragment shaderを用いて、procedual textureを生成し
+地形として音響合成を試みることも可能であろうし、
+地形の時間的変化を持たせるときに、テクスチャ間でモーフィングを行うことも考えうる。
+
+## Perlinノイズとそのフラクタル合成
+
+フラクタル合成（FBM: Fractional Brownian Motion）を利用した Perlin Noise の式について説明する。
+
+## 式の定義
+
+フラクタル合成された Perlin Noise は次のように定義される：
+
+$$
+h(x,y) = \sum_{i=0}^{n} \frac{1}{2^i} P(\omega^i x, \omega^i y)
+$$
+
+ここで：
+- $P(x,y)$ は 2D Perlin Noise
+- $n$ はオクターブ数（加算するノイズの層の数）
+- $\omega$ は周波数スケールファクター
+- $i$ はオクターブのインデックス
+
+## $\frac{1}{2^i}$ で割る意味
+
+この項は **振幅の減衰（Amplitude Scaling）** を目的とする。フラクタル合成では、異なるスケールのノイズを重ねるが、高周波成分を過度に強調しないために各オクターブの振幅を $\frac{1}{2^i}$ で抑える。これにより、よりスムーズなノイズが生成される。
+
+## $i$ の意味
+
+$i$ はオクターブ番号（Octave Index）を表す。具体的には、$i=0$ から始まり、$i$ が増えるごとに高周波成分のノイズを追加する。
+
+例えば：
+- $i=0$ は基本の低周波ノイズ
+- $i=1$ で $\omega$ 倍の周波数を持つノイズを追加
+- $i=2$ で $\omega^2$ 倍の周波数を持つノイズを追加
+- これを $n$ 回繰り返す
+
+このようにして、異なるスケールのノイズを重ね、リアルなパターンを作り出す。
+
+## $n$ がオクターブ数とは？
+
+$n$ は **オクターブ数（Octave Count）** であり、**何回ノイズを合成するかを決めるパラメータ**。$n$ が大きいほど、より細かいディテールが追加され、リアルな質感になるが、計算コストも増える。
+
+例えば：
+- $n=1$ なら基本的なノイズのみ
+- $n=4$ なら 4 回異なるスケールのノイズを重ねる
+- $n=8$ ならより高精細なノイズになる
+
+## パーリンノイズの基本処理との違い
+
+通常の **Perlin Noise** は、以下のように生成される：
+1. **グリッド点にランダムな勾配ベクトルを設定**
+2. **補間関数（エルミート補間や 5 次補間）でスムーズに補間**
+3. **1 つのノイズマップを生成**
+
+しかし、上記のフラクタル合成の式では **単一のノイズではなく、複数の異なるスケールのノイズを合成している**。このため、より自然でリアルなノイズパターンを得ることができる。
+
+
+
+### 軌道
+
+
+$$
+ \begin{pmatrix}
+ x(t) \\ y(t)
+ \end{pmatrix} =
+
+\begin{pmatrix} r_x\cos(2\pi f_xt) \\
+ r_y\cos(2\pi f_yt)
+ \end{pmatrix}
+$$
+
+#### カオス的な軌道（ローレンツアトラクター）の例：
+
+
+$$
+ \begin{cases} 
+   \dot{x} = \sigma(y-x) \\
+   \dot{y} = x(\rho-z) - y \\
+   \dot{z} = xy - \beta z
+ \end{cases}
+$$
+
+
+
+#### 周期的な軌道の場合：
+   - 出力される周波数成分は軌道の周波数$f_x$と$f_y$の整数倍の線形結合として現れる：
+   $$
+   f_{out} = nf_x + mf_y \quad (n,m \in \mathbb{Z})
+   $$
+   - 軌道の周波数の比
+   $$
+   f_{ratio} = \frac{f_x}{f_y}
+   $$
+   が有理数の場合、出力信号は周期的となる。例えば：
+     * 円形軌道（$f_x = f_y$）で地形関数が
+   $$
+   h(x,y) = \sin(2\pi x)\sin(2\pi y)
+   $$
+   の場合、主に$f_x$と$f_y$の2倍の周波数成分が現れる
+     * 同じ円形軌道で地形関数が$h(x,y) = \sin(4\pi x)\sin(4\pi y)$の場合、主に$f_x$と$f_y$の4倍の周波数成分が現れる
+   - $f_{ratio}$が無理数の場合、出力信号は非周期的となり、より複雑なスペクトルを持つ
+   - これは加算合成とは異なり、地形関数と軌道の相互作用による非線形な波形生成プロセスである
+
+#### 非周期的な軌道の場合：
+   - 出力信号の瞬時的な変化は以下の要素によって決定される：
+     * 軌道の速度ベクトル：
+       $
+         \vec{v}(t) = \begin{pmatrix} \frac{dx}{dt} \\ \frac{dy}{dt} \end{pmatrix}
+       $
+     * 地形関数の局所的な勾配：
+       $
+         \nabla h(x,y) = \begin{pmatrix} \frac{\partial h}{\partial x} \\ \frac{\partial h}{\partial y} \end{pmatrix}
+       $
+   - 瞬時的な出力値の変化率は、速度ベクトルと地形の勾配の内積で与えられる：
+     $
+     \frac{ds}{dt} = \vec{v}(t) \cdot \nabla h(x(t),y(t))
+     $
+   - この結果、出力信号のスペクトルは：
+     * 地形関数の空間周波数特性
+     * 軌道の速度の時間変化
+     * 軌道が通過する地形の局所的な特徴
+   の組み合わせとして決定される。周期的な軌道の場合のような単純な周波数成分の記述はできない。
+
+#### カオス的な軌道の場合：
+   - カオス力学系（例：ローレンツ方程式）による軌道生成：
+   $$
+    \begin{cases} 
+      \dot{x} = \sigma(y-x) \\
+      \dot{y} = x(\rho-z) - y \\
+      \dot{z} = xy - \beta z
+    \end{cases}
+   $$
+
+   - 軌道の状態空間上での動きは、アトラクターの構造によって特徴づけられる：
+     * 局所的なリャプノフ指数：
+       $$
+       \lambda(t) = \lim_{\Delta t \to 0} \frac{1}{\Delta t} \ln\left|\frac{d\vec{r}(t+\Delta t)}{d\vec{r}(t)}\right|
+       $$
+     * 軌道の発散率：
+       $$
+       D(t) = \nabla \cdot \vec{v}(t) = \frac{\partial \dot{x}}{\partial x} + \frac{\partial \dot{y}}{\partial y} + \frac{\partial \dot{z}}{\partial z}
+       $$
+
+   - 出力信号の生成プロセス：
+     1. カオス軌道の(x,y)成分を地形関数への入力として使用：
+        $$
+        s(t) = h(x(t), y(t))
+        $$
+     
+     2. 瞬時的な周波数成分は以下の要素で決定される：
+        * 軌道の局所的な速度：
+          $$
+          \vec{v}(t) = \begin{pmatrix} \dot{x}(t) \\ \dot{y}(t) \end{pmatrix}
+          $$
+        * 地形関数の勾配：
+          $$
+          \nabla h(x,y) = \begin{pmatrix} \frac{\partial h}{\partial x} \\ \frac{\partial h}{\partial y} \end{pmatrix}
+          $$
+        * 瞬時的な出力変化率：
+          $$
+          \frac{ds}{dt} = \vec{v}(t) \cdot \nabla h(x(t),y(t))
+          $$
+
+   - スペクトル特性：
+     * 広帯域ノイズ的な性質を持つが、アトラクターの構造を反映した特徴的なスペクトル包絡を示す
+     * パワースペクトル密度は近似的に：
+       $$
+       P(\omega) \propto \frac{1}{|\omega|^\alpha}
+       $$
+       ここで$\alpha$はアトラクターのフラクタル次元に関連する指数である
+
+   - 音響合成の実装：
+     1. カオス方程式の数値解法（ルンゲ・クッタ法など）による軌道生成
+     2. 地形関数上での軌道の投影
+     3. 出力信号の生成と正規化：
+        $$
+        s_{norm}(t) = \frac{s(t) - \min(s(t))}{\max(s(t)) - \min(s(t))} \cdot 2 - 1
+        $$
+     4. 必要に応じてフィルタリングやエンベロープ処理を適用
+
+   - 音色制御パラメータ：
+     * カオスパラメータ（$\sigma$, $\rho$, $\beta$）：スペクトルの複雑さを制御
+     * 数値積分のステップサイズ：高周波成分の生成を制御
+     * 地形関数の空間周波数：全体的な周波数分布を制御
+     * 正規化とフィルタリング：ダイナミックレンジと周波数バランスを制御
+     
+### 振幅制御
+出力信号の振幅は振幅パラメータ、起動のスケーリングダイナミックレンジ制御
+
+#### 地形関数の振幅パラメータ：
+   
+   地形関数$h(x,y)$に対して、振幅パラメータ$A$を導入します：
+   $$
+     h_A(x,y) = A \cdot h(x,y)
+   $$
+   
+   ここで$A$は地形のスケーリング係数で、出力の全体的な音量を制御します。
+
+#### 軌道のスケーリング：
+
+##### 周期的な軌道の場合：
+      - 軌道半径$r_x$、$r_y$により直接スケーリング
+      $$
+       s(t) = h_A(\frac{x(t)}{r_x}, \frac{y(t)}{r_y})
+      $$
+
+##### 非周期的/カオス的な軌道の場合：
+      - 正規化係数$\alpha(t)$を導入：
+      $$
+        \alpha(t) = \frac{1}{\sqrt{x(t)^2 + y(t)^2 + \epsilon}}
+      $$
+      ただし、$\epsilon$は0除算を防ぐための小さな正の定数
+      
+      - スケーリングされた出力：
+      $$
+        s(t) = h_A(\alpha(t)x(t), \alpha(t)y(t))
+      $$
+
+#### ダイナミックレンジ制御：
+
+   軌道の種類によらず、以下のパラメータで制御可能：
+   
+##### 軌道の有効範囲$R$：
+      $$
+      R = \max_{t \in [0,T]} \sqrt{x(t)^2 + y(t)^2}
+      $$
+   
+##### 振幅エンベロープ$E(t)$：
+      $$
+        s_{env}(t) = E(t) \cdot s(t)
+      $$
+
+##### 最終的な出力信号：
+
+   $$
+    s_{final}(t) = g(s_{env}(t))
+   $$
+
+   ここで$g$は非線形関数（例：ソフトクリッピング）：
+   
+   $$
+    g(x) = \tanh(\beta x)
+   $$
+   
+   $\beta$はクリッピングの強さを制御するパラメータ
+
+#### 複合的な軌道の例
+円形軌道以外も定義することは可能。
+
+
+$$
+ \begin{pmatrix} x(t) \\ y(t) \end{pmatrix} = \begin{pmatrix} r_x\cos(2\pi f_xt) + r_{x2}\cos(2\pi f_{x2}t) \\ r_y\cos(2\pi f_yt) + r_{y2}\cos(2\pi f_{y2}t) \end{pmatrix}
+$$
+
+## 実装上の注意点
+
+- サンプリングレート$f_s$は、生成される信号の最高周波数の2倍以上である必要があります（ナイキストの定理）：
+$$
+f_s \geq 2\max(f_x, f_y)
+$$
+
+- 出力信号は通常[-1, 1]の範囲に正規化し、クリッピングを防ぐ必要がある。
+
+$$
+s_{norm}(t) = \frac{s(t) - \min(s(t))}{\max(s(t)) - \min(s(t))} \cdot 2 - 1
+$$
+
+
+## csoundにおける実装
+
+wterrainでwave terrain synthesisを実装する。
+軌道は円形で周期的な軌道のみをサポートする。
+地形関数は分離可能な形式（$h(x,y) = f(x)g(y)$）に限定される。
+これは計算効率と実装の単純さのためだが、以下の制限がある：
+- 複雑な地形パターンの表現が制限される
+- 回転対称性を持つ地形が作成できない
+- 局所的な特徴を持つ地形の表現が困難である
+
+動的な地形変調はテーブル更新を通じてのみ可能である。
+
+
+$$
+ \begin{pmatrix}
+  x(t) \\ y(t)
+ \end{pmatrix} =
+ \begin{pmatrix} x_c + r_x\cos(2\pi f t) \\
+  y_c + r_y\cos(2\pi f t)
+ \end{pmatrix}
+$$
+
+信号は
+
+$$
+s(t) = A \cdot h\left(\frac{x(t)-x_c}{r_x}, \frac{y(t)-y_c}{r_y}\right)
+$$
+
+のように生成される。$f$は`kpch`パラメータにより指定される基本周波数である。
+
+
+```csound
+aout wterrain kamp, kpch, k_xcenter, k_ycenter, k_xradius, k_yradius, itabx, itaby
+```
+
+#### `kamp`
+   - 前述の振幅パラメータ$A$に対応
+   - 出力信号の全体的な振幅を制御
+
+#### `kpch`
+   - 軌道の基本周波数を制御
+   - 周期的な軌道の場合の$f_x$, $f_y$の基準となる周波数
+
+#### `k_xcenter`, `k_ycenter`
+   - 軌道の中心点$(x_c, y_c)$を定義
+   - 地形上の走査中心位置の制御
+   - 地形関数の座標変換：$h(x-x_c, y-y_c)$
+
+#### `k_xradius`, `k_yradius`
+   - 前述の軌道スケーリングパラメータ$r_x$, $r_y$に対応
+   - 走査範囲の制御
+   - スケーリングされた座標：$(\frac{x}{r_x}, \frac{y}{r_y})$
+
+5. `itabx`, `itaby`
+   - 地形関数$h(x,y)$を定義するテーブル
+   - 2次元の地形を1次元テーブルの組み合わせとして表現
+   - 実際の地形値：$h(x,y) = f_{tabx}(x) \cdot f_{taby}(y)$
+
+
+
+## その他のWTS実装
+
+### Max/MSP
+#### `terrain~` オブジェクト
+   - 3次元地形のリアルタイム操作が可能である
+   - OpenGLを使用した視覚的フィードバックにより：
+     * 地形の形状と軌道の関係が直観的に把握可能である
+     * パラメータ変更の効果をリアルタイムで確認できる
+     * パフォーマンス時の視覚的要素としても利用できる
+   - 任意の地形関数の定義が可能である：
+     * 数式による定義
+     * テーブルデータのインポート
+     * リアルタイムの描画入力
+     * ただし計算負荷に応じて更新レートに制限がある
+
+#### `2d.wave~` （Pure Dataとの互換オブジェクト）
+   - より単純な2次元地形に特化：
+     * テーブルベースの地形定義のみ
+     * 分離可能な形式（$h(x,y) = f(x)g(y)$）に限定
+     * 計算効率重視の実装である
+   - リアルタイムのパラメータ制御：
+     * 低レイテンシーである
+     * CPU負荷が予測可能である
+
+#### 詳細パラメータ
+   - 地形制御
+     * terrain_buffer: 3D地形データ
+     * terrain_scale: 地形の振幅スケーリング（理論での$A$に対応）
+     * terrain_offset: 地形のDCオフセット
+   - 軌道制御
+     * orbit_freq: 基本周波数（$f_x$, $f_y$の基準）
+     * orbit_phase: 軌道の位相オフセット
+     * orbit_radius: 軌道半径（$r_x$, $r_y$に対応）
+   - 変調制御
+     * mod_amount: 地形変調の深さ
+     * mod_rate: 変調速度
+
+
+
+### SuperCollider
+#### `WaveTerrain` UGen
+   - 柔軟な地形定義をサポート
+   - 動的な地形更新が可能
+   - 様々な軌道タイプをサポート：
+     - 周期的軌道
+     - カオス軌道
+     - アルゴリズミック軌道
+
+#### 詳細パラメータ
+   - 地形パラメータ
+     * terrain: 地形関数または配列
+     * terrainSize: 地形のサイズ
+     * interpolation: 補間方式
+   - 軌道パラメータ
+     * freq: 基本周波数
+     * xScale, yScale: 軌道スケール（$r_x$, $r_y$に相当）
+     * orbit_type: 軌道の種類（周期的/カオス的）
+   - 追加制御
+     * chaos_param: カオス軌道のパラメータ
+     * smooth: 出力の平滑化係数
+
+
+### Pure Data
+#### `2d.wave~` オブジェクト
+   - シンプルな2次元地形合成
+   - リアルタイムでのパラメータ変更
+   - 教育用途に適した実装
+
+#### 詳細パラメータ
+   - 基本パラメータ
+     * amplitude: 出力振幅（$A$に対応）
+     * frequency: 基本周波数
+     * x_center, y_center: 走査中心位置
+     * x_range, y_range: 走査範囲（$r_x$, $r_y$に対応）
+   - テーブル制御
+     * table1, table2: 地形定義テーブル
+     * table_interp: テーブル補間方式
+
+
+
+### Reaktor
+#### Wave Terrain Ensembleブロック
+   - モジュラー型の実装
+   - 視覚的なパッチング
+   - カスタム地形設計が可能
+#### 詳細パラメータ
+
+   - 地形モジュール
+     * terrain_type: 地形生成方式
+     * terrain_mod: 地形変調
+     * terrain_scale: 地形スケーリング
+   - 軌道モジュール
+     * orbit_shape: 軌道形状
+     * orbit_speed: 軌道速度
+     * orbit_chaos: カオス度
+   - エフェクト
+     * smooth_amount: 平滑化
+     * feedback: フィードバック量
+
+#### 変調地形の時間変化の定義
+
+地形関数に対する時間変化を定義します：
+
+$$
+h(x,y,t) = h_0(x,y) + M(x,y,\omega_{mod}t)
+$$
+
+ここで：
+- $h_0(x,y)$は基本地形関数
+- $M(x,y,\phi)$は変調関数
+- $\omega_{mod}$は変調角周波数（mod_rateに対応）
+
+変調関数の一般的な形式：
+$$
+M(x,y,\phi) = A_{mod}\sum_{k=1}^{N} m_k(x,y,\phi)
+$$
+
+- $A_{mod}$は変調深度（mod_amountに対応）
+- $m_k$は基本変調関数
+- $N$は変調成分の数
+
+#### Reaktor Wave Terrainの地形タイプ
+
+Reaktorのterrain_typeには以下の選択肢が用意されています：
+
+##### Basic Waveforms（基本波形）
+- 正弦波: h(x,y) = sin(2πx)sin(2πy)
+- 三角波: h(x,y) = tri(x)tri(y)  
+- ノコギリ波: h(x,y) = saw(x)saw(y)
+- 矩形波: h(x,y) = rect(x)rect(y)
+
+
+#### Mathematical Functions（数学関数）
+- 双曲線: h(x,y) = x/y
+- 放物面: h(x,y) = x2 + y2
+- 指数関数: h(x,y) = exp(-x2-y2)
+- ベッセル関数: h(x,y) = J?(√(x2+y2))
+
+#### Procedural Terrains（手続き型地形）
+- Perlin Noise: 
+   h(x,y) = Σ?(1/2?)P(2?x, 2?y)
+- Fractal:
+   h(x,y) = Σ?(1/2?)F(2?x, 2?y)
+- Cellular Automata:
+   h(x,y) = CA(x,y,t)
+
+
+#### Modulation Types（変調型）
+
+- AM変調: 
+   h(x,y) = sin(2πx)sin(2πy)(1 + μsin(2πft))
+   
+- FM変調:
+   h(x,y) = sin(2πx + βsin(2πft))sin(2πy)
+   
+- Ring変調:
+   h(x,y) = sin(2πx)sin(2πy)sin(2πft)
+
+
+#### Complex Functions（複素関数）
+
+- マンデルブロ集合:
+   h(x,y) = f(z), z = x + yi
+   
+- ジュリア集合:
+   h(x,y) = g(z,c), z = x + yi
+
+
+#### カスタマイズ可能なパラメータ
+
+各地形タイプに対して：
+
+1. Scale Parameters（スケールパラメータ）
+   - x_scale: X軸方向のスケーリング
+   - y_scale: Y軸方向のスケーリング
+   - amplitude: 振幅スケーリング
+
+2. Modulation Parameters（変調パラメータ）
+   - mod_depth: 変調深度
+   - mod_freq: 変調周波数
+   - mod_type: 変調タイプ
+
+3. Evolution Parameters（発展パラメータ）
+   - evolution_rate: 時間発展の速度
+   - complexity: 複雑さの程度
+   - seed: 乱数生成のシード値
+
+
+
+
+
+### Kyma
+   - 研究用/実験的実装
+   - 高度な地形設計機能
+   - スペクトル処理との統合
+
+### Chuck
+   - 研究用/実験的実装
+   - 教育・研究目的の実装
+   - アルゴリズミックな制御が可能
+
+
+### 理論との関連
+
+各地形タイプは、前述の理論的フレームワークにおける地形関数$h(x,y)$の具体的な実装として位置づけられます：
+
+1. 基本波形：
+   $$
+   h_{basic}(x,y) = f(x)g(y)
+   $$
+   ここで$f,g$は基本周期関数
+
+2. 手続き型地形：
+   $$
+   h_{proc}(x,y) = \sum_{i=0}^{n} \frac{1}{2^i}P(\omega^i x, \omega^i y)
+   $$
+   ここで$P$は基本的なノイズ関数
+
+3. 変調型地形：
+   $$
+   h_{mod}(x,y,t) = h_0(x,y)(1 + M(t))
+   $$
+   ここで$M(t)$は変調関数
+
+2. 補間関連（新出）
+   - interpolation → $I(x,y)$ : 補間関数
+   $$
+   h_{interp}(x,y) = \sum_{i,j} h(x_i,y_j)I(x-x_i,y-y_j)
+   $$
+   - smooth_amount → $\sigma$ : 平滑化パラメータ
+   $$
+   h_{smooth}(x,y) = \frac{1}{2\pi\sigma^2}\int\int h(u,v)e^{-\frac{(x-u)^2+(y-v)^2}{2\sigma^2}}dudv
+   $$
+
+3. フィードバック関連（新出）
+   - feedback → $\beta$ : フィードバックパラメータ
+   時刻$t$での出力：
+   $$
+   s(t) = (1-\beta)h(x(t),y(t)) + \beta s(t-\tau)
+   $$
+   ここで$\tau$は遅延時間
+
+4. 軌道形状制御（新出）
+   - orbit_shape → $\vec{F}(t)$ : 基本軌道関数
+   $$
+   \vec{r}(t) = \vec{F}(t) + \vec{P}(t)
+   $$
+   ここで$\vec{P}(t)$は摂動項
+
+5. カオス度制御（新出）
+   - orbit_chaos → $\kappa$ : カオス制御パラメータ
+   $$
+   \vec{r}_{chaos}(t) = \vec{r}(t) + \kappa\vec{C}(t)
+   $$
+   ここで$\vec{C}(t)$はカオス項
+
+### 実装間の用語対応
+
+```
+理論的記号    Max/MSP       SuperCollider    Reaktor
+$\omega_{mod}$ mod_rate      modFreq         mod_speed
+$A_{mod}$     mod_amount    modDepth         mod_intensity
+$\sigma$      smooth        smoothing        smooth_amount
+$\beta$       feedback      feedbackAmt      fb_amount
+$\kappa$      chaos_amt     chaosParam       orbit_chaos
+```
+
+これらのパラメータは、実装によって名称は異なりますが、基本的な機能は同様です。異なる実装間でのパラメータ変換は、これらの理論的定義に基づいて行うことができます。
+
+## 付録：リャプノフ指数の数学的定義
+
+リャプノフ指数は、動的システムにおける軌道の収束または発散の度合いを定量化する指標です。
+
+### 形式的定義
+
+n次元の連続力学系において：
+
+1. 状態空間上の点 $\vec{x}_0$ から出発する軌道を考えます：
+
+$\vec{x}(t) = \phi_t(\vec{x}_0)$
+
+ここで $\phi_t$ は時間発展作用素です。
+
+2. 初期状態からの微小な摂動 $\delta\vec{x}_0$ を考えます。この摂動の時間発展は：
+
+$\delta\vec{x}(t) = \mathbf{J}_t(\vec{x}_0)\delta\vec{x}_0 + O(\|\delta\vec{x}_0\|^2)$
+
+ここで $\mathbf{J}_t$ はヤコビ行列（線形化された時間発展）です。
+
+3. リャプノフ指数は、この摂動の指数的成長率として定義されます：
+
+$\lambda(\vec{x}_0, \vec{v}) = \lim_{t \to \infty} \frac{1}{t} \ln \frac{\|\mathbf{J}_t(\vec{x}_0)\vec{v}\|}{\|\vec{v}\|}$
+
+ここで $\vec{v}$ は初期摂動の方向を表す単位ベクトルです。
+
+### スペクトル分解
+
+n次元システムには n個のリャプノフ指数があり、これらは摂動の主軸方向に対応します：
+
+$\lambda_1 \geq \lambda_2 \geq ... \geq \lambda_n$
+
+### カオス的振る舞いとの関係
+
+1. 最大リャプノフ指数が正（$\lambda_1 > 0$）である場合、システムはカオス的です
+
+2. 軌道の予測可能性の時間スケール $\tau$ は以下で与えられます：
+
+$\tau \approx \frac{1}{\lambda_1}$
+
+3. Wave Terrain Synthesisにおいて、正のリャプノフ指数は：
+   - より広いスペクトル分布
+   - 非周期的な音響特性
+   - 時間的に変化する音色
+   を生成する傾向があります。
+
+
+
+### 波形走査合成とWave Terrain Synthesis
+- 波形走査合成（Wavescanning Synthesis）: 
+  - 波形テーブルを周期的に走査して音を生成する合成手法の一般的な呼称
+  - 1次元の波形テーブルを使用する場合と、2次元以上の波形テーブルを使用する場合がある
+- Wave Terrain Synthesis (WTS): 
+  - 波形走査合成の一種で、特に2次元または3次元の地形（terrain）上を軌道（trajectory）に沿って走査する手法
+  - 地形は数学的関数やテーブルで表現される
+  - 1978年にRich Goldによって考案された手法
+
+<MermaidChart code={`
+graph LR
+    A[波形走査合成 \nWavescanning Synthesis] --> B[1次元波形走査]
+    A --> C[多次元波形走査]
+    
+    B --> D[ウェーブテーブル合成]
+    B --> E[その他の1次元走査手法]
+    
+    C --> F[Wave Terrain Synthesis \n WTS]
+    
+    F --> G[2次元WTS]
+    F --> H[3次元WTS]
+    
+    G --> I[地形関数ベース]
+    G --> J[テーブルベース]
+    
+    H --> K[関数ベース]
+    H --> L[ボクセルベース]
+
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef secondary fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef tertiary fill:#ddf,stroke:#333,stroke-width:2px;
+    
+    class A default;
+    class B,C secondary;
+    class D,E,F,G,H tertiary;
+    class I,J,K,L tertiary;
+`} />
+
+
+
+#### 特徴の比較
+- 1次元波形走査：
+   - 単一の波形テーブルを周期的に走査
+   - 走査速度で基本周波数を制御
+   - 波形の選択と走査方法で音色を制御
+- Wave Terrain Synthesis：
+   - 2次元以上の地形上を軌道に沿って走査
+   - 軌道の形状と速度で周波数特性を制御
+   - 地形関数と軌道の組み合わせで複雑な音色を生成
+
+このように、WTSは波形走査合成の考え方を多次元に拡張した手法であり、より複雑な音響合成が可能となっている。
+
+#### 波形走査合成
+波形走査合成は、2つの異なる波形間を周期的に移動（スキャン）することで音色を作り出す音声合成方式である。この二つ波形を基本波形と呼ぶ。
+
+$$
+ y(t) = s(t)f_1(t) + (1-s(t))f_2(t)
+$$
+
+スキャン関数s(t)は、なめらかな$0<s(t)<1$の値域を持つ関数を取る。
+
+##### 例
+
+$$
+\begin{aligned}
+f_1(t) = A_1\sin(2\pi f_1t + \phi_1)\\
+f_2(t) = A_2\sin(2\pi f_2t + \phi_2)
+\end{aligned}
+$$
+- $A_1, A_2$：振幅
+- $f_1, f_2$：周波数
+- $\phi_1, \phi_2$：初期位相
+
+
+スキャン関数は、
+
+$$
+ s(t) = \alpha + \beta\sin(2\pi f_st)
+$$
+
+- $\alpha$：基準となる混合率（0〜1）
+- $\beta$：スキャンの深さ
+- $f_s$：スキャンの速さ
+
+#### 拡張変調処理
+ 基本の波形走査合成に対して、以下の変調処理を加えることで音響特性を拡張できる。
+
+
+##### Amplitude Modulation
+出力波形$y(t)$に対する振幅変調：
+$$
+AM(t) = [1 + m\sin(2\pi f_mt)]y(t)
+$$
+- $m$：変調度（0～1）
+- $f_m$：変調周波数
+
+#### 位相変調（Phase Modulation）
+基本波形$y(t)$に対する位相変調は、時間軸上での波形の歪みとして表現できる。
+
+##### 基本的な正弦波の位相変調
+単一正弦波$y(t) = A\sin(2\pi ft)$に対して、位相$\phi(t)$による変調を加えると：
+$$
+y'(t) = A\sin(2\pi ft + \phi(t))
+$$
+
+位相項を正弦波で変調する場合：
+$$
+\phi(t) = I\sin(2\pi f_mt)
+$$
+- $I$：変調指数（位相偏移量）
+- $f_m$：変調周波数
+
+##### 波形走査合成への適用
+波形走査合成の出力$y(t)$に対する位相変調は、時間軸の変形として：
+$$
+PM(t) = y(t + I\sin(2\pi f_mt))
+$$
+
+これは元の波形$y(t)$の時間軸を$I\sin(2\pi f_mt)$に従って周期的に前後させることを意味する。
+
+##### パラメータ変化による音響効果
+| パラメータ | 変化範囲 | 音響効果 |
+|------------|----------|----------|
+| $\alpha$ | 0 → 1 | 基本波形1から波形2への移行 |
+| $\beta$ | 0 → 1 | スキャン深度（音色変化の幅） |
+| $f_s$ | 0.1 → 20Hz | スキャン速度（音色変化の速さ） |
+| $m$ | 0 → 1 | トレモロの深さ |
+| $f_m$ | 2 → 20Hz | トレモロ/音色変化の速度 |
+| $I$ | 0 → 10 | 音色の豊かさ |
+
+##### 楽器音での具体例
+1. エレクトリックピアノ
+   - $f_1(t)$：正弦波
+   - $f_2(t)$：矩形波
+   - $f_s = 4Hz$：適度なスキャン速度
+   - $m = 0.2$：軽いトレモロ
+
+2. ストリングス
+   - $f_1(t)$：ノコギリ波
+   - $f_2(t)$：三角波
+   - $f_s = 0.5Hz$：遅いスキャン
+   - $I = 3$：豊かな倍音

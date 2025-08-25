@@ -1,0 +1,125 @@
+---
+title: (*)プルリク
+description: pull request
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+
+## プルリクは3-sandboxで必要か？
+答え→不要<br />
+
+### pull Request (PR) とは？ 必要？ 何がいいの？
+- Pull Request (PR) は、他のブランチ（通常は master や main）へ変更を統合するためのリクエスト。
+GitHub では、PR を作成すると
+
+- 変更の可視化：コードの差分を確認しやすい
+- レビューの依頼：他の開発者にチェックしてもらえる
+- 履歴の整理：変更内容を記録し、問題が起きたときに戻しやすい
+
+ただしPR は必須ではなく、git merge を使えば手動で master に統合できる。
+
+### 一人で開発しているときも必要？
+- 基本的には不要。git merge や rebase で master に統合できる。
+- ただし、履歴を整理したい場合や、後で見直しやすくしたい場合は PR を使うのもアリ。
+- GitHub 上で PR を作成すると、変更内容を可視化し、記録を残せるメリットがある。
+
+### このブランチを後で master に統合する場合は？ 永久に維持するなら？
+-master に統合するなら PR は有用（ただし不要でも可）
+- git merge pl/json01 で統合できるが、PR を作成すると変更内容の記録が GitHub に残る
+- PR を使えば GitHub でレビューやコメントができ、変更履歴が整理される
+- pl/json01 を永久に維持するなら PR は不要
+- pl/json01 を独立した開発用ブランチとして使い続けるなら、master とは関係なくなるため PR は不要
+ただし、ブランチが増えると管理が複雑になるので注意
+
+
+
+##
+
+先ほどの例を使って、より具体的にプルリクエストの流れを説明します。
+
+太郎さんがプルリクエストする場合：
+
+1. 太郎さんは、GitHubの元のリポジトリ（`flower-girl/original-repo`）ページにアクセスし、"Fork"ボタンをクリックして、自分のGitHubアカウント（`akihisa/original-repo`）にリポジトリをフォークします。
+
+2. 太郎さんは、ターミナルを開き、以下のコマンドを実行してフォークしたリポジトリをローカルにクローンします。
+   ```
+   git clone https://github.com/akihisa/original-repo.git
+   cd original-repo
+   ```
+
+3. 新しいブランチを作成し、そのブランチに切り替えます。
+   ```
+   git checkout -b feature-branch
+   ```
+
+4. 太郎さんは、ファイルを編集し、変更をコミットします。
+   ```
+   git add .
+   git commit -m "Add new feature"
+   ```
+
+5. 変更を太郎さんのGitHubアカウントのフォークしたリポジトリにプッシュします。
+   ```
+   git push origin feature-branch
+   ```
+
+6. GitHubの元のリポジトリ（`flower-girl/original-repo`）のページに移動し、"Pull requests"タブをクリックします。
+
+7. "New pull request"ボタンをクリックし、太郎さんのフォークしたリポジトリとブランチ（`akihisa/original-repo`の`feature-branch`）を選択します。
+
+8. プルリクエストのタイトルとコメントを入力し、"Create pull request"ボタンをクリックします。
+
+9. 花子さんは、プルリクエストをレビューし、必要に応じてコメントやリクエストを行います。
+
+10. 太郎さんは、リクエストに応じて追加の変更を行い、変更をコミットし、同じブランチにプッシュします。プルリクエストは自動的に更新されます。
+    ```
+    git add .
+    git commit -m "Address review comments"
+    git push origin feature-branch
+    ```
+
+11. 花子さんがプルリクエストを承認し、マージすると、太郎さんの変更が元のリポジトリ（`flower-girl/original-repo`）に取り込まれます。
+
+花子さんがプルリクエストする場合：
+1. 花子さんは、太郎さんのリポジトリ（`akihisa/original-repo`）をフォークします。
+
+2. 花子さんは、ターミナルを開き、以下のコマンドを実行してフォークしたリポジトリをローカルにクローンします。
+   ```
+   git clone https://github.com/flower-girl/original-repo.git
+   cd original-repo
+   ```
+
+3. 花子さんは、新しいブランチを作成し、そのブランチで変更を加えます。
+   ```
+   git checkout -b feature-branch
+   ```
+
+4. 変更をコミットし、花子さんのGitHubアカウントのフォークしたリポジトリにプッシュします。
+   ```
+   git add .
+   git commit -m "Add new feature"
+   git push origin feature-branch
+   ```
+
+5. 太郎さんのリポジトリ（`akihisa/original-repo`）のページに移動し、"Pull requests"タブをクリックします。
+
+6. "New pull request"ボタンをクリックし、花子さんのフォークしたリポジトリとブランチ（`flower-girl/original-repo`の`feature-branch`）を選択します。
+
+7. プルリクエストのタイトルとコメントを入力し、"Create pull request"ボタンをクリックします。
+
+8. 太郎さんは、プルリクエストをレビューし、必要に応じてコメントやリクエストを行います。
+
+9. 花子さんは、リクエストに応じて追加の変更を行い、変更をコミットし、同じブランチにプッシュします。プルリクエストは自動的に更新されます。
+   ```
+   git add .
+   git commit -m "Address review comments"
+   git push origin feature-branch
+   ```
+
+10. 太郎さんがプルリクエストを承認し、マージすると、花子さんの変更が太郎さんのリポジトリ（`akihisa/original-repo`）に取り込まれます。
+
+以上が、GitコマンドとGitHubを使ったプルリクエストの具体的な流れです。コラボレーションを円滑に進めるために、適切なブランチ管理とコミュニケーションが重要です。

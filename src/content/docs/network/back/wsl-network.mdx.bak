@@ -1,0 +1,316 @@
+---
+title: 暫）wslネットワーク
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## 要約
+- wsl配下の全てのディストリビューションはアドレスを共有している
+- それゆえそれらのディストリビューションをhttpdやsshd等を同時に動かすことはポートを変えないとできない
+- wsl内部のローカルアドレス127.0.0.1は実は直接PCのlocalhostではない。
+- ubuntu.wsl.localhost等になっている
+- wsl2のディストロでubuntu.wsl.localhost:4321でwebサーバが動いた場合自動でwindows上のlocalhostにポートフォワードされるので、localhost:4321でもアクセスできる
+
+
+
+こんな風にエラーが出る
+```text
+[03/09 2:03] ~ %sudo service --status-all
+ [ - ]  apparmor
+ [ - ]  apport
+ [ - ]  console-setup.sh
+ [ + ]  cron
+ [ + ]  dbus
+ [ - ]  keyboard-setup.sh
+ [ + ]  kmod
+ [ - ]  postfix
+ [ + ]  procps
+ [ - ]  rsync
+ [ - ]  ssh
+ [ + ]  unattended-upgrades
+ [ - ]  uuidd
+ [ - ]  x11-common
+[03/09 2:03] ~ %sudo service ssh start
+Job for ssh.service failed because the control process exited with error code.
+See "systemctl status ssh.service" and "journalctl -xeu ssh.service" for details.
+[03/09 2:03] ~ %systemctl status ssh.service
+× ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/usr/lib/systemd/system/ssh.service; disabled; preset: enabled)
+     Active: failed (Result: exit-code) since Sun 2025-03-09 02:03:40 JST; 22s ago
+TriggeredBy: × ssh.socket
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+    Process: 8448 ExecStartPre=/usr/sbin/sshd -t (code=exited, status=0/SUCCESS)
+    Process: 8449 ExecStart=/usr/sbin/sshd -D $SSHD_OPTS (code=exited, status=255/EXCEPTION)
+   Main PID: 8449 (code=exited, status=255/EXCEPTION)
+      Tasks: 1 (limit: 4596)
+     Memory: 9.6M ()
+     CGroup: /system.slice/ssh.service
+
+Mar 09 02:03:40 pasokon systemd[1]: Starting ssh.service - OpenBSD Secure Shell server...
+Mar 09 02:03:40 pasokon sshd[8449]: error: Bind to port 22 on 0.0.0.0 failed: Address already in use.
+Mar 09 02:03:40 pasokon sshd[8449]: error: Bind to port 22 on :: failed: Address already in use.
+Mar 09 02:03:40 pasokon systemd[1]: ssh.service: Main process exited, code=exited, status=255/EXCEPTION
+Mar 09 02:03:40 pasokon sshd[8449]: fatal: Cannot bind any address.
+Mar 09 02:03:40 pasokon systemd[1]: ssh.service: Failed with result 'exit-code'.
+Mar 09 02:03:40 pasokon systemd[1]: Failed to start ssh.service - OpenBSD Secure Shell server.
+
+```
+
+
+
+## WSL2のネットワーク基本構造
+
+- WSL2の全ディストリビューションは同じ仮想ネットワークアダプタを共有
+  - 同一MACアドレスとIPアドレスが全ディストリビューションに割り当てられる
+  - 各ディストリビューションで`ip addr show eth0`を実行すると同じ結果が表示される
+  - サブネットマスクは通常`/20`（255.255.240.0）形式
+
+- Windowsホスト側のネットワーク構成
+  - `vEthernet (WSL (Hyper-V firewall))`という仮想アダプタが作成される
+  - このアダプタにはWSLサブネットの先頭側IPアドレス（例：172.20.160.1）が割り当てられる
+  - WSL2インスタンスにはサブネット内の別アドレス（例：172.20.172.143）が割り当てられる
+
+## ディストリビューション識別と接続方法
+
+- 複数ディストリビューション間で同じIPを持つのに通信が可能な理由
+  - プロセスやSSHサーバーは各ディストリビューションで個別に動作
+  - `scp`や`ssh`でのアクセスは個別のSSHデーモンに接続するため機能する
+
+- ディストリビューション情報の確認方法
+  - 名前やバージョンの取得:
+    ```bash
+    grep -oP '(?<=^NAME=")[^"]+' /etc/os-release
+    sed -n 's/^VERSION="\([^ ]*\).*/\1/p' /etc/os-release
+    ```
+  - プロンプトに表示する設定例:
+    ```bash
+    DISTRO_VERSION=$(sed -n 's/^VERSION="\([^ ]*\).*/\1/p' /etc/os-release)
+    PS1="\u@\h [$DISTRO_VERSION] \W$ "
+    ```
+
+## Windows-WSL間通信メカニズム
+
+- 通信パターン
+  - WSL2からWindowsホストへ: 172.20.160.1（vEthernetアダプタのIP）を使用
+  - WindowsからWSL2へ: 複数の方法が存在
+
+- WSL2からWindowsホスト（172.20.160.1）へのアクセス用途
+  - Webサーバー連携
+    - Windows上で動作するWebサーバーへのアクセス
+    - ローカルホスト転送
+  - 開発環境統合
+    - ファイル共有アクセス
+    - データベース接続
+    - Docker間通信
+    - デバッグポート接続
+  - その他
+    - X Window Systemディスプレイ転送
+    - プロキシサーバー設定
+    - ネットワーク診断
+
+## WindowsからWSL2へのアクセス方法
+
+- 自動ポート転送機能
+  - WSL2でリッスンしているポートは自動的にWindowsホスト側にマッピングされる
+  - Windowsブラウザから`localhost:ポート番号`で直接アクセス可能
+  - 明示的な設定なしでWSL2アプリケーションにアクセスできる
+
+- WSL.localhostドメイン機能
+  - Windows 11で導入された機能
+  - 形式: `<ディストリビューション名>.wsl.localhost`
+  - 複数ディストリビューションを区別してアクセス可能
+  - 使用例:
+    - `ubuntu.wsl.localhost:3000` - Ubuntu上のWebサーバー
+    - `debian.wsl.localhost:5432` - Debian上のPostgreSQLサーバー
+  - 複数の同名ディストリビューション（例：Ubuntu 20.04とUbuntu 22.04）がある場合は正確な登録名を使用する必要がある
+    - 例: `ubuntu-20.04.wsl.localhost`
+
+## 現状
+
+
+#### Ubuntu 22.04.5での結果
+```text
+[03/09 1:40 ]@(22.04.5)  ~ %ip address show
+ip address show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 10.255.255.254/32 brd 10.255.255.254 scope global lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:15:5d:ad:68:36 brd ff:ff:ff:ff:ff:ff
+    inet 172.20.172.143/20 brd 172.20.175.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::215:5dff:fead:6836/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+- 172.20.172.143がアドレスみたいだ
+
+#### Ubuntu 22.04.5での結果
+
+``` text
+[03/09 1:26] ~ %ip address show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 10.255.255.254/32 brd 10.255.255.254 scope global lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:15:5d:ad:68:36 brd ff:ff:ff:ff:ff:ff
+    inet 172.20.172.143/20 brd 172.20.175.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::215:5dff:fead:6836/64 scope link
+       valid_lft forever preferred_lft forever
+[03/09 1:42] ~ %
+```
+
+- 172.20.172.143がアドレスみたいだ同じ？！
+
+
+
+## 用語説明
+
+- CIDR (Classless Inter-Domain Routing)
+  - IPアドレスの割り当て方式
+  - `/20`のような表記でサブネットマスクを表現
+  - 例: `/20`は255.255.240.0に相当し、20ビットがネットワーク部分
+
+- サブネットマスク
+  - IPアドレスをネットワーク部とホスト部に分ける境界を定義
+  - `/20`の場合、使用可能なIPアドレス数は約4,094個
+
+- vEthernet アダプタ
+  - Hyper-V仮想化技術の一部としてWindowsに作成される仮想ネットワークアダプタ
+  - WSL2インスタンスとホストWindows間の通信を可能にする
+
+## リファレンスリンク
+
+- [WSL2におけるネットワーキングの変更点](https://docs.microsoft.com/ja-jp/windows/wsl/networking)
+- [WSL2ディストリビューション間通信](https://docs.microsoft.com/ja-jp/windows/wsl/compare-versions#accessing-network-applications)
+- [WSL2の自動ポートフォワーディング](https://devblogs.microsoft.com/commandline/whats-new-for-wsl-in-windows-10-version-2004/)
+- [WSL localhostとwsl.localホスト名解決](https://docs.microsoft.com/ja-jp/windows/wsl/networking#accessing-linux-networking-apps-from-windows-localhost)

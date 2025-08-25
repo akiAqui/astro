@@ -1,0 +1,517 @@
+---
+title: multi branch
+description: branch, multi branch, workingtree, submodule
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## TODO & ショート・サマリー
+- orphanブランチ
+  - `git switch -c <new_branch>`だと今までの履歴をすべて持ったまま新しいブランチを作ってしまう
+  - `git switch --orphan <new_branch>`とすると
+- worktree
+  - outputデータにはとても有効であることが判明
+- resource設定
+  - submodule
+    - うまく動かないことが判明 submoduleはディレクトリ単位でしかファイルを出し入れできない
+  - ln -sだとnpm run devは動くが、npm buildでうまくいかない可能性ありとの報告
+  - しかしmulti brunchで色々試すのにはその必要性はないか！！！
+    - ln -sで行こう！！
+  
+## はじめに
+### 概要
+
+- 通常開発を進めるとリポジトリは変化を積み重ねてゆき一つのリポジトリに集約されて終了するが、今回は
+Three.jsを学ぶ目的で小さいテストをいくつも実施する場合、
+main.tsをAIで生成しファイルごと書き換えて更新し技術的な確認ができれば終了する。
+- 上記の状況で一つのリポジトリで説明付きの複数のブランチで複数のテストを運用するときの方法を記載する。
+- 各実験ブランチは画面キャプチャ画像と要点説明のメモを持った出力ファイルを生成するがこれをworkingtreeとしてディレクトリを外出しして管理する。これによりいつでも参照可能となる。
+- 合わせて他プロジェクトともテクスチャなどのリソースを共有し各プロジェクトではsubmoduleとして利用する方法を記載する
+
+
+
+
+### 運用プロセス概要
+初期化後は、実験ごとに実験開始のプロセスを実行する。実験中に他の実験ソースを見たいときは、
+- 初期化
+  - test運用リモート・リポジトリの作成(github.comで作業)
+  - ローカルファイル環境の作成(npm create)
+  - README.mdファイル作成(touch README.md)
+  - git init,
+  - .gitignoreを確認
+  - git add,commit remote add originでローカルmasterブランチの作成
+  - git push -u origin masterしてリモートにmasterブランチを作成
+  - master branchは中身のない綺麗な状態としておく
+- 実験開始(misc/exp1というブランと想定）
+  - 実験準備
+    - 名前の重なりを避ける目的で既存ブランチを確認(git branch -a)
+    - 実験用ブランチの作成(git switch -c misc/exp1)
+    - ブランチの説明を付与し、表示確認
+  - 共通ブランチ"resource"からのリソース取得
+    - 現ブランチでcommit
+    - git switch resource
+    - ファイルの中身を確認ファイル名を確定
+    - 戻る。git switch exp1　　#現ブランチの名前がexp1だったとして
+    - git checkout 
+  - 実験開始
+    - 編集して実験コード、リソース等の挿入
+    - git add, commit, push -s origin exp1
+    - その後commit/pushで更新し実験終了
+  - 実験終了
+    - README.mdを更新、必要に応じて他のドキュメントも更新
+    - 最終のpushをして実験終了
+    - 実験結果のスクリーンショットを保管
+    - 実験初期状態に戻す
+
+### ディレクトリ構成
+```text
+pj
+├── 3-sandbox (実験用プロジェクトディレクトリ）
+│   ├── index.html
+│   ├── src
+│   │   ├── main.ts        # index.htmlから読み込まれる
+│   │   ├── class.ts       # 関連クラス定義
+│   │   └── util           # 録画等ユーティリティー
+│   │         └── xxx.ts
+│   │
+│   ├── resource           # submodule/sparse checkoutした必要なファイルのみここで見える
+│   │   ├── image          # png, jpg etc.
+│   │   ├── model          # modeling data
+│   │   ├── sound          # wav, mp3 etc.
+│   │   ├── csound         # sco, orc
+│   │   └── movie          # mp4 etc
+│   │
+│   ├── tmp                # .gitignoreで除外作業用ディレクトリ
+│   │   ├── screenshot.png #
+│   │   ├── output.md
+│   │   └── output.pdf
+│   │
+│   ├── public             
+│   │   ├── image          # sparse checkoutされた必要なものだけシンボリックリンク
+│   │   ├── model          # sparse checkoutされた必要なものだけシンボリックリンク
+│   │   ├── sound          # sparse checkoutされた必要なものだけシンボリックリンク
+│   │   ├── csound         # sparse checkoutされた必要なものだけシンボリックリンク
+│   │   └── movie          # sparse checkoutされた必要なものだけシンボリックリンク
+│   │
+│   └── README.md          # 全ブランチ概要を順次記す
+│
+├── 他のプロジェクトディレクトリ
+│
+├── output(3-sandboxのworingtree)
+│   ├── three-material.pdf # three/materialの実験結果レポート
+│   ├── three-material.mp4 # 動画を取ってあれば保存
+│   ├── glsl-doublebuf.pdf
+│   ├── pj-point_line01.pdf
+│   ├── pj-point_line02.pdf
+│   ├── misc-csound.pdf
+│   └── misc-GSAP.pdf
+│
+└── resource       # project共有リソース
+    ├── image
+    ├── model
+    ├── sound
+    ├── csound    
+    └── movie
+```
+
+#### ブランチ名
+- 必ずこの規則に従うこと「＊＊＊」は新しいブランチの名称
+
+<RedBox>
+- ブランチ名はスラッシュで区切って分類を行う
+  - three/***: three.js関連の実験
+  - glsl/***:  glsl関連の実験
+  - pj/[project名]/***: 特定のプロジェクトに向けた実験
+  - csound/***: csound関連の実験
+  - misc/***: それ以外いろいろなテスト用
+- 特に
+  - output: 実験結果のスクリーンショットを保管するブランチ
+</RedBox>
+
+
+
+------
+
+## 初期化
+### outputブランチを作る
+
+- outputブランチを作る
+- masterにいてswitch -c outputなので、masterブランチと同じ内容から始まる
+- master の最新の状態がそのまま output にコピーされ、コミット履歴も master のものを引き継ぐ！
+```text
+> cd ~/html.ts/3-sandbox
+> git switch master
+> git switch -c output
+```
+
+- outputブランチにいるとworktreeができないので一旦masterに抜ける
+- masterブランチからworkoutでoutputブランチ用のoutputディレクトリにチェックアウトする
+```text
+> git switch master
+> git worktree add ../output output
+```
+
+- git rm でファイルを削除する
+- ディレクトリは-r オプション
+
+```text
+> cd ../output
+> git rm README.md
+> git rm -r src
+> git status
+> git commit -m'remove all files from master branch'
+```
+- リモートブランチを作って、恒常的な紐づけ情報をローカルに保存
+- 念のため確認して、push
+```text
+>git push -u origin output
+>git branch -a
+>git push
+Everything up-to-date
+```
+
+- 最後にworktreeディレクトリから離れてプロジェクトディレクトリへ移動
+- 他の作業ツリーでアクティブなブランチ には + マークが付く。
+- +マークは別の Git worktree（作業ツリー）で現在チェックアウトされているブランチ を示す。
+
+```text
+# この例では既に実験用ブランチpj/pl/JSON_01を作ってから
+# 慌ててoutputのブランチとworktreeを作ったため
+# pj/pl/JSON_01ブランチとの間で行き来している
+> git branch
+
+  master
+* output
++ pj/pl/JSON_01
+
+> cd ../3-sandbox
+> git branch
+  master
++ output
+* pj/pl/JSON_01
+
+# 本来ならたぶん下記のようになるはず
+> git branch
++ master
+* output
+
+> cd ../3-sandbox
+> git branch
+* master
++ output
+
+```
+
+
+------
+
+
+## 実験準備
+- misc/boofooを新たに実験ブランチの名称とする
+### 既存ブランチの確認と新規ブランチの作成
+```text
+> git branch -a                     # * が付いているのが現在のブランチ
+> git switch -c misc/boofoo        # 新しいテストブランチの作成とswitch
+                                    # スラッシュで階層的な命名にしている
+> git push -u origin misc/boofoo   # push先のoriginでmisc/boofooに紐づけてリモートでも同じ名前を使う
+```
+- 現在いるブランチを確認で、git branch --show-currentもあるが、普通は使わない
+- branchを確認すれば、下記のように表示される
+
+```text
+> git branch -a
+  master
+* misc/boofoo
+  remotes/origin/master
+  remotes/origin/misc/boofoo
+```
+
+#### トラブル：　紐づけをさらに確認
+- デフォルトのremote/localの紐づけがされているか不安になったとき
+- 現在のブランチがどのリモートブランチを追跡しているか
+
+```text
+> git branch -vv
+  master        6e9860c [origin/master: ahead 2] 3rd
++ output        71b95cc (/home/akihisa/html.ts/output) [origin/output] added pj-pl-JSON_01.png
+* misc/boofoo   baa7259 [origin/misc/boofoo: ahead 3] deleted:    README.md
+```
+
+- すべてのブランチの追跡状況を確認
+
+```text
+> git remote show origin
+* remote origin
+  Fetch URL: git@github.com:akiAqui/3-sandbox.git
+  Push  URL: git@github.com:akiAqui/3-sandbox.git
+  HEAD branch: master
+  Remote branches:
+    master        tracked
+    output        tracked
+    misc/boofoo   tracked
+  Local branches configured for 'git pull':
+    master        merges with remote master
+    output        merges with remote output
+    misc/boofoo   merges with remote misc/boofoo
+  Local refs configured for 'git push':
+    master        pushes to master        (fast-forwardable)
+    output        pushes to output        (up to date)
+    misc/boofoo   pushes to misc/boofoo (fast-forwardable)
+```
+
+#### トラブル:ブランチ名を間違えた！！
+- まずローカルの名前を変更
+```text
+> git branch -m misc/booboo misc/boofoo
+```
+
+- 次にリモートブランチの削除
+- これをすると、github.comのブランチ一覧からは消えるが、以前にcommit/pushしていてもハッシュ値に紐づく履歴は消えない！
+
+```text
+> git push origin --delete misc/boofoo
+```
+
+- 新しいブランチ名をリモートにpushしつつ、ローカルでもリモートのpush先の紐づきを記録
+- これはローカルで過去のハッシュ値と結びついている名前を替えただけのブランチなので、リモート側のハッシュ値に紐づく履歴は残っているので、元のように過去の履歴の復活も可能。
+```text
+git push -u origin misc/boofoo
+```
+- 最終確認もする
+```text
+> git branch -a
+  master
+* misc/boofoo
+  remotes/origin/master
+  remotes/origin/misc/boofoo
+```
+
+
+### ブランチの説明を付与して確認
+- どのブランチにいても指定したブランチの説明を変更可能
+- .git/configに書き込むが、手動書き換えは推奨されない
+- 常に上書きになる
+```text
+> git config branch.misc/boofoo.description "メッセージ"  # test/boofooの説明追加
+> git config branch.misc/boofoo.description　　# 現在のブランチの説明を確認
+```
+#### もし間違ったブランチ名を用いてしまったら？
+- .git/configに新しいブランチのセクションができてしまう
+- セクションの削除をするしかない、でも、正しいセクションは削除しないように
+  - セクション削除すると、データはなくならないがconfigに設定した情報は全部なくなる
+  - 事前に、cat .git/config　してみておいた方がいい。念のため
+```text
+> git config branch.misc/booboo.description "boofooをboobooと打ってしまった！"
+> git config --remove-section branch.misc/booboo
+```
+
+#### エディタで複数行の説明を書きたい場合
+```text
+> echo $EDITOR # エディタを確認
+> export EDITOR=cat             # シェル上で書き換える例。emacs, viなど
+> git branch --edit-description
+```
+
+#### 詳細説明
+- descriptionというのは勝手な項目をオリジナルで追加と考えていい
+- git config branch.misc/boofoo.descriptionは単にkey-valueのキーを追加しただけ
+- だから、git config branch.misc/boofoo.hogehogeだってできる
+- git config --unset branch.misc/boofoo.descriptionするとkey-valueの削除になる
+
+
+
+----
+
+
+## 実験開始
+
+### リソース取得、追加
+- ちなみにGitはファイルの内容をハッシュ化して保存するので、ブランチ間で同じファイルがあってもディスクは喰わない
+- resourceは全プロジェクトで**共有のリポジトリ**とする
+- resoruceはsubmoduleで各プロジェクトに読み込み、sparse-checkoutで必要なファイルのみを取り込む
+
+#### サブモジュール(resourceレポジトリ)のsparse-checkout
+- 一旦サブモジュールにしてからsparse-checkoutで、必要なファイルやディレクトリのみを追加
+- 後で必要になったパターンは git sparse-checkout add で追加可能
+- git sparse-checkout set を行うと全パターンを書き直す
+- git sparse-checkout list を行うと全パターンを表示
+
+# ここから
+
+```text
+> cd <project_directory>
+> git submodule add ../resource resource # プロジェクトディレクトリと平行にリソースディレクトリがある
+> cd resource
+> git sparse-checkout init --cone
+> git sparse-checkout set image/apple.*　model/apple.vrml　# ファイル単位、
+```
+
+#### (参考) ブランチ別にファイル一覧を見る
+- ls-treeは、ローカルの.gitディレクトリ内にあるキャッシュされた情報を参照する
+
+```text
+> git ls-tree -r output                 # outputブランチが持つファイル一覧を見る
+> git ls-tree -r master:src             # masterブランチのsrcディレクトリのファイル一覧を見る
+```
+
+#### (参考) 特定のファイルの中身をcatする
+```text
+> git show master:index.html            # masterブランチのindex.htmlファイルの中身を見る
+```
+
+#### (参考）hot reload
+- npm run dev が動いている前提でswitch するとhtmlの画面が瞬時に切り替わる、興味深い！
+```text
+> git switch master
+> git switch pj/pl/JSON_01   # この瞬間でブラウザの画面がhot reloadで自動的に切り替わる！
+```
+
+
+## 実験終了
+### スクリーンショットの保存
+- 画面のスクリーンショットを作って、worktreeしておいた../outputディレクトリに追加する
+```
+> cd ~/html.ts/boofoo
+# キャプチャをmisc/boofooブランチで作ってmisc-boofoo.pngとして保存する
+> cp misc-boofoo
+
+### 初期状態に戻す
+このコマンドを行わないと次の実験開始時に混乱する可能性あり
+
+```text
+> git swtich master
+> git branch  # 現在のブランチがmasterになっていればmasterに*がついていることを確認
+```
+
+## トラブルシューティング
+
+### 間違ったブランチ名を作ったときの、ブランチ名の変更
+```text
+# ローカルブランチ名の変更(リモートには何の影響も与えない)
+> git branch -m old-name new-name
+```
+
+### 間違ったコミットをプッシュしてしまった場合
+
+#### 直前のコミットを取り消す場合（安全な方法）
+```text
+# 取り消すためのコミットを新たに作成
+git revert HEAD
+git push origin branch-name
+```
+
+#### プッシュ自体を取り消す場合（危険な操作）
+```text
+# 強制的にプッシュを巻き戻す
+git push -f origin HEAD^:branch-name
+```
+
+#### 重要な注意事項:
+- `git push -f`（force push）は、リモートの履歴を強制的に上書きします
+- チーム開発では他の開発者の作業に影響を与える可能性があるため、使用を避けてください
+- 個人の開発ブランチでのみ、十分な注意を払って使用してください
+- force pushを行う前に、必ず変更内容を別ブランチにバックアップしてください
+
+## 参考
+
+### 過去の実験を基に新しい実験を始める場合
+
+```text
+git switch -c test/new-experiment test/old-experiment　　# 過去の実験ブランチから新しいブランチを作成
+git add master.ts　　　　　　　　　　　　　　　　　　　　# 必要な修正を加えてコミット
+git commit -m "Modify experiment for new test"
+git push -u origin test/new-experiment
+```
+
+
+### 参考　初期セットアップ
+
+```text
+（リモートリポジトリ作成）
+> git config --global --list   # 全てのグローバル設定を表示
+> git config --global core.quotepath  # 特定の設定値を確認
+> git config --global core.quotepath false　# 日本語の文字化け防止の設定
+
+> git init tester　# ローカルリポジトリの作成
+> cd tester
+> git remote add origin git@github.com:yourusername/tester.git　# リモートリポジトリの設定
+
+> touch README.md # README.mdに各テストの暫定記述
+> git add README.md
+> git commit -m "Initial commit"
+> git push -u origin master
+```
+
+### 参考　リモートリポジトリの操作
+
+```text
+# リモートの確認
+git remote -v
+
+# ローカルの.git/configのremote "origin"にあるエントリがすべて削除される
+git remote remove origin
+
+# ローカルの.git/configのremote "origin"にあるurlエントリの情報が追加される
+git remote add origin git@github.com:yourusername/new-repo.git
+
+```
+### 参考 便利なエイリアスの設定と使用
+
+GitConfigでエイリアスを設定することで、長いコマンドを短縮できます。
+
+```text
+# .gitconfigに追加
+[alias]
+    # 現在のブランチに説明を追加するエイリアス
+    bdesc = "!f() { git config branch.$(git rev-parse --abbrev-ref HEAD).description \"$1\"; }; f"
+    # 現在のブランチの説明を表示するエイリアス
+    bshow = "!git config branch.$(git rev-parse --abbrev-ref HEAD).description"
+```
+
+使用例：
+```text
+# エイリアスを使用しない場合
+git config branch.$(git rev-parse --abbrev-ref HEAD).description "新しいテスト機能の説明"
+git config branch.$(git rev-parse --abbrev-ref HEAD).description
+
+# エイリアスを使用する場合
+git bdesc "新しいテスト機能の説明"
+git bshow
+```
+
+
+### 参考：Git Worktree のディレクトリ名変更方法
+変更は直接できないので、削除して作り直す
+```text
+> git worktree add ../output-3 output
+> git worktree add ../new_output output
+> git worktree list # 変更が反映されたか確認：
+```
+
+ファイル自体は、ブランチに入っているのでなくならないので安心して削除しても平気
+
+強制削除をしなくてはいけないケースがあるかも
+```text
+> git worktree remove --force ../output
+```
+
+
+
+### 参考 resourceディレクトリの作成
+- ~/html.ts/resoruceディレクトリを作成
+- リソースとなりそうなファイルを集める
+- と思ったけど、うまくいかなそう。。。

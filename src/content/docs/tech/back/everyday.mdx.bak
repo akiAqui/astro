@@ -1,0 +1,158 @@
+---
+title: ＊）毎日のコマンド
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+### 初期化
+- (PowerShell)usb ssdを接続
+```txt
+wsl --mount \\.\PHYSICALDRIVE1 --partition 1 --bare
+```
+- usbのデバイス名を確認
+```txt
+lsblk
+```
+- マウント
+```txt
+ sudo mount -t ext4 /dev/sde1 /mnt/usb
+```
+- NFSをsambaマウント
+```txt
+sudo mount -t cifs //192.168.1.1/ndisk /mnt/samba -o "username=nobe,password=Kisamic8,vers=2.0,uid=1000,gid=1000,file_mode=0644,dir_mode=0755"
+```
+```txt
+smount
+```
+- apt
+```txt
+sudo apt update
+```
+```txt
+sudo apt upgrade -y
+```
+### portforward
+
+- (powershell) port forward 設定
+  - どこからでもつながるようにする
+```txt
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4321 connectaddress=172.20.172.143 connectport=4321
+```
+```txt
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=5173 connectaddress=172.20.172.143 connectport=5173
+```
+- (powershell)port forward確認(されていることを確認するだけでいい何故なら、永続設定のはずなので）
+  - Addressが0.0.0.0のどこからでもつながるように設定されている
+```txt
+netsh interface portproxy show all
+```
+```txt
+PS C:\Users\aquis> netsh interface portproxy show all
+
+ipv4 をリッスンする:         ipv4 に接続する:
+
+Address         Port        Address         Port
+--------------- ----------  --------------- ----------
+192.168.1.234   80          172.20.172.143  80
+192.168.1.234   4321        172.20.172.143  4321
+192.168.1.234   5173        172.20.172.143  5173
+0.0.0.0         443         172.20.172.143  8080
+192.168.1.131   443         172.20.172.143  443
+0.0.0.0         4321        172.20.172.143  4321
+0.0.0.0         5173        172.20.172.143  5173
+
+PS C:\Users\aquis>
+
+```
+
+
+- (powershell) FW設定確認
+```txt
+Get-NetFirewallRule | Where-Object DisplayName -like "*WSL2*" | Get-NetFirewallPortFilter | Select-Object Protocol, LocalPort
+```
+```txt
+Protocol LocalPort
+-------- ---------
+TCP      4321
+TCP      5173
+TCP      4321
+TCP      5173
+TCP      4321
+```
+- (powershell) FW設定(astro)
+```txt
+netsh advfirewall firewall add rule name="WSL2 astro" dir=in action=allow protocol=TCP localport=4321
+
+```
+- (powershell) FW設定(three.js)
+```txt
+netsh advfirewall firewall add rule name="WSL2 three.js" dir=in action=allow protocol=TCP localport=5173
+
+```
+
+
+
+### 開発中
+- git
+```
+gaa
+```
+```txt
+gc メッセージ
+```
+```txt
+gp
+```
+
+### 開発開始
+- repository初期化
+```txt
+git init
+```
+```txt
+gaa
+```
+```txt
+gc 最初
+```
+```txt
+git branch -M master
+```
+```txt
+git remote add origin https://github.com/username/repo.git
+```
+```txt
+git push -u origin master
+```
+### 更新・バックアップ
+- commit できていないプロジェクトを検索
+```txt
+ git_todo_all
+```
+- バックアップ
+```txt
+weekly_backup
+```
+- astroの初期ページ更新
+```txt
+update_index
+```
+- distroのサイズ確認
+```txt
+distro
+```

@@ -1,0 +1,325 @@
+---
+title: ＊）バイポーラ
+description: 複素平面
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+            font-size:10px;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           padding-left:0px;           
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-size:25px;
+           padding-left:5px;
+           font-weight: normal;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h2 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           padding-left:10px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h3 + p{
+         margin: 0px;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           padding-left:14px;                      
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 + p{
+         margin: 0px;
+        }     
+        .sl-markdown-content h5 {
+           font-size:12px;
+           padding-left:16px;           
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 + p{
+         margin: 0px;
+       
+        .sl-markdown-content h6 {
+           font-size:10px;
+           padding-left:20px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h6 + p{
+         margin: 0px;
+        
+        h6::before {
+          content: "◇　";
+        }               
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle    from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp    from '../../../components/TimeStamp';
+import Box          from '../../../components/Box';
+import RedBox       from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## バイポーラ変換（Mobius変換）
+
+### 定義と数学的背景
+
+Mobius変換は、複素平面上の座標変換の一種であり、一般的に次の形で定義される：
+
+$$
+w = \frac{az + b}{cz + d}, \quad ad - bc \neq 0
+$$
+
+ここで、$z$ は入力座標、$w$ は変換後の座標であり、$a, b, c, d$ は複素数パラメータ。
+Mobius変換は双線型変換（線形分数変換）とも呼ばれ、幾何学的には円を円に、直線を直線または円に写す性質を持つ。
+
+### Mobius変換の特性と歴史
+
+Mobius変換は、リーマン面、共形写像、射影幾何の概念と密接に関係している。
+
+#### リーマン面
+
+リーマン面とは、複素関数が一価的（ただ一つの値を持つ）に定義されるようにするための幾何学的構造である。特に、Mobius変換は拡張された複素平面（リーマン球面）において自己同型群を形成し、円や直線の写像の性質を持つ。
+
+#### 共形写像
+
+共形写像とは、局所的に角度を保存する写像である。Mobius変換は共形写像の一種であり、特定の領域内の図形を角度を変えずに変形する。これにより、流体力学や電磁場理論におけるポテンシャル流解析などに応用される。
+
+#### 射影幾何
+
+射影幾何は、遠近法や無限遠点の概念を含む幾何学分野であり、Mobius変換は射影直線の自己同型変換として解釈される。特に、リーマン球面を考えると、Mobius変換は球面上の射影変換として自然に表現される。
+
+#### 自己同型群
+
+自己同型群とは、ある数学的構造を変えずに写像する変換群である。Mobius変換はリーマン球面の自己同型変換群であり、数学的には$PSL(2, \mathbb{C})$と呼ばれる群構造を持つ。
+
+### 物理学や電気回路理論への応用
+
+Mobius変換は、次のような分野で応用される。
+
+- **電磁場理論**：共形写像の特性を活かし、電磁ポテンシャルの解析に用いる。
+- **電気回路理論**：インピーダンス変換やフィルター設計に応用される。
+- **量子力学**：複素関数を用いた変換で波動関数の操作を行う。
+
+### フラクタル生成への応用
+
+Mobius変換はフラクタルの生成にも使われる。特に、ジュリア集合やマンデルブロ集合の変形において、Mobius変換を適用することで複雑なフラクタルパターンを得ることができる。変換の繰り返し適用により、自己相似性を持つ構造を作り出す。
+
+---
+
+### 幾何学的性質：円を円に、直線を円に写す
+
+Mobius変換の重要な特性の一つは、円と直線の像が必ず円または直線になることである。これを証明するために、複素数の性質を用いる。
+
+#### 証明の概略
+
+複素数平面では、円と直線は次の形で表される：
+
+- 円：
+  $$
+  |z - z_0| = r
+  $$
+  ここで、$z_0$ は円の中心、$r$ は半径。
+- 直線：
+  $$
+  az + b\bar{z} + c = 0
+  $$
+  これは直線または円の一般形。
+
+Mobius変換の式を代入し変形すると、変換後の式が再び同様の形になるため、円は円に、直線は円または直線に写る。
+
+これは、Mobius変換が複素平面の自己同型変換であり、共形（角度保存）性を持つためである。
+
+---
+
+### GLSL の `mobius()` 関数との対応
+
+GLSL の `mobius()` 関数は以下のように定義されている：
+
+```glsl
+vec2 mobius(vec2 domain, vec2 zero_pos, vec2 asymptote_pos)
+{
+    return complex_div(domain - zero_pos, domain - asymptote_pos);
+}
+```
+
+これは、上記の $\frac{z - z_0}{z - z_1}$ に対応する。
+ここで `complex_div()` は複素数の除算を計算する関数であり、
+
+$$
+\text{complex\_div}(a, b) = \frac{a}{b} = \frac{a_x + i a_y}{b_x + i b_y}
+$$
+
+を計算している。
+
+`mobius()` を適用するコード：
+
+```glsl
+vec2 uv_bipolar = mobius(uv, vec2(-dist*0.5, 0.), vec2(dist*0.5, 0.));
+```
+
+この場合：
+- `zero_pos = (-dist/2, 0)` は $z_0$
+- `asymptote_pos = (dist/2, 0)` は $z_1$
+
+つまり、座標 $(x, y)$ を以下のように変換している：
+
+$$
+w = \frac{(x + \frac{d}{2}) + iy}{(x - \frac{d}{2}) + iy}
+$$
+
+この変換によって、$x = -d/2$ は原点 $(0,0)$ に写り、$x = d/2$ は無限遠点へ写る。
+結果として、`uv` 座標系をバイポーラ座標系に変換し、特定の中心を持つ変形を生み出している。
+
+
+## 複素平面とリーマン面
+
+### 複素平面の基礎
+
+複素数は実数と虚数の組み合わせとして表され、
+
+$$
+z = x + iy, \quad x, y \in \mathbb{R}
+$$
+
+の形を取る。ここで、$i$ は虚数単位であり、$i^2 = -1$ を満たす。
+
+複素平面は、$x$ 軸を実部、$y$ 軸を虚部として直交座標系上に表現される。
+また、極座標表現も重要であり、
+
+$$
+z = r e^{i\theta}, \quad r = |z|, \quad \theta = \arg(z)
+$$
+
+と表せる。これはリーマン面の多価性を考える際に重要な概念となる。
+
+### 複素対数関数の導出
+
+複素対数関数 $w = \log z$ は、指数関数の逆関数として定義される。
+
+指数関数 $e^w = z$ の関係を用いると、
+
+$$
+ e^{a+ib} = e^a e^{ib} = e^a (\cos b + i \sin b)
+$$
+
+より、$z = r e^{i\theta}$ に対して、
+
+$$
+ w = \ln r + i\theta
+$$
+
+となる。このため、複素対数関数は $\arg(z)$ の取り方によって異なる値を取る多価関数となる。
+
+### ステレオ投影
+
+ステレオ投影とは、球面と平面を対応付ける変換の一種であり、リーマン球面の構築に利用される。
+
+単位球面上の点 $(X, Y, Z)$ を、$Z=1$ の平面に投影する方法として定義される。
+複素平面上の点 $z$ を単位球面上の点 $(X, Y, Z)$ に対応付ける式は、
+
+$$
+X = \frac{2\text{Re}(z)}{1 + |z|^2}, \quad Y = \frac{2\text{Im}(z)}{1 + |z|^2}, \quad Z = \frac{|z|^2 - 1}{1 + |z|^2}
+$$
+
+この変換によって、$z \to \infty$ の極限が球面の北極点 $(0,0,1)$ に対応することが分かる。
+
+### リーマン曲面の式の導出
+
+リーマン曲面は、複素関数が多価性を持つ場合に、関数を一意的に定義するための曲面である。
+例えば、$w^2 = z$ のリーマン曲面は、
+
+$$
+w = \pm \sqrt{z}
+$$
+
+の二つの値を持つため、2つの層を持つ曲面として表現される。
+
+リーマン曲面を形式的に表現すると、
+
+$$
+F(w, z) = 0
+$$
+
+の形を持つ方程式として定義できる。
+
+### 共形成の証明
+
+共形写像とは、局所的に角度を保存する写像である。
+
+複素関数 $f(z) = u(x,y) + iv(x,y)$ が共形である条件は、コーシー・リーマン方程式
+
+$$
+\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \quad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}
+$$
+
+を満たすことである。
+
+これは、$f(z)$ のヤコビ行列が回転行列の形を持つことから、局所的に角度を保存することを意味する。
+
+### 解析的拡張の例
+
+1. **対数関数**
+   $$
+   \log(z) = \ln |z| + i \arg(z)
+   $$
+   分岐点 $z=0$ を避けるため、異なる枝を定義する。
+
+2. **平方根関数**
+   $$
+   \sqrt{z} = e^{\frac{1}{2} \log z}
+   $$
+   異なる $\arg(z)$ に応じて異なる枝を取る。
+
+3. **ガンマ関数**
+   $$
+   \Gamma(z) = \int_0^{\infty} t^{z-1} e^{-t} dt
+   $$
+   負の整数で極を持ち、解析接続により拡張可能。
+
+### 分岐点の取り扱い
+
+分岐点とは、複素関数の値が連続的に変化しない点である。
+
+例えば、$f(z) = \sqrt{z}$ において、
+
+$$
+f(e^{i\theta}) = e^{i\theta/2}
+$$
+
+は、$\theta = 2\pi$ のとき $f(z)$ の値が不連続に変化するため、$z=0$ は分岐点である。
+
+リーマン面上では、複数の枝を考慮し、関数を一意に定義することで、分岐点の影響を除去できる。
+
+### まとめ
+
+リーマン面は、複素関数の解析的拡張、多価関数の整理、共形写像の適用などに利用される。
+リーマン球面を導入することで、無限遠点を含む解析が可能となり、射影幾何や物理学にも応用される。
+
+

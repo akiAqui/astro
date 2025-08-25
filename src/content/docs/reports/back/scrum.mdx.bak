@@ -1,0 +1,307 @@
+---
+title: Project Manager Technical Interview Guide
+description: scrum
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+
+
+## 目次 (Table of Contents)
+1. [Core Questions](#core-questions)
+2. [Specific Scenario Questions](#specific-scenario-questions)
+3. [Glossary of Agile Terms](#glossary-of-agile-terms)
+
+## Core Questions
+
+### Question 1: How do you prioritize backlog items in an Agile environment?
+
+**Short Answer (English):**
+Prioritize based on business value and customer impact first, then work with the team to determine a feasible sequence.
+
+**短い回答 (日本語):**
+ビジネス価値と顧客影響を第一に考え、チームと協力して実現可能な順序を決定する。
+
+**Detailed Answer (English):**
+I prioritize backlog items using a combination of business value, customer impact, dependency relationships, and effort estimation. First, I collaborate with stakeholders to understand business priorities and assign value scores. Then I consider technical dependencies to create a logical sequence. I use techniques like MoSCoW (Must have, Should have, Could have, Won't have) or WSJF (Weighted Shortest Job First) to create an ordered backlog. During sprint planning, I ensure the team understands the priority rationale and adjusts as needed based on capacity and technical considerations.
+
+**詳細な回答 (日本語):**
+アジャイル環境でのバックログアイテムの優先順位付けは、ビジネス価値、顧客への影響、依存関係、工数見積もりを組み合わせて行います。まず、ステークホルダーと協力してビジネス優先事項を理解し、価値スコアを割り当てます。次に技術的依存関係を考慮して論理的な順序を作成します。MoSCoW（Must have、Should have、Could have、Won't have）やWSJF（Weighted Shortest Job First）などの手法を使用して、順序付けされたバックログを作成します。スプリント計画中には、チームが優先順位の根拠を理解し、能力や技術的考慮事項に基づいて必要に応じて調整することを確認します。
+
+### Question 2: How do you handle technical debt in your projects?
+
+**Short Answer (English):**
+Visualize technical debt and systematically reduce it by allocating dedicated time in each sprint.
+
+**短い回答 (日本語):**
+技術的負債を可視化し、各スプリントで計画的に一部の時間を使って減らしていく。
+
+**Detailed Answer (English):**
+I approach technical debt proactively by making it visible and manageable. First, I work with the development team to identify and document existing technical debt in a dedicated backlog. We categorize it based on impact and urgency. I allocate a percentage of each sprint (typically 10-20%) specifically for technical debt reduction. For major technical debt items, I create a business case showing the long-term benefits of addressing it versus the cost of delay. I also encourage development practices that prevent new technical debt, such as code reviews, automated testing, and maintaining documentation. This balanced approach ensures we deliver business value while maintaining a sustainable codebase.
+
+**詳細な回答 (日本語):**
+技術的負債には、可視化と管理を通じて積極的に取り組みます。まず、開発チームと協力して既存の技術的負債を特定し、専用のバックログに文書化します。それを影響度と緊急度に基づいて分類します。各スプリントの一定割合（通常10?20%）を技術的負債の削減に特別に割り当てます。主要な技術的負債項目については、対処することの長期的な利益と遅延のコストを示すビジネスケースを作成します。また、コードレビュー、自動テスト、ドキュメントの維持などの新たな技術的負債を防ぐ開発プラクティスを奨励します。このバランスの取れたアプローチにより、ビジネス価値を提供しながら持続可能なコードベースを維持できます。
+
+### Question 3: How do you ensure effective communication between technical and non-technical stakeholders?
+
+**Short Answer (English):**
+Translate technical concepts into business value and use visual tools to communicate complex information.
+
+**短い回答 (日本語):**
+技術的な内容をビジネス価値に翻訳し、視覚的ツールを使って複雑な情報を伝える。
+
+**Detailed Answer (English):**
+I create a communication bridge by translating technical concepts into business terms and vice versa. For technical stakeholders, I focus on specifications, constraints, and implementation details. For business stakeholders, I emphasize value, outcomes, and timelines. I use visual aids like dashboards, burndown charts, and simple diagrams to convey complex information. Regular showcases demonstrate progress in tangible ways. I also establish a glossary of terms to ensure everyone speaks the same language. When conflicts arise due to misunderstandings, I facilitate discussions to clarify objectives and constraints, helping both sides find common ground while respecting their different perspectives.
+
+**詳細な回答 (日本語):**
+技術的な概念をビジネス用語に、またその逆に翻訳することで、コミュニケーションの架け橋を作ります。技術的なステークホルダーに対しては、仕様、制約、実装の詳細に焦点を当てます。ビジネスステークホルダーに対しては、価値、成果、スケジュールを強調します。ダッシュボード、バーンダウンチャート、シンプルな図表などの視覚的な補助を使用して、複雑な情報を伝えます。定期的なショーケースでは、進捗を具体的な形で示します。また、全員が同じ言語で話せるように用語集を確立します。誤解から対立が生じた場合は、目標と制約を明確にするための議論を促進し、両者が異なる視点を尊重しながら共通点を見つける手助けをします。
+
+### Question 4: Describe your approach to sprint planning and estimation.
+
+**Short Answer (English):**
+Build team understanding, use relative estimations, and commit to what the team believes they can achieve.
+
+**短い回答 (日本語):**
+チーム全体で理解を深め、相対的な見積もりを行い、チームが達成できると信じる量にコミットする。
+
+**Detailed Answer (English):**
+My sprint planning approach focuses on clarity and team ownership. I begin with backlog refinement sessions where the team discusses user stories to ensure shared understanding. For estimation, I facilitate planning poker or t-shirt sizing to reach consensus on story points. I emphasize relative sizing rather than hours to account for complexity and uncertainty. During sprint planning, we collectively determine the sprint goal and select stories that align with it, respecting the team's capacity based on previous velocity. I ensure acceptance criteria are clear, and dependencies are identified. I also encourage the team to break down complex stories into smaller tasks. Throughout the process, I maintain a balance between business priorities and technical feasibility while empowering the team to make commitments they believe they can achieve.
+
+**詳細な回答 (日本語):**
+私のスプリント計画アプローチは、明確さとチームの当事者意識に焦点を当てています。まず、チームがユーザーストーリーについて議論し、共通理解を確保するバックログリファインメントセッションから始めます。見積もりについては、プランニングポーカーやTシャツサイジングを促進して、ストーリーポイントについてのコンセンサスを得ます。複雑さと不確実性を考慮するため、時間よりも相対的なサイジングを重視します。スプリント計画中に、私たちは集合的にスプリントゴールを決定し、それに沿ったストーリーを選択し、以前のベロシティに基づいたチームの能力を尊重します。受け入れ基準が明確であり、依存関係が特定されていることを確認します。また、チームが複雑なストーリーをより小さなタスクに分解することを奨励します。プロセス全体を通じて、ビジネスの優先事項と技術的な実現可能性のバランスを維持しながら、チームが達成できると信じるコミットメントを行う権限を与えます。
+
+### Question 5: How do you manage dependencies between multiple Agile teams?
+
+**Short Answer (English):**
+Identify and visualize dependencies early, and facilitate regular coordination meetings between teams.
+
+**短い回答 (日本語):**
+依存関係を早期に特定・可視化し、定期的な調整ミーティングで連携を促進する。
+
+**Detailed Answer (English):**
+Managing cross-team dependencies requires visibility, coordination, and proactive planning. I implement a dependency management system where dependencies are identified, documented, and tracked with clear owners and due dates. I facilitate regular inter-team synchronization meetings where teams discuss their dependencies and coordinate delivery schedules. For large initiatives, I use techniques like feature mapping to visualize dependencies across the value stream. I also encourage architectural decisions that minimize dependencies, such as clear APIs and service contracts. When blockers arise, I escalate appropriately and help negotiate priorities across teams. Additionally, I promote practices like API-first development and test doubles to allow teams to work in parallel even with dependencies. This comprehensive approach reduces delays and increases predictability across the organization.
+
+**詳細な回答 (日本語):**
+複数のアジャイルチーム間の依存関係の管理には、可視性、調整、積極的な計画が必要です。依存関係が特定され、文書化され、明確な所有者と期日で追跡される依存関係管理システムを実装します。チーム間の定期的な同期ミーティングを促進し、チームが依存関係について議論し、納品スケジュールを調整します。大規模なイニシアチブでは、フィーチャーマッピングなどの手法を使用して、バリューストリーム全体の依存関係を視覚化します。また、明確なAPIやサービス契約など、依存関係を最小限に抑えるアーキテクチャ上の決定を奨励します。ブロッカーが発生した場合は、適切にエスカレーションし、チーム間の優先順位の交渉を支援します。さらに、APIファースト開発やテストダブルなどのプラクティスを促進し、依存関係があっても並行して作業できるようにします。この包括的なアプローチにより、遅延が減少し、組織全体の予測可能性が向上します。
+
+### Question 6: What metrics do you use to measure team performance in an Agile environment?
+
+**Short Answer (English):**
+Use metrics that measure not just output, but also business outcomes and team health.
+
+**短い回答 (日本語):**
+作業量だけでなく、ビジネス成果とチーム健全性の両方を測る指標を使用する。
+
+**Detailed Answer (English):**
+I use a balanced set of metrics that focus on both output and outcomes. For delivery performance, I track velocity, cycle time, and throughput to understand productivity trends, but never use these to compare teams. For quality, I monitor defect rates, test coverage, and technical debt accumulation. I also measure business value delivered through customer satisfaction scores, feature usage, and business KPIs aligned with product goals. For team health, I track team happiness metrics, retrospective action completion rates, and collaboration patterns. I present these metrics as trends rather than absolute values and use them as conversation starters, not judgments. The most important principle is that metrics should drive improvement, not compliance, and should empower teams to self-organize toward better outcomes.
+
+**詳細な回答 (日本語):**
+アウトプットとアウトカムの両方に焦点を当てたバランスの取れた指標セットを使用します。配信パフォーマンスについては、生産性の傾向を理解するためにベロシティ、サイクルタイム、スループットを追跡しますが、これらを使用してチームを比較することはありません。品質については、欠陥率、テストカバレッジ、技術的負債の蓄積をモニタリングします。また、顧客満足度スコア、機能の使用状況、製品目標に沿ったビジネスKPIを通じて提供されるビジネス価値も測定します。チームの健全性については、チームの幸福度指標、振り返りのアクション完了率、コラボレーションパターンを追跡します。これらの指標を絶対値ではなく傾向として提示し、判断ではなく会話のきっかけとして使用します。最も重要な原則は、指標が遵守ではなく改善を促進し、チームが自己組織化してより良い成果を達成できるようにすることです。
+
+### Question 7: How do you handle conflicts within an Agile team?
+
+**Short Answer (English):**
+Create a safe environment for dialogue, resolve issues based on facts, and guide toward common goals.
+
+**短い回答 (日本語):**
+安全な対話環境を作り、事実に基づいて問題を解決し、共通目標に向かうよう導く。
+
+**Detailed Answer (English):**
+I approach conflict resolution with transparency and respect. First, I create a safe space for open discussion, ensuring all perspectives are heard. I focus on the issue rather than personalities, helping team members articulate their concerns using "I" statements. I guide the conversation toward shared goals and principles, looking for common ground. For technical disagreements, I encourage data-driven decision-making or time-boxed experiments to validate approaches. When compromise is needed, I help negotiate solutions that acknowledge everyone's core needs. I document decisions and rationales to prevent revisiting resolved conflicts. Throughout the process, I model productive conflict behaviors and remind the team that healthy debate leads to better outcomes when conducted respectfully. For persistent conflicts, I might involve a neutral facilitator or use retrospectives to address underlying issues.
+
+**詳細な回答 (日本語):**
+透明性と尊重を持って対立解決にアプローチします。まず、オープンな議論のための安全な場を作り、すべての視点が聞かれることを確認します。個人ではなく問題に焦点を当て、チームメンバーが「私は?」という表現を使って懸念を明確に表現できるよう支援します。会話を共有の目標と原則に導き、共通点を探します。技術的な意見の相違については、データ駆動型の意思決定や、アプローチを検証するための時間制限のある実験を奨励します。妥協が必要な場合は、全員の核心的なニーズを認める解決策を交渉するのを手伝います。決定と根拠を文書化して、解決済みの対立を再検討することを防ぎます。プロセス全体を通じて、生産的な対立行動をモデル化し、健全な議論が尊重して行われるとき、より良い結果につながることをチームに思い出させます。持続的な対立については、中立的なファシリテーターを関与させたり、レトロスペクティブを使用して根本的な問題に対処したりする場合があります。
+
+### Question 8: Describe your experience with scaling Agile across multiple teams.
+
+**Short Answer (English):**
+Balance standardization with team autonomy while establishing transparency and coordination mechanisms.
+
+**短い回答 (日本語):**
+標準化とチーム自律性のバランスを取りながら、透明性と調整の仕組みを確立する。
+
+**Detailed Answer (English):**
+I've implemented scaled Agile using frameworks like SAFe and LeSS, but always adapt practices to the organizational context. In my most recent implementation, I established a multi-team structure with 6 cross-functional teams aligned to different product areas. We synchronized planning through quarterly PI planning events where teams aligned on program objectives and identified cross-team dependencies. I implemented a Scrum of Scrums approach for daily coordination, where team representatives met to discuss integration points and remove impediments. For backlog management, we used a hierarchical approach with epics broken down into features and then into team-level stories. To maintain quality, we established a continuous integration environment with automated testing across teams. The key success factors were standardizing just enough practices across teams while allowing for team-level autonomy, and creating transparency through common tools and visualization of the entire value stream.
+
+**詳細な回答 (日本語):**
+SAFeやLeSSなどのフレームワークを使用してスケールドアジャイルを実装してきましたが、常に組織のコンテキストに合わせてプラクティスを適応させています。最近の実装では、異なる製品領域に合わせた6つのクロスファンクショナルチームによるマルチチーム構造を確立しました。四半期ごとのPIプランニングイベントを通じて計画を同期し、チームがプログラム目標に合わせて調整し、チーム間の依存関係を特定しました。日々の調整のためにスクラム・オブ・スクラムズアプローチを実装し、チーム代表者が統合ポイントとインピーダンスの除去について議論しました。バックログ管理については、エピックを機能に分解し、さらにチームレベルのストーリーに分解する階層的なアプローチを使用しました。品質を維持するために、チーム間で自動テストを行う継続的インテグレーション環境を確立しました。成功の鍵となる要因は、チーム間でのプラクティスを十分に標準化しながらもチームレベルの自律性を許容すること、そして共通ツールと価値ストリーム全体の可視化による透明性の創出でした。
+
+### Question 9: How do you incorporate user feedback into the development process?
+
+**Short Answer (English):**
+Continuously collect user feedback throughout development and directly incorporate it into the backlog.
+
+**短い回答 (日本語):**
+開発全体を通じて継続的にユーザーからフィードバックを集め、バックログに反映させる。
+
+**Detailed Answer (English):**
+I integrate user feedback throughout the development lifecycle. Early in the process, I conduct user interviews and usability testing to validate concepts before full implementation. During development, I arrange regular demos with real users to get feedback on incremental functionality. I establish multiple feedback channels like in-app surveys, support tickets, and usage analytics to capture both explicit and implicit feedback. All feedback is consolidated into a centralized backlog, categorized by impact and aligned with product areas. I encourage developers to participate in user sessions to build empathy and firsthand understanding. For significant features, we use techniques like A/B testing to validate assumptions with data. The key is creating a continuous feedback loop where user insights directly influence prioritization and refinement of the backlog, ensuring we're building what users actually need rather than what we think they want.
+
+**詳細な回答 (日本語):**
+開発ライフサイクル全体にユーザーフィードバックを統合しています。プロセスの早い段階で、完全な実装の前にコンセプトを検証するためにユーザーインタビューとユーザビリティテストを実施します。開発中は、増分機能に関するフィードバックを得るために実際のユーザーとの定期的なデモを手配します。アプリ内調査、サポートチケット、使用状況分析など、複数のフィードバックチャネルを確立して、明示的および暗黙的なフィードバックの両方をキャプチャします。すべてのフィードバックは、影響別に分類され、製品領域に合わせて調整された集中バックログに統合されます。開発者が共感と直接的な理解を構築するためにユーザーセッションに参加することを奨励します。重要な機能については、A/Bテストなどの手法を使用して、データで仮説を検証します。鍵となるのは、ユーザーの洞察が優先順位付けとバックログの洗練に直接影響を与える継続的なフィードバックループを作成し、ユーザーが実際に必要としているものを構築していることを確認することです。
+
+### Question 10: How do you balance technical quality with delivery deadlines?
+
+**Short Answer (English):**
+Make quality-speed tradeoffs transparent and reach consensus as conscious decisions among all stakeholders.
+
+**短い回答 (日本語):**
+品質とスピードのトレードオフを透明化し、意識的な決定として全員で合意する。
+
+**Detailed Answer (English):**
+I approach the quality-speed balance by making it a transparent trade-off decision rather than a hidden compromise. First, I establish quality standards with the team, defining what "good enough" means for different contexts. For critical systems, I'm less willing to compromise on quality factors like security and data integrity. I work with stakeholders to understand the real business drivers behind deadlines, sometimes finding that earlier delivery of core functionality with subsequent enhancements is better than delayed perfection. When time constraints require quality compromises, I ensure these are documented as technical debt with a plan to address them in future sprints. I also invest in quality enablers like automated testing and CI/CD pipelines that allow both quality and speed to improve simultaneously. The most important principle is making these decisions consciously with full transparency about the consequences, rather than allowing deadlines to silently erode quality standards.
+
+**詳細な回答 (日本語):**
+品質とスピードのバランスについては、隠れた妥協ではなく、透明性のあるトレードオフの決定として取り組みます。まず、チームと品質基準を確立し、異なるコンテキストで「十分に良い」とは何かを定義します。重要なシステムでは、セキュリティやデータの整合性などの品質要因について妥協することをあまり望みません。ステークホルダーと協力して、期限の背後にある実際のビジネス要因を理解し、時には中核機能を早期に提供し、その後の拡張を行うことが、遅延した完璧さよりも優れていることを発見することがあります。時間的制約が品質の妥協を必要とする場合、将来のスプリントで対処する計画とともに、これらが技術的負債として文書化されることを確認します。また、自動テストやCI/CDパイプラインなどの品質イネーブラーに投資し、品質とスピードの両方が同時に向上できるようにします。最も重要な原則は、期限が品質基準を静かに侵食することを許すのではなく、結果について完全な透明性を持ってこれらの決定を意識的に行うことです。
+
+## Specific Scenario Questions
+
+### Question 11: How would you manage a project with unstable requirements in a volatile situation?
+
+**Short Answer (English):**
+Use short iterations to deliver small increments of value, and maintain a flexible planning approach that embraces change.
+
+**短い回答 (日本語):**
+短いイテレーションで小さく価値を届け、変化を受け入れる柔軟な計画アプローチを取る。
+
+**Detailed Answer (English):**
+In volatile situations with unstable requirements, I implement a highly adaptive approach. First, I establish shorter iteration cycles (1-2 weeks) to limit the impact of changing requirements. I focus on delivering minimal viable increments that provide immediate value while maintaining flexibility. I implement progressive elaboration, where we detail near-term work extensively but keep future work at a higher level. I increase the frequency of stakeholder reviews to capture changes early, and establish a lightweight change management process that allows for pivoting without excessive overhead. I also create a prioritization framework that considers both business value and stability of requirements, focusing first on stable, high-value features. Throughout the process, I maintain transparency about the impacts of requirement changes on scope, schedule, and resources, helping stakeholders understand the trade-offs involved in their decisions. The key is embracing change rather than resisting it, while providing enough structure to maintain progress.
+
+**詳細な回答 (日本語):**
+不安定な要件を持つ変動的な状況では、高度に適応的なアプローチを実装します。まず、要件変更の影響を制限するために、より短いイテレーションサイクル（1?2週間）を確立します。柔軟性を維持しながら即時の価値を提供する最小限の実行可能なインクリメントの提供に焦点を当てます。私たちは近期の作業を詳細に説明しますが、将来の作業をより高いレベルに保つ漸進的な詳細化を実装します。変更を早期にキャプチャするためにステークホルダーレビューの頻度を増やし、過度のオーバーヘッドなしでピボットを可能にする軽量な変更管理プロセスを確立します。また、ビジネス価値と要件の安定性の両方を考慮し、まず安定した高価値の機能に焦点を当てる優先順位付けフレームワークを作成します。プロセス全体を通じて、要件変更がスコープ、スケジュール、リソースに与える影響について透明性を維持し、ステークホルダーが決定に関連するトレードオフを理解できるようにします。鍵となるのは、進捗を維持するのに十分な構造を提供しながら、変化に抵抗するのではなく受け入れることです。
+
+### Question 12: How do you handle a client's request for specification changes during development?
+
+**Short Answer (English):**
+Analyze change impact and present options with tradeoffs to help the client make informed decisions.
+
+**短い回答 (日本語):**
+変更の影響を分析し、選択肢とトレードオフを明示してクライアントの意思決定を支援する。
+
+**Detailed Answer (English):**
+When a client requests specification changes mid-development, I follow a structured process. First, I ensure I fully understand the requested changes through detailed discussions with the client about their underlying needs. I then assess the impact on scope, schedule, resources, and technical architecture with the development team. For each change, I prepare options with associated costs and benefits, including potential alternative approaches that might better address the client's needs. I present these options to the client with clear explanations of impacts and trade-offs, helping them make an informed decision. Once a decision is made, I properly document the changes in the product backlog, update relevant artifacts, and communicate changes to all stakeholders. For significant changes, I might recommend negotiating the project timeline or scope of other features. Throughout this process, I maintain a collaborative rather than adversarial stance, recognizing that changes often arise from evolving business needs rather than poor initial planning.
+
+**詳細な回答 (日本語):**
+クライアントが開発途中で仕様変更を要求した場合、体系的なプロセスに従います。まず、クライアントの根本的なニーズについて詳細な議論を通じて、要求された変更を完全に理解していることを確認します。次に、開発チームとともに、スコープ、スケジュール、リソース、技術アーキテクチャへの影響を評価します。各変更について、関連するコストと利点を含むオプションを準備し、クライアントのニーズをより適切に満たす可能性のある代替アプローチも含めます。これらのオプションを影響とトレードオフの明確な説明とともにクライアントに提示し、情報に基づいた決定を行うのを支援します。決定が下されると、製品バックログに変更を適切に文書化し、関連するアーティファクトを更新し、すべてのステークホルダーに変更を伝えます。重大な変更については、プロジェクトのタイムラインや他の機能のスコープの交渉を推奨する場合があります。このプロセス全体を通じて、対立的ではなく協力的な姿勢を維持し、変更が多くの場合、当初の計画の不備ではなく、進化するビジネスニーズから生じることを認識します。
+
+### Question 13: How would you respond to a request to advance the service launch date by two weeks?
+
+**Short Answer (English):**
+Understand the business drivers, evaluate options like scope adjustments or resource reallocation, and assess feasibility.
+
+**短い回答 (日本語):**
+ビジネス要因を理解し、スコープ調整やリソース見直しなどの選択肢を提示して実現可能性を評価する。
+
+**Detailed Answer (English):**
+When faced with a request to advance the launch date by two weeks, I take a systematic approach. First, I gather information about the business drivers behind this request to understand its importance. I then conduct a feasibility assessment with the team to evaluate what would be required to meet the accelerated timeline. We identify options such as scope reduction, increasing resources, adjusting quality standards, or implementing a phased launch approach. For each option, we outline the risks, costs, and trade-offs involved. If the original timeline was based on careful planning, I transparently communicate what compromises would be necessary to advance the date. If we determine the new date is achievable, I develop a revised plan with the team, ensuring they maintain ownership of their commitments. If it's not feasible, I present alternative solutions that address the underlying business need. Throughout this process, I maintain open communication with stakeholders, ensuring they understand the implications of their request and can make informed decisions about the acceptable trade-offs.
+
+**詳細な回答 (日本語):**
+サービス開始日を2週間早めるという要求に直面したとき、体系的なアプローチを取ります。まず、この要求の背後にあるビジネス要因についての情報を収集し、その重要性を理解します。次に、チームと実現可能性評価を実施し、加速されたタイムラインを満たすために何が必要かを評価します。スコープの削減、リソースの増加、品質基準の調整、または段階的な立ち上げアプローチの実施などのオプションを特定します。各オプションについて、関連するリスク、コスト、トレードオフを概説します。元のタイムラインが慎重な計画に基づいていた場合、日付を前倒しするために必要な妥協点を透明に伝えます。新しい日付が達成可能であると判断した場合、チームと改訂された計画を策定し、彼らが自分たちのコミットメントの所有権を維持することを確認します。実現不可能な場合は、根本的なビジネスニーズに対処する代替解決策を提示します。このプロセス全体を通じて、ステークホルダーとのオープンなコミュニケーションを維持し、彼らが自分たちの要求の影響を理解し、許容できるトレードオフについて情報に基づいた決定を下せるようにします。
+
+## Glossary of Agile Terms
+
+### Planning Poker (プランニングポーカー)
+**English:**
+A consensus-based estimation technique where team members use cards with numbers (usually Fibonacci sequence) to vote on the effort required for user stories. Cards are revealed simultaneously, and differences are discussed until consensus is reached.
+
+**日本語:**
+チームメンバーが数字が書かれたカード（通常はフィボナッチ数列）を使用して、ユーザーストーリーに必要な労力を投票するコンセンサスベースの見積もり技法です。カードは同時に公開され、意見の相違について議論し、合意に達するまで進めます。
+
+### T-shirt Sizing (Tシャツサイジング)
+**English:**
+A relative sizing technique where requirements are categorized as XS, S, M, L, XL, XXL based on complexity and effort. It's less precise but faster than Planning Poker and useful for initial high-level estimation.
+
+**日本語:**
+要件を複雑さと労力に基づいてXS、S、M、L、XL、XXLとして分類する相対的なサイジング技法です。プランニングポーカーよりも精度は低いですが、より速く、初期の高レベル見積もりに役立ちます。
+
+### Feature Mapping (フィーチャーマッピング)
+**English:**
+A visual technique to break down complex features into smaller components and show their relationships and dependencies. When used across a value stream, it helps visualize dependencies between different teams and components.
+
+**日本語:**
+複雑な機能をより小さなコンポーネントに分解し、それらの関係や依存関係を示す視覚的技法です。バリューストリーム全体で使用すると、異なるチームとコンポーネント間の依存関係を視覚化するのに役立ちます。
+
+### Value Stream (バリューストリーム)
+**English:**
+The end-to-end flow of activities that deliver value to customers, from concept to delivery. Mapping the value stream helps identify bottlenecks, waste, and opportunities for improvement.
+
+**日本語:**
+コンセプトから配信まで、顧客に価値を提供する活動の端から端までの流れです。バリューストリームをマッピングすることで、ボトルネック、無駄、改善の機会を特定するのに役立ちます。
+
+### API-First Development (APIファースト開発)
+**English:**
+An approach where APIs are designed before implementation. Teams agree on API contracts early, then develop against those contracts independently, allowing frontend and backend teams to work in parallel.
+
+**日本語:**
+実装前にAPIを設計するアプローチです。チームは早い段階でAPIコントラクトに合意し、それらのコントラクトに対して独立して開発します。これにより、フロントエンドとバックエンドのチームが並行して作業できるようになります。
+
+### Test Doubles (テストダブル)
+**English:**
+Objects that simulate the behavior of real components in testing environments, including:
+- Stubs: Provide canned answers to calls
+- Mocks: Pre-programmed with expectations about calls
+- Fakes: Working implementations not suitable for production
+- Spies: Record calls made during test execution
+- Dummies: Passed around but not actually used
+
+**日本語:**
+テスト環境で実際のコンポーネントの動作をシミュレートするオブジェクトで、以下が含まれます：
+- スタブ：呼び出しに対して用意された回答を提供するもの
+- モック：受け取るべき呼び出しに関する期待値でプログラムされているもの
+- フェイク：機能する実装だが本番環境には適さないもの
+- スパイ：テスト実行中に行われた呼び出しを記録するもの
+- ダミー：渡されるが実際には使用されないもの
+
+### Outputs vs. Outcomes (アウトプット vs. アウトカム)
+**English:**
+- **Outputs**: Direct deliverables produced by a team (features, stories, tasks)
+- **Outcomes**: Actual results and benefits achieved (user engagement, conversion rates, customer satisfaction)
+- The key difference is outputs focus on "what was built" while outcomes focus on "what was achieved"
+
+**日本語:**
+- **アウトプット**: チームによって生み出される直接的な成果物（機能、ストーリー、タスク）
+- **アウトカム**: 実際に達成された結果と利益（ユーザーエンゲージメント、コンバージョン率、顧客満足度）
+- 主な違いは、アウトプットが「何が構築されたか」に焦点を当て、アウトカムは「何が達成されたか」に焦点を当てることです
+
+### Cycle Time (サイクルタイム)
+**English:**
+The time it takes for a work item to move through the development process from when work actually begins until it's completed and ready for delivery. Lower cycle times generally indicate more efficient processes.
+
+**日本語:**
+作業項目が実際に作業を開始してから完了して納品準備ができるまでの開発プロセスを通過するのにかかる時間です。サイクルタイムが短いほど、一般的にプロセスの効率が高いことを示します。
+
+### SAFe (Scaled Agile Framework)
+**English:**
+A comprehensive framework for scaling Agile practices to larger organizations. SAFe is more structured and provides detailed guidance for various organizational levels (Team, Program, Portfolio, and Enterprise).
+
+**日本語:**
+アジャイルプラクティスを大規模組織に拡張するための包括的なフレームワークです。SAFeはより構造化されており、様々な組織レベル（チーム、プログラム、ポートフォリオ、エンタープライズ）に詳細なガイダンスを提供します。
+
+### LeSS (Large-Scale Scrum)
+**English:**
+A minimalist approach to scaling Scrum with as few additions as possible. LeSS maintains core Scrum elements and adds only what's necessary for coordination across teams.
+
+**日本語:**
+可能な限り少ない追加でスクラムを拡張する最小限のアプローチです。LeSSはコアとなるスクラム要素を維持し、チーム間の調整に必要なものだけを追加します。
+
+### Scrum of Scrums (スクラム・オブ・スクラムズ)
+**English:**
+A scaling technique used to coordinate multiple Scrum teams. Representatives from each team meet regularly to discuss progress, dependencies, impediments, and coordination needs.
+
+**日本語:**
+複数のスクラムチームを調整するために使用されるスケーリング技法です。各チームの代表者が定期的に会合を持ち、進捗、依存関係、障害物、調整のニーズについて議論します。

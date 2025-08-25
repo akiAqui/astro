@@ -1,0 +1,44 @@
+---
+title: ＊）RUST勉強の始め方
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+### Rustを学ぶ方法（複数候補）
+
+#### A）最短でRustの構文・概念を把握したい
+- [The Rust Programming Language（通称：The Book）](https://doc.rust-lang.org/book/)
+  - 公式・無料・体系的
+  - 時間がないなら第3章?第6章だけでも効果的
+
+#### B）プロジェクトベースでRustを試したい
+- [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
+  - サンプル駆動で学べる
+  - JS感覚に近く、読みながら即理解しやすい
+
+#### C）WebGPUやWGSLと連携してRustを使いたい
+- [wgpu チュートリアル](https://sotrh.github.io/learn-wgpu/)
+  - RustでWebGPUを扱うための実践的教材
+  - WGSLとRustの橋渡しになる
+
+#### D）最速体験したい（セットアップ簡略化）
+- [Rust Playground](https://play.rust-lang.org/)
+  - インストール不要、コード即実行
+  - 小スニペット試行や概念確認に最適
+
+

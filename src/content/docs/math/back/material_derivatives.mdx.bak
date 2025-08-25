@@ -1,0 +1,287 @@
+---
+title: 物質微分と微分の連鎖律
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import MemoBox from '../../../components/MemoBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+<WhiteBox>
+- 多変数関数の連鎖律と物質微分は結果として一致する
+- 物質微分は場所を固定した物理量の増分と速度寄与による増分を加えたものである
+- 特に速度寄与による増分を「移流項」と呼ぶ
+</WhiteBox>
+
+## 1. 多変数関数の連鎖律
+### 1.1 多変数関数のテイラー展開
+多変数関数 $f(x,y...)$ のテイラー展開は、ある点 $(x_0, y_0...)$ の周りで以下のように表され、
+$x_i$ は各変数（$x$, $y$ ...）を表す。さらに、4変数に限定し、一次近似（高次の項を無視）すると以下の結果が得られる。
+
+$$
+
+\begin{align*}
+
+\phi(x_0+\Delta x, y_0+\Delta y,z_{0}+\Delta z,...)   &= \phi(x_0,y_0,z_{0},...) + \sum_{i}\frac{\partial \phi}{\partial x_i}\Delta x_i + \frac{1}{2!}\sum_{i,j}\frac{\partial^2 \phi}{\partial x_i \partial x_j}\Delta x_i \Delta x_j + ...\\
+
+\Delta \phi &= \phi(x_0+\Delta x, y_0+\Delta y,z_{0}+\Delta z,...) -\phi(x_{0},y_{0},z_{0},...)\\
+ &\approx  \frac{\partial \phi}{\partial t}\Delta t + \frac{\partial \phi}{\partial x}\Delta x + \frac{\partial \phi}{\partial y}\Delta y + \frac{\partial \phi}{\partial z}\Delta z
+
+\end{align*}
+$$
+
+
+$\Delta t$, $\Delta x$, $\Delta y$ が十分小さい場合、この近似が有効である。これを全微分と呼び、以下のように表記する：
+
+
+
+多変数関数 $\phi(x,y,z,t)$ において、変数 $x$, $y$, $z$ が別の変数 $t$ の関数であるとする
+
+$$
+\left\{
+\begin{align*}
+x = x(t)\\
+y = y(t)\\
+z = z(t)
+\end{align*}
+\right.
+$$
+
+$t$ が $\Delta t$ だけ変化したときの $\phi$ の変化を考える。変数 $x$, $y$, $z$ の変化量は：
+
+
+$$
+\left\{
+\begin{align*}
+\Delta x = \frac{dx}{dt}\Delta t + O((\Delta t)^2)\\
+\Delta y = \frac{dy}{dt}\Delta t + O((\Delta t)^2)\\
+\Delta z = \frac{dz}{dt}\Delta t + O((\Delta t)^2)
+\end{align*}
+\right.
+$$
+
+
+$O((\Delta t)^2)$ は $\Delta t$ の2次以上の項を表す。
+
+これらを $\Delta \phi$ の全微分に代入すると：
+
+
+$$
+\Delta \phi = \frac{\partial \phi}{\partial t}\Delta t + \frac{\partial \phi}{\partial x}\left(\frac{dx}{dt}\Delta t\right) + \frac{\partial \phi}{\partial y}\left(\frac{dy}{dt}\Delta t\right) + \frac{\partial \phi}{\partial z}\left(\frac{dz}{dt}\Delta t\right) + O((\Delta t)^2)
+$$
+
+
+両辺を $\Delta t$ で割り、$\Delta t \to 0$ の極限をとると：
+
+
+$$
+\frac{d\phi}{dt} = \frac{\partial \phi}{\partial t} + \frac{\partial \phi}{\partial x}\frac{dx}{dt} + \frac{\partial \phi}{\partial y}\frac{dy}{dt} + \frac{\partial \phi}{\partial z}\frac{dz}{dt}
+$$
+
+
+これが4変数関数の連鎖律である。
+
+<MemoBox>
+ちなみに、下記のように、$\Delta \phi$を $ d\phi$と書き換えて両辺を$dt$で割っても結果は同じになる。
+
+$$
+d\phi = \frac{\partial \phi}{\partial t}dt + \frac{\partial \phi}{\partial x}dx + \frac{\partial \phi}{\partial y}dy + \frac{\partial \phi}{\partial z}dz
+$$
+
+</MemoBox>
+
+ちなみに、1変数の場合、連鎖律は$y = f(g(x))$ のときに、
+
+$$
+\frac{dy}{dx} = \frac{df}{dg} \cdot \frac{dg}{dx}
+$$
+
+であり、一般的に多変数の連鎖律は、1変数の連鎖律を拡張したものであり、$t$ の変化に対する $\phi$ の変化率
+
+$$
+\frac{d\phi}{dt} = \frac{\partial \phi}{\partial t} + \sum_{i} \frac{\partial \phi}{\partial x_i}\frac{dx_i}{dt}
+$$
+
+
+となる。
+
+## 2. 物質微分
+物質微分は「実質微分」「全微分」「ラグランジュ微分」「移流微分」などとも呼ばれることがあります。また英語では "Material derivative"、"Substantial derivative"、"Total derivative"、"Lagrangian derivative" などの名称で知られています。
+この概念は特に流体力学において、
+オイラー的視点（空間の固定点での観測）とラグランジュ的視点（流体粒子に追随する観測）を
+結びつける重要な架け橋となることを次のセクションで説明します。
+
+### 2.1 オイラー的記述とラグランジュ的記述
+
+流体力学には2つの基本的な見方がある：
+
+1. **オイラー的記述**：空間の固定点での流体の性質（速度、圧力など）に注目する。観測者は固定位置にいる。
+   例：「この地点での流速は5m/s」
+
+2. **ラグランジュ的記述**：個々の流体粒子を追跡し、その粒子の性質の時間変化を見る。観測者は流体粒子と共に移動する。
+   例：「この特定の水分子は最初はここにあって、3秒後にはここに移動した」
+
+
+
+つまり、実験や観測で得られるデータは、多くの場合オイラー的で、空間の固定点での観測になります。
+しかし、物理法則の多く、例えばニュートンの法則はラグランジュ的であり、ここの粒子や質点に着目します。
+その二つをつなげているのが物質微分である。
+
+
+
+
+#### 物質微分のイメージの例
+
+例として、温度勾配のある川の流れを考える：
+
+- 橋の上から川を見る（オイラー的）：「この地点の水温は20℃で、1時間後も同じ地点の水温は19℃になった」
+- ボートに乗って流れに沿って移動する（ラグランジュ的）：「今乗っている水の温度は20℃で、1時間後（別の場所に移動した後）には18℃になった」
+
+物質微分は後者（ラグランジュ的）な視点での変化率を、前者（オイラー的）な座標系で表現するものである。
+
+### 物質微分の物理的意味からの導出
+
+
+物質微分は、流体粒子に沿った物理量 $\phi$ の時間変化率であり、以下のように表される：
+
+
+$$
+\frac{D\phi}{Dt} = \left(\frac{\partial \phi}{\partial t}\right) + \left(\frac{dx}{dt} \frac{\partial \phi}{\partial x} + \frac{dy}{dt} \frac{\partial \phi}{\partial y} + \frac{dz}{dt}\frac{\partial \phi}{\partial z}\right)
+$$
+
+ベクトル表記を用いると：
+
+
+
+
+$$
+\frac{D\phi}{Dt} = \frac{\partial \phi}{\partial t} + (\overrightharpoon{v} \cdot \nabla)\phi
+$$
+
+
+ここでは速度ベクトルは以下の通り
+$$
+\overrightharpoon{v} =  \left(\frac{dx}{dt},\frac{dy}{dt},\frac{dz}{dt}\right)
+$$
+
+勾配ベクトルは以下の通り。
+$$
+\nabla\phi = \left(\frac{\partial \phi}{\partial x}, \frac{\partial \phi}{\partial y}, \frac{\partial \phi}{\partial z}\right)
+$$
+
+
+
+
+右辺は2つの項からなることをgivenとして、この物理的な意味を考えるという逆の道筋を考える。
+
+#### 右辺第一項
+
+右辺第一項は偏微分なので下記のように書き下すことができて、x,y,zについては固定されて時間についての変化率を見ている。
+
+$$
+\frac{\partial \phi}{\partial t}= \lim_{\Delta t \to 0}\frac{f(x,y,z,t+\Delta t) - f(x,y,z,t)}{\Delta t}
+$$
+
+
+
+それゆえに、(x,y,z)という固定位置での時間変化率（局所変化率）、もしくは固定位置における単位時間当たりの$\phi$の増分だとみなすことができる。
+
+
+#### 右辺第二項
+これを移流項と呼ぶ。
+
+$$
+\frac{dx}{dt}\frac{\partial \phi}{\partial x} + \frac{dy}{dt}\frac{\partial \phi}{\partial y} + \frac{dz}{dt}\frac{\partial \phi}{\partial z}
+$$
+
+流体の移動による変化率を表していることを以下に説明する。
+
+$$
+\frac{\partial \phi}{\partial x}
+$$
+
+はx方向の変化率である。
+
+$$
+\frac{dx}{dt}
+$$
+は速度であるとともに、単位時間当たりの移動量$\Delta x$とも取れる。
+
+
+$$
+\frac{\partial \phi}{\partial x} \cdot \Delta x
+$$
+
+はすなわちx方向への移動によって単位時間当たりの移動によって生じたx軸方向に関する増分$\Delta \phi$である。
+粒子の移動可能な軸の分だけ$\phi$の増分を足し合わせたものが右辺第二項だと理解できる。
+
+#### まとめ
+
+すなわち固定位置の$\phi$の増分と、粒子の移動による全方向の$\phi$の増分を足し合わせたものが、単位時間当たりの全増分だということを示しているのが、物質微分である。
+
+
+
+また、連鎖律から導出した式と物質微分が同一であることが分かった。
+
+$$
+\frac{D\phi}{Dt} = \frac{d\phi}{dt}
+$$
+
+
+つまり、連鎖律を用いて導出した式は、物理的に「流体粒子に沿った変化率」を表す物質微分と完全に一致する。連鎖律は数学的な導出法であり、物質微分は物理的な概念であるが、両者は同じ式に帰着する。
+
+
+
+#### 参考
+
+連鎖律 $\frac{dy}{dx}=\frac{df}{dg}\cdot\frac{dg}{dx}$ が成り立つ理由を説明します。
+
+##### 連鎖律の直感的な理解
+
+合成関数 $y = f(g(x))$ を考えると、$x$ が微小量 $\Delta x$ 変化したときの $y$ の変化を知りたいです。
+
+この変化は2段階で起こります：
+1. $x$ の変化 $\Delta x$ によって $g$ が変化する量 $\Delta g$
+2. $g$ の変化 $\Delta g$ によって $f$ が変化する量 $\Delta f$ (これが $\Delta y$ になります)
+
+つまり：
+- $\Delta g \approx \frac{dg}{dx}\Delta x$（$g$ の変化率 × $x$ の変化量）
+- $\Delta y = \Delta f \approx \frac{df}{dg}\Delta g$（$f$ の変化率 × $g$ の変化量）
+
+これらを組み合わせると：
+$\Delta y \approx \frac{df}{dg} \cdot \frac{dg}{dx}\Delta x$
+
+両辺を $\Delta x$ で割ると連鎖律が得られます：
+$\frac{\Delta y}{\Delta x} \approx \frac{df}{dg} \cdot \frac{dg}{dx}$
+
+$\Delta x \to 0$ の極限で：
+$\frac{dy}{dx} = \frac{df}{dg} \cdot \frac{dg}{dx}$
+
+##### 数学的な証明
+
+より厳密な証明としては、$g(x)$ と $f(g)$ の微分可能性を仮定し、極限の定義から導くこともできます：
+
+$\frac{dy}{dx} = \lim_{\Delta x \to 0}\frac{f(g(x+\Delta x)) - f(g(x))}{\Delta x}$
+
+ここで $g(x+\Delta x) - g(x) = \Delta g$ とおくと：
+
+$\frac{dy}{dx} = \lim_{\Delta x \to 0}\frac{f(g(x) + \Delta g) - f(g(x))}{\Delta x}$
+$= \lim_{\Delta x \to 0}\frac{f(g(x) + \Delta g) - f(g(x))}{\Delta g} \cdot \frac{\Delta g}{\Delta x}$
+$= \lim_{\Delta g \to 0}\frac{f(g(x) + \Delta g) - f(g(x))}{\Delta g} \cdot \lim_{\Delta x \to 0}\frac{\Delta g}{\Delta x}$
+$= \frac{df}{dg} \cdot \frac{dg}{dx}$
+
+これが連鎖律の数学的な証明です。

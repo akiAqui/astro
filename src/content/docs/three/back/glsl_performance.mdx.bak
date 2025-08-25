@@ -1,0 +1,109 @@
+---
+title: GLSL performance
+description: RenderTarget
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## Uniforms, Texture, Buffer Object の比較
+
+| **特性/用途**         | **Uniforms**                                         | **Texture**                                              | **Buffer Object**                                        |
+|------------------------|----------------------------------------------------|---------------------------------------------------------|----------------------------------------------------------|
+| **データ格納領域**     | ユニフォーム専用メモリ（小容量）                     | テクスチャ専用メモリ（大容量、圧縮/フィルタリング可能）    | 頂点バッファメモリ（頂点データ向けに最適化）              |
+| **参照方式**           | 全体で一定値として共有                               | `sampler2D`でピクセル単位で参照（ランダムアクセス可能）    | 頂点シェーダーで`attribute`として参照                     |
+| **更新頻度**           | 高頻度（フレームごとに更新）                         | 中〜高頻度（フレームごとの`renderTarget`も含む）          | 低〜中頻度（ジオメトリ変更時のみ）                        |
+| **利用頻度**           | 低〜中頻度（全体の定数値として参照される）            | 高頻度（ピクセル単位でのサンプリングが可能）              | 高頻度（頂点単位でアクセス）                              |
+| **1フレーム内の参照回数** | 1回                                                | $N_{pixel} \times p \times \text{フレーム数}$             | $N_{vertex} \times \text{フレーム数}$                     |
+| **用途例**             | - 時間、ライト位置、カメラ情報                        | - ノイズマップ、ディスプレイスメント、`renderTarget`         | - 頂点変形、インスタンシング、インデックス情報            |
+| **容量制限**           | 制限あり（数百個の`vec4`程度）                       | 大容量（GPUのテクスチャメモリ制限に依存）                 | 大容量（数十万頂点分を効率的に扱える）                    |
+| **特性**               | 簡素で軽量、動的な小規模データの更新に適する          | 大規模データのランダムアクセスが可能                      | 頂点データの効率的な管理と描画に特化                      |
+| **renderTarget対応**   | 不適（大規模データ管理に不向き）                     | 適している（フレームごとのデータ更新に対応可能）           | 不適（頂点データの管理専用）                              |
+
+
+## WebGLとThree.jsのリソース制限一覧
+
+#### Texture関連
+
+| パラメータ名                          | Three.jsプロパティ名     | 説明                                         | 例（値）             |
+|---------------------------------------|--------------------------|---------------------------------------------|---------------------|
+| `gl.MAX_TEXTURE_SIZE`                 | `capabilities.maxTextureSize` | 最大テクスチャの幅または高さ                | 8192               |
+| `gl.MAX_CUBE_MAP_TEXTURE_SIZE`        | `capabilities.maxCubeMapSize` | 最大キューブマップテクスチャサイズ           | 8192               |
+| `gl.MAX_TEXTURE_IMAGE_UNITS`          | `capabilities.maxTextures`    | フラグメントシェーダーで利用可能なテクスチャ数 | 16                 |
+| `gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS`   | `capabilities.maxVertexTextures` | 頂点シェーダーで利用可能なテクスチャ数       | 16                 |
+| `gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS` | `capabilities.maxCombinedTextures` | 頂点/フラグメントシェーダーで合計利用可能なテクスチャ数 | 32 |
+
+---
+
+#### Buffer Object関連
+
+| パラメータ名                          | Three.jsプロパティ名     | 説明                                         | 例（値）             |
+|---------------------------------------|--------------------------|---------------------------------------------|---------------------|
+| `gl.MAX_VERTEX_ATTRIBS`               | `capabilities.maxAttributes` | 頂点シェーダーで使用可能な属性の最大数       | 16                 |
+| `gl.MAX_VERTEX_UNIFORM_VECTORS`       | `capabilities.maxVertexUniforms` | 頂点シェーダーで使用可能なユニフォーム数     | 1024               |
+| `gl.MAX_FRAGMENT_UNIFORM_VECTORS`     | `capabilities.maxFragmentUniforms` | フラグメントシェーダーで使用可能なユニフォーム数 | 224               |
+| `gl.MAX_VARYING_VECTORS`              | `capabilities.maxVaryings` | 頂点シェーダーとフラグメントシェーダー間で共有可能な変数数 | 30 |
+
+---
+
+#### Uniform関連
+
+| パラメータ名                          | Three.jsプロパティ名     | 説明                                         | 例（値）             |
+|---------------------------------------|--------------------------|---------------------------------------------|---------------------|
+| `gl.MAX_UNIFORM_BLOCK_SIZE`           | `capabilities.maxUniformBlockSize` | ユニフォームブロックの最大サイズ（バイト単位）| 16KB               |
+| `gl.MAX_UNIFORM_BUFFER_BINDINGS`      | `capabilities.maxUniformBufferBindings` | 使用可能なユニフォームバッファの最大数       | 24                 |
+
+---
+
+# Three.jsでの確認方法
+
+以下のコードを使用すると、Three.jsで全ての制限を確認できます。
+
+```javascript
+const renderer = new THREE.WebGLRenderer();
+const capabilities = renderer.capabilities;
+
+console.log({
+    maxTextureSize: capabilities.maxTextureSize,
+    maxCubeMapSize: capabilities.maxCubeMapSize,
+    maxTextures: capabilities.maxTextures,
+    maxVertexTextures: capabilities.maxVertexTextures,
+    maxCombinedTextures: capabilities.maxCombinedTextures,
+    maxAttributes: capabilities.maxAttributes,
+    maxVertexUniforms: capabilities.maxVertexUniforms,
+    maxFragmentUniforms: capabilities.maxFragmentUniforms,
+    maxVaryings: capabilities.maxVaryings,
+    maxUniformBlockSize: capabilities.maxUniformBlockSize,
+    maxUniformBufferBindings: capabilities.maxUniformBufferBindings,
+});
+```
+
+
+## 頻度に関する比較表
+
+| **種類**            | **参照対象**                      | **頻度式**                                      | **例**                                                  |
+|---------------------|-----------------------------------|------------------------------------------------|--------------------------------------------------------|
+| **Uniforms**        | シェーダー全体（一定値として共有） | フレームごとに1回                                | ライトの色、カメラ位置、時間                             |
+| **Texture**         | フラグメントシェーダー            | $N_{pixel} \times p \times \text{フレーム数}$   | ノイズマップ、ディスプレイスメントマップ                |
+| **Buffer Object**   | 頂点シェーダー                   | $N_{vertex} \times c \times \text{フレーム数}$  | 頂点の位置、条件に合致する頂点（例: 特定の高さ以上）     |
+
+- $N_{vertex}$: 頂点数。
+- $N_{pixel}$: 解像度によるピクセル数。
+- $p$: 条件に合致する割合（フラグメント）。
+- $c$: 条件に合致する割合（頂点）。
+
+

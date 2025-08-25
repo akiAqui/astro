@@ -1,0 +1,353 @@
+---
+title: Texture/Canavasでテクスチャ生成
+description: canvas APIでTHREE.Pointsのテクスチャを生成する
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+
+
+## サンプルコード
+```html
+<html>
+<head>
+    <title>ジオメトリパーティクル</title>
+    <script type="text/javascript"src="https://cdnjs.cloudflare.com/ajax/libs/three.js/99/three.min.js"></script>
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/three@0.101.1/examples/js/controls/OrbitControls.js"></script>
+      <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="WebGL-output">
+</div>
+
+    <script type="text/javascript">
+
+        //シーンの作成
+        const scene = new THREE.Scene();
+
+        //カメラの作成
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        //レンダラーの作成
+        const webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0x000000));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+
+        //カメラの位置
+        camera.position.x = -30;
+        camera.position.y = 40;
+        camera.position.z = 50;
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+      
+       // 滑らかにカメラコントローラーを制御する
+     　 const controls = new THREE.OrbitControls(camera, document.body);
+     　 controls.enableDamping = true;
+      　controls.dampingFactor = 0.2;
+
+        //HTMLに書きだし
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+        //canvasにテクスチャを作成
+        function generate() {
+        
+            //canvasで小さい丸の作成
+            const canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
+
+            const context = canvas.getContext('2d');
+            const gradient = context.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.1, 'rgba(170,248,255,0.3)');
+            gradient.addColorStop(0.2, 'rgba(0,37,97,1)');
+            gradient.addColorStop(1, 'rgba(0,0,0,1)');
+          
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+
+        }
+
+        //ジオメトリの頂点の作成
+        function createPoints(geom) {
+            const material = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 3,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                map: generate(),//canvasをmapで渡す
+                depthWrite: false
+            });
+
+            const cloud = new THREE.Points(geom, material);
+            return cloud;
+        }
+            //ジオメトリの作成
+        const geom = new THREE.TorusKnotGeometry(20, 6.9, 260, 11, 6, 3);
+        //マテリアルの作成
+        const knot = createPoints(geom);
+        scene.add(knot);
+
+            
+        tick();
+            
+        // 毎フレーム時に実行されるループイベントです
+        function tick() {
+
+            knot.rotation.z += 0.001;
+            knot.rotation.y += 0.001;
+
+        webGLRenderer.render(scene, camera);// レンダリング
+
+        requestAnimationFrame(tick);
+        }
+
+    </script>
+</body>
+</html>
+
+```
+## テクスチャの生成
+- appendChildなどでDOMツリーに追加しないと表示されない
+　
+```javascript
+// canvasを生成
+const canvas = document.createElement('canvas'); 
+
+// canvasをDOMツリーに追加して始めて表示されるがこれがないと表示されない
+document.body.appendChild(canvas); 
+```
+
+```javascript
+function generate() {//canvasにテクスチャを作成
+   const canvas = document.createElement('canvas');
+   canvas.width = 16;
+   canvas.height = 16;
+   const context = canvas.getContext('2d');
+   const gradient = context.createRadialGradient(
+    canvas.width  / 2, canvas.height / 2, 0,
+    canvas.width  / 2, canvas.height / 2, canvas.width / 2);
+   gradient.addColorStop(0, 'rgba(255,255,255,1)');
+   gradient.addColorStop(0.1, 'rgba(170,248,255,0.3)');
+   gradient.addColorStop(0.2, 'rgba(0,37,97,1)');
+   gradient.addColorStop(1, 'rgba(0,0,0,1)');
+   context.fillStyle = gradient;
+   context.fillRect(0, 0, canvas.width, canvas.height);
+   const texture = new THREE.Texture(canvas);
+   texture.needsUpdate = true;
+   return texture;
+}
+
+```
+
+## サンプルコードのテクスチャ適用に関する要点
+
+## 1. `canvas` を用いた放射状グラデーションの生成
+- 中央は白、不透明。外周は濃い青から黒（不透明）。
+- **`AdditiveBlending` の効果**:
+  - ピクセルの新しい色値 $C_{\text{result}}$ は以下の式で計算される:
+    $$
+    C_{\text{result}} = C_{\text{source}} \times \alpha_{\text{source}} + C_{\text{destination}}
+    $$
+    - $C_{\text{source}}$: 描画中のピクセル値（粒子の色）。
+    - $\alpha_{\text{source}}$: 描画中のピクセルの透明度（アルファ値）。
+    - $C_{\text{destination}}$: 既存のピクセル値（背景や他の粒子の色）。
+  - アルファ値が小さい部分は影響が小さく、アルファ値が大きい中央部分は色が加算されて明るさが強調される。
+
+## 2. `PointsMaterial` の設定
+- **`transparent: true`**:
+  - アルファ値（透明度）を描画に反映する設定。指定しない場合、アルファ値が無視され、テクスチャの透明部分が不透明として描画される。
+  - 例: 外周の透明部分が無視され、黒い背景が表示される。
+- **`blending: THREE.AdditiveBlending`**:
+  - 描画ピクセルと既存ピクセルの色値を加算する。透明部分が明るさに応じて影響し、粒子間の重なりが計算される。
+- **`depthWrite: false`**:
+  - 深度バッファを無効化する設定。
+    - 深度バッファが有効（`true`）の場合、透明部分も奥行き方向の情報として記録される。これにより、透明部分が背面の不透明部分を隠し、視覚的に背面が描画されない問題が発生する。
+    - 無効化することで、透明部分が奥行き情報に影響せず、背面の描画が正しく表示される。
+
+
+
+
+## (参考) CanvasAPIとWebGLの違い
+
+- Canvas API:
+  - ラスターベースの2D描画
+  - CPUベースでピクセルごとに描画状態管理が不要
+  - 少量の描画に適し、単純で低負荷大量の描画やリアルタイム更新には不向き
+  - 基本的な2Dグラフィックスに十分だが、拡張性が低い
+  - 初学者向けや単純な描画に適し、ブラウザ対応が広い開発が簡単
+  - シンプルなコードで円や矩形を描くのに適する
+- WebGL
+  - GPUを活用したベクトルベースの2D/3D描画
+  - シェーダーを使用し、GPUでベクトルを計算して描画低レベルでプログラム的
+  - 高負荷なシーンでも高速多数の要素や複雑なアニメーションに強い
+  - 3Dエフェクトや高度なシェーダーを活用可能2D描画でもアンチエイリアスや変形が高品質
+  - 高度なパフォーマンスと柔軟性を持ち、モダンなアプリケーションに最適学習コストが高い
+  - 同じ円を描く場合でも、バッファをセットアップし、シェーダープログラムが必要
+
+
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas and WebGL</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #cccccc;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas API用 -->
+    <canvas id="canvas2d" width="300" height="300"></canvas>
+    <!-- WebGL用 -->
+    <canvas id="canvasWebGL" width="300" height="300"></canvas>
+
+    <script>
+        // Canvas APIで赤い円を描画
+        const canvas2d = document.getElementById('canvas2d');
+        const ctx = canvas2d.getContext('2d');
+
+        ctx.fillStyle = 'gray';
+        ctx.fillRect(0, 0, canvas2d.width, canvas2d.height);
+
+        ctx.beginPath();
+        ctx.arc(150, 150, 50, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+
+        // WebGLで青い円を描画
+        const canvasWebGL = document.getElementById('canvasWebGL');
+        const gl = canvasWebGL.getContext('webgl');
+
+        // シェーダープログラムの作成
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            uniform vec2 u_resolution;
+            void main() {
+                vec2 center = u_resolution / 2.0;
+                float radius = 50.0;
+                float dist = distance(gl_FragCoord.xy, center);
+                if (dist < radius) {
+                    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+                } else {
+                    gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Gray background
+                }
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,
+             1, -1,
+            -1,  1,
+             1,  1,
+        ]), gl.STATIC_DRAW);
+
+        const positionLocation = gl.getAttribLocation(program, 'a_position');
+        gl.enableVertexAttribArray(positionLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+        gl.uniform2f(resolutionLocation, canvasWebGL.width, canvasWebGL.height);
+
+        gl.clearColor(0.5, 0.5, 0.5, 1.0); // Gray background
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    </script>
+</body>
+</html>
+```

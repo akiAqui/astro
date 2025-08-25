@@ -1,0 +1,228 @@
+---
+title: ＊）せん断層数値解析
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+# 圧縮性せん断層の数値解析
+
+## 問題設定
+
+- 圧縮性オイラー方程式を風上差分法で離散化し、Kelvin-Helmholtz不安定性の発生を解析
+- 初期条件として速度・密度の不連続を与え、せん断層が成長する様子を観察
+- 渦度場を可視化し、渦の発展を解析
+
+## 数値モデル
+
+### 支配方程式
+
+オイラー方程式（圧縮性）を保存形で記述する。
+
+$$
+\frac{\partial U}{\partial t} + \nabla \cdot F = 0
+$$
+
+ここで:
+- $U$: 保存量ベクトル
+- $F$: 流束ベクトル
+- $\nabla \cdot$: 発散演算子
+
+
+<br />
+
+なお、流束ベクトル $F$ は方向成分に分けられる:
+
+$x$方向の流束ベクトル $F_x$:
+
+$$
+F_x = \begin{bmatrix} 
+\rho u \\
+\rho u^2 + p \\
+\rho uv \\
+(E + p) u
+\end{bmatrix}
+$$
+
+$y$方向の流束ベクトル $F_y$:
+
+$$
+F_y = \begin{bmatrix} 
+\rho v \\
+\rho uv \\
+\rho v^2 + p \\
+(E + p) v
+\end{bmatrix}
+$$
+
+ここで $p$ は圧力を表す。
+
+
+$$
+U = \begin{bmatrix} 
+\rho \\
+\rho u \\
+\rho v \\
+E
+\end{bmatrix}, \quad
+F = \begin{bmatrix} 
+\rho u \\
+\rho u^2 + p \\
+\rho uv \\
+(E + p) u
+\end{bmatrix}
+$$
+
+$$
+\left\{
+\begin{align*}
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \mathbf{u}) = 0\\
+\frac{\partial (\rho u)}{\partial t} + \nabla \cdot (\rho u \mathbf{u}) + \frac{\partial p}{\partial x} = 0\\
+\frac{\partial (\rho v)}{\partial t} + \nabla \cdot (\rho v \mathbf{u}) + \frac{\partial p}{\partial y} = 0\\
+\frac{\partial E}{\partial t} + \nabla \cdot ((E + p) \mathbf{u}) = 0
+\end{align*}
+\right.
+$$
+
+
+
+
+### 状態方程式の導出
+
+エネルギー密度 $E$ は、運動エネルギーと内部エネルギーの和で表される。
+
+$$
+E = \frac{1}{2} \rho |
+\mathbf{u}|^2 + \frac{p}{\gamma - 1}
+$$
+
+この関係を用いることで、状態方程式（理想気体の関係式）が得られる。
+
+$$
+p = (\gamma - 1) \left( E - \frac{1}{2} \rho |
+\mathbf{u}|^2 \right)
+$$
+
+ここで、
+- $\rho$ [kg/m3]: 密度
+- $u, v$ [m/s]: 速度成分
+- $p$ [Pa]: 圧力
+- $E$ [J/m3]: エネルギー密度
+- $\gamma = 1.4$: 比熱比（空気の値）
+
+### 初期条件
+
+- 計算領域: $0 \leq x \leq L_x$, $0 \leq y \leq L_y$
+- 速度分布:
+  - 上層: $U_1 = 1.0$
+  - 下層: $U_2 = 0.5$
+  - 初期摂動: $\epsilon = 0.05 \sin(2\pi x / L_x)$
+- 密度:
+  - 上層: $\rho_1 = 1.0$
+  - 下層: $\rho_2 = 0.8$
+- 圧力: 全領域で $p = 1.0$
+
+オイラー方程式において、速度は運動量 $\rho \mathbf{u}$ を $\rho$ で割ることで求まる。
+
+$$
+\mathbf{u} = \frac{1}{\rho} (
+ho u, \rho v)
+$$
+
+初期条件の $U_1, U_2$ は、
+
+$$
+\mathbf{u}(y) = 
+\begin{cases}
+    (U_1, 0), & y > L_y/2 \\
+    (U_2, 0), & y < L_y/2
+\end{cases}
+$$
+
+として適用される。
+
+### 渦の発生と渦度方程式
+
+せん断層において、速度の不連続が Kelvin-Helmholtz 不安定性を引き起こし、渦が成長する。
+
+渦度 $\omega$ は、速度の回転を表し、次の式で定義される。
+
+$$
+\omega = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}
+$$
+
+渦度を支配する方程式は以下の形となる。
+
+$$
+\frac{D \omega}{D t} = \left( \omega \cdot \nabla \right) u - \omega \nabla \cdot u
+$$
+
+ただし、
+- $\frac{D}{D t}$: 物質微分
+
+この式により、渦がどのように変化するかを解析できる。
+
+### 境界条件
+
+- $x$方向: 周期境界
+- $y$方向: 反射境界（$v = 0$）
+
+## 可視化手法
+
+### 渦度場の可視化
+
+- 渦度: $\omega = \frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}$
+- カラーマップを用いて渦の正負を識別
+- 等値線を重ねて流れの構造を明示
+
+### 速度場の可視化
+
+- ベクトルプロットで流れの向きを表現
+- ストリームラインで流線を描画
+
+### 密度場の可視化
+
+- カラーマップによる密度分布表示
+- 高密度と低密度の境界が渦の発達とともに変化する様子を解析
+
+## 実装方法
+
+### 計算部
+
+- 風上差分法を用いた数値解法を TypeScript で実装
+- 数値積分には陽解法を使用
+
+### 可視化部
+
+- Three.js を用いて WebGL によるリアルタイム可視化
+- 計算結果をテクスチャに変換し GPU で描画
+
+## 用語説明
+
+- 風上差分法: 流れの向きを考慮して数値解を安定化する差分法
+- Kelvin-Helmholtz不安定性: せん断層において生じる流体の不安定性
+- 圧縮性オイラー方程式: 粘性を無視した圧縮性流体の保存則
+- 渦度: 速度場の回転を表す量で、流体の局所的な回転運動を示す
+
+## 参考文献
+
+- P. Drazin, Introduction to Hydrodynamic Stability, Cambridge University Press, 2002.
+- J. D. Anderson, Computational Fluid Dynamics: The Basics with Applications, McGraw-Hill, 1995.
+
+

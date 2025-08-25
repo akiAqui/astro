@@ -1,0 +1,166 @@
+---
+title: レンダリングプロセス
+description: WebGLRenderer
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+------------------------------------------------------------------------------------------------------------
+
+### THREE.js/WebGL のレンダリングプロセス
+
+1. CPU 側で WebGL のセットアップ
+   - `THREE.WebGLRenderer()`でHTMLのcanvas要素の生成or設定とrendererを生成
+   - シーンの作成(オブジェクト、ライトなど）
+   - ジオメトリ、マテリアルを用意し、Meshを設定
+   - ShaderMaterial/RawShaderMaterialでシェーダーを設定
+     - MeshStandardMaterial や MeshBasicMaterial などの組み込みマテリアルは GLSL シェーダーを内部で保持している
+   - renderer.render(scene,camera)で描画命令
+   - WebGL API を介して GPU にデータを送信
+
+2. GPU での処理
+   - 頂点シェーダー（Vertex Shader）
+     - 3D 座標をスクリーン座標へ変換
+     - `gl_Position` に結果を出力
+   - クリッピングとビューポート変換
+     - 各頂点の座標を NDC（クリッピング座標） に変換
+     - 視錐台外の部分を破棄（クリッピング）
+     - NDC をスクリーン座標に変換（ビューポート変換）
+   - ラスタライズ（Rasterization）
+     - `gl_Position` の情報を元に、画面のピクセルへ変換
+   - フラグメントシェーダー（Fragment Shader）
+     - 各ピクセルの色を計算し、out vec4 FragColorに出力
+       - gl_FragColor は GLSL 4.1 以降で非推奨
+       - gl_FragColorはGLSL 3.0以降では使われない
+   - フレームバッファへの出力
+     - フラグメントシェーダーの結果を GPU のフレームバッファへ保存
+     - 画面にレンダリングされる
+
+### フレームバッファ
+フレームバッファ（Framebuffer）は、GPU が描画結果を一時的に格納するメモリ領域である。
+すべてのレンダリング結果（ピクセルデータ、深度情報、ステンシルバッファなど）がここに保存され、
+最終的に画面へ出力される。
+
+WebGL では、フレームバッファのクリア動作がデフォルトで有効になっており、
+各フレームの描画後にその内容が消去される。
+これにより、特定のシナリオ（画像の保存など）で問題が発生することがある。
+
+### WebGLRendererの動作詳細
+- WebGLRendererはHTMLに設定したcanvas要素を渡してレンダラーを生成する場合と、
+canvas要素を渡さないで自動生成させる場合がある。
+- どちらの場合でもrenderer.domElementがcanvas要素として参照可能。
+
+#### canvas要素を渡す場合
+```html
+<canvas id="myCanvas"></canvas>
+<script>
+  const canvas = document.getElementById("myCanvas");
+  const renderer = new THREE.WebGLRenderer({ canvas });
+</script>
+```
+
+#### canvas要素を生成する場合
+```javascript
+const renderer = new THREE.WebGLRenderer();
+document.body.appendChild(renderer.domElement);
+```
+
+
+
+### CPU 側で描画結果の取得し、ファイル出力する方法
+- preserveDrawingBuffer: true の設定を行う必要がある。
+- デフォルトでは `preserveDrawingBuffer: false` で、
+各フレーム描画後にフレームバッファはクリアされる
+- `preserveDrawingBuffer: true` に設定すると、描画結果が次のフレームまで維持される。
+
+```javascript
+// Three.js シーン & カメラ設定
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 1;
+
+const renderer = new THREE.WebGLRenderer({ canvas,preserveDrawingBuffer: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+```
+ 
+ - `toBlob()` を使用してデータを取得([blobスキームについてこちらを参照](http://localhost:4321/tech/blob/))
+
+
+```javascript
+// 変換後のテクスチャを保存
+const saveButton = document.getElementById("saveButton") as HTMLButtonElement;
+saveButton.addEventListener("click", () => {
+  renderer.domElement.toBlob((blob) => {
+    if (!blob) return;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "output_texture.png";
+    link.click();
+  });
+});
+```
+
+------------------------------------------
+ 
+- renderer.domElementはhtml内部にあるcanvas要素である
+  - メリット
+    - `toBlob()` や `readPixels()` を使用して 描画結果を保存できる
+    - 連続したフレームのキャプチャ や 静止画のエクスポート が可能
+    - バッファを活用したポストプロセス効果（一時的に保存したフレームを利用する）
+
+  - デメリット
+    - パフォーマンスの低下（フレームごとに不要なバッファが保持されるため、VRAM の使用量が増加）
+    - 一部のWebGL実装では `preserveDrawingBuffer: true` がサポートされていないことがある
+    - 手動でのバッファクリアが必要になる（新しいフレームを描画する際に `gl.clear()` を明示的に呼ぶ必要がある）
+
+### WebGLRenderer のその他のオプション
+- `WebGLRenderer` には、以下のオプションが存在する。
+
+| オプション | 説明 | デフォルト値 |
+|------------|------------------------------|-------------|
+| `canvas` | 描画する HTMLCanvasElement | `undefined` |
+| `context` | 既存の WebGL コンテキストを使用 | `undefined` |
+| `precision` | シェーダーの浮動小数点精度<br/>（`highp`, `mediump`, `lowp`） | `highp` |
+| `alpha` | 背景のアルファチャンネルを有効にする | `false` |
+| `depth` | 深度バッファを有効にする | `true` |
+| `stencil` | ステンシルバッファを有効にする | `true` |
+| `antialias` | アンチエイリアスを有効にする | `false` |
+| `premultipliedAlpha` | `true` の場合、アルファ値を事前乗算 | `true` |
+| `preserveDrawingBuffer` | 描画バッファを保持するか | `false` |
+| `powerPreference` | GPU の電力設定<br/>（`high-performance`, `low-power`, `default`） | `default` |
+| `failIfMajorPerformanceCaveat` | パフォーマンスの低い GPU でレンダリングを拒否する | `false` |
+| `xrCompatible` | WebXR 互換モードを有効にする | `false` |
+
+### precision の設定について
+- WebGLRenderer の `precision` オプションは、シェーダーの `precision` 指定と異なり、レンダリング全体の精度を設定する。一般的に、`WebGLRenderer` の `precision` はデフォルトで `highp` となっており、シェーダーの `precision` 指定がない場合に適用される。
+- シェーダー内で明示的に `precision highp float;` を指定すれば、その設定が優先される。
+
+### ステンシルバッファの効果とメリット・デメリット
+- メリット
+  - 複雑なマスク処理（特定の領域のみ描画するなど）が可能。
+  - マルチパスレンダリングで一部のオブジェクトのみ影響を受ける処理が可能。
+- デメリット:
+  - メモリ使用量が増加。
+  - すべてのデバイスでサポートされているわけではない。
+
+### アンチエイリアスについて
+- メリット
+  - エッジのギザギザを滑らかにすることで、レンダリングの品質が向上。
+- デメリット:
+  - 計算負荷が増大し、GPU の処理が重くなる。
+  - モバイルデバイスでは負荷が大きく、パフォーマンスが低下する可能性がある。
+

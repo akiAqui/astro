@@ -1,0 +1,56 @@
+---
+title: git/memo
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+### 仕様で覚えておくこと
+- 空のディレクトリはgit add .しても追跡されない
+  - .gitkeep等のダミーファイルを追跡させる
+- git stashは追跡されているファイルだけを退避する
+  - git stash -u で untracked fileも stashする
+
+
+
+
+
+### いらないファイルをcommit/pushしてしまった！
+- index（ステージ）から削除（ローカルには残す）
+- cacheというのは、indexをgitの世界ではcacheと呼んでいるため
+```
+git rm --cached package-lock.json
+
+```
+- この後にcommit/pushする
+  - 履歴は残るが
+
+### ファイル削除してしまった！
+ファイル削除を間違ってした場合、もしくは意図した場合の対処方法
+
+#### add前
+- 元に戻す: git restore [file]
+- 削除を確定: なにもしなければ削除がstageされる
+
+#### add後
+- 元に戻す: git restore --staged [file], git restore [file]
+- 削除を確定:  なにもせずcommit
+
+#### commit後
+- 元に戻す(直前のコミットを取り消す）: git reset HEAD~1, git restore [file]
+- 削除を確定:  なにもせず
+

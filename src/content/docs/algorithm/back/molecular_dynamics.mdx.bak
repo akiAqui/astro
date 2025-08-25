@@ -1,0 +1,118 @@
+---
+title: ＊）分子動力学
+description: 概論
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## カットオフ半径
+- 粒子間ポテンシャル計算に上限半径$r_c$を設定
+  - $r > r_c$の粒子間相互作用を無視し計算量を削減
+  - 通常は$r_c \approx 2.5\sigma$
+- エネルギー補正（Tail Correction）を追加する場合あり
+  $$
+  U_{tail} = \frac{8\pi N \epsilon \sigma^6}{3V} \left[ \frac{1}{3}\left(\frac{\sigma}{r_c}\right)^9 - \left(\frac{\sigma}{r_c}\right)^3 \right]
+  $$
+
+## ポテンシャルシフト・スムージング
+- カットオフ近傍のエネルギー不連続性回避のため、ポテンシャルをシフト
+  $$
+  U_{shift}(r) = U(r) - U(r_c), \quad r \le r_c
+  $$
+- 力（Force）にもシフトを適用可能（Force-shifting）
+  $$
+  F_{shift}(r) = F(r) - F(r_c)
+  $$
+
+## レプリカ交換法（REM）
+- 複数の異なる温度の系（レプリカ）を並列で実行
+  - 隣接温度の系を確率的に交換（Metropolis基準）し探索効率化
+  - 交換確率$p$は以下
+  $$
+  p = \min\left(1, e^{(\beta_j - \beta_i)(E_j - E_i)}\right)
+  $$
+  - $\beta = 1/k_B T$（逆温度）
+
+## ラジアル分布関数（RDF）
+- RDF $g(r)$ は粒子の配置構造を表現
+  $$
+  g(r) = \frac{V}{N^2}\left\langle\sum_i\sum_{j\ne i}\delta(r - r_{ij})\right\rangle
+  $$
+  - 統計的に多数サンプリングし構造評価
+  - 結晶、液体、気体で異なるピーク特性
+
+## 相図・相転移
+- 状態方程式に基づき相（Phase）を区別
+  - 臨界点、三重点を含む相図を数値計算で作成
+  - Lennard-Jones系では$T^*=k_B T/\epsilon$、$\rho^*=N\sigma^3/V$などの無次元量で解析
+- クラスタ分析により気相・液相の転移点を同定
+
+## 分子クラスターの安定性
+- クラスターサイズごとにエネルギー最小構造を探索
+  - Global optimization法（焼きなまし法、遺伝的アルゴリズムなど）を適用
+  - Lennard-Jonesポテンシャルでは13粒子でicosahedral構造が特に安定
+- Magic number クラスター特有の構造的安定性に着目
+
+## 非平衡分子動力学（NEMD）
+- 熱や運動量の流れを加える非平衡状態シミュレーション
+  - 粘性係数：剪断速度$\dot{\gamma}$下での剪断応力$\tau$を測定し算出
+    $$
+    \eta = \frac{\tau}{\dot{\gamma}}
+    $$
+  - 熱伝導率、拡散係数なども同様に評価可能
+- Lennard-Jones系で流体輸送現象を解析するため広く利用される
+
+## 相図・相転移
+- Lennard-Jones系において相転移を分子動力学シミュレーションで観察
+  - 液体-気体転移を密度-温度平面上で確認
+  - 結晶化や融解点を計算（Free energy法利用）
+- Gibbs自由エネルギー差から転移点を特定
+  $$
+  \Delta G = \Delta H - T\Delta S
+  $$
+
+## 粗視化モデル
+- 複数原子を単一粒子として表現し、計算を簡略化
+  - Lennard-Jonesパラメータ$(\epsilon,\sigma)$をスケールアップ
+  - 粗視化ポテンシャルは粒子間自由エネルギーを再現するようパラメータを最適化
+- Multiscale法により原子スケールと粗視化スケールを連結可能
+
+## 非平衡分子動力学（NEMD）
+- 外部場印加状態での輸送現象評価
+  - 応力テンソル（Pressure Tensor）の解析により流動特性を取得
+    $$
+    P_{xy} = \frac{1}{V}\sum_{i}\left(m_i v_{ix} v_{iy} + \frac{1}{2}\sum_{j\ne i} r_{ij,x}F_{ij,y}\right)
+    $$
+  - 外力・境界条件を適切に設定し非平衡状態を維持
+
+---
+
+### 必要な用語説明
+- **Tail Correction**：カットオフ外の寄与を積分で評価し補正する方法
+- **Metropolis基準**：統計力学で広く使われる状態遷移の基準（Metropolis et al. 1953）
+- **Magic Number**：安定構造を持つ特定数の粒子クラスター（例：13, 55, 147など）
+- **Global optimization法**：系のエネルギー最小点を探索する手法
+- **Free energy法**：系の自由エネルギーを求めて相転移点を決定する方法（例：Thermodynamic Integration法、Umbrella Sampling法）
+
+### リファレンス
+- [Frenkel and Smit, *Understanding Molecular Simulation*](https://www.sciencedirect.com/book/9780122673511/understanding-molecular-simulation)
+- [Allen and Tildesley, *Computer Simulation of Liquids*](https://academic.oup.com/book/27009)
+- [Metropolis Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm)
+- [Replica Exchange Molecular Dynamics (REMD) 解説](https://en.wikipedia.org/wiki/Parallel_tempering)
+- [Coarse-grained Molecular Dynamics (CG-MD)](https://pubs.acs.org/doi/10.1021/acs.chemrev.9b00583)
+
+

@@ -1,0 +1,212 @@
+---
+title: ＊）emacs register etc
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+# Emacsのレジスタ操作とC-uの活用
+
+- 一覧を見る
+  - M-x list-registers
+  
+- 数値
+  - 数値0をレジスターに記録 <span style="color:red">C-x r n [r]</span>
+  - 任意の数値をレジスターに記録 <span style="color:red">C-u [数値] C-x r n [r]</span>
+  - 1だけインクリメント <span style="color:red">C-x r + [r]</span>
+    - ５  インクリメント　<span style="color:red">C-u 5 C-x r + [r] </span>
+    - -6  インクリメント　<span style="color:red">C-u -6 C-x r + [r]</span>
+  - その値を挿入    <span style="color:red">C-x r i</span> C-x r g (どちらでも)
+- 文字列
+  - <span style="color:red">C-x r s</span>で範囲指定した文字列、ヤンクした直後の文字列、Esc-wした文字列を覚える
+  - その値を挿入    <span style="color:red">C-x r i</span> C-x r g (どちらでも)　　
+- キーボードマクロ
+  - キーボードマクロを記録した直後に <span style="color:red">C-x C-k x [r]</span>
+- バッファとバッファ内のカーソル位置
+  - 記録　   <span style="color:red">C-x r SPC [r]</span>
+  - ジャンプ <span style="color:red">C-x r j   [r]</span>
+  - バッファを閉じていてもそのバッファを開こうとする
+- Windowの切り方、バッファの中身、バッファ内のカーソル位置
+  - 記録     <span style="color:red">C-x r w   [r]</span>
+  - ジャンプ <span style="color:red">C-x r j   [r]</span>
+  - ただし、バッファでそれを開けていないと位置が不定になる
+- rectangle領域操作
+  - <span style="color:red">C-x r r</span> copy-rectangle-to-register
+  - その値を挿入    <span style="color:red">C-x r i</span> C-x r g (どちらでも)
+
+## 類似
+- rectangle系
+  - rectangle-number-lines 領域選択をしてから、<span style="color:red">C-x r N</span>で行番号挿入
+    - <span style="color:red">C-u C-x r N</span>で任意の値、任意のフォーマットで
+  - yank-rectangle <span style="color:red">C-x r y</span>
+  - open-rectangle <span style="color:red">C-x r o</span>
+  - delete-rectangle <span style="color:red">X-x r d</span>
+- bookmark系
+  - bookmarkを保存してジャンプする。emacsを再開しても有効
+    - <span style="color:red">C-x r m </span>bookmark-set
+    - <span style="color:red">C-x r b </span>bookmark-jump
+    - <span style="color:red">C-x r l </span>bookmark-bmenu-list
+- C-x r
+  - C-x r a        - 
+  - C-x r b     <span style="color:magenta">bookmark-jump</span>
+  - C-x r c     <span style="color:red">clear-rectangle</span>　削除して空けたまま
+  - C-x r d     <span style="color:red">delete-rectangle</span>
+  - C-x r e        - 
+  - C-x r f     frameset-to-register
+  - C-x r g     insert-register
+  - C-x r h        -
+  - C-x r i     insert-register
+  - C-x r j     jump-to-register
+  - C-x r k     <span style="color:red">kill-rectangle</span>  削除して詰める
+  - C-x r l     <span style="color:magenta">bookmark-bmenu-list</span>
+  - C-x r m     <span style="color:magenta">bookmark-set</span>
+  - C-x r n     number-to-register
+  - C-x r o     <span style="color:red">open-rectangle</span>
+  - C-x r p        -
+  - C-x r q        -
+  - C-x r r     copy-rectangle-to-register
+  - C-x r s     copy-to-register  Stringを保管
+  - C-x r t     <span style="color:red">string-rectangle</span>  同じ文字列で置き換える
+  - C-x r u        -
+  - C-x r v        -
+  - C-x r w     window-configuration-to-register
+  - C-x r x     copy-to-register　Stringを保管
+  - C-x r y     <span style="color:red">yank-rectangle</span>
+  - C-x r z        -
+  - C-x r +     increment-register
+  - C-x r N     <span style="color:red">rectangle-number-lines</span>
+  - C-x r SPC   point-to-register
+  - C-x r C-SPC point-to-register
+  - C-x r C-@   point-to-register
+  - C-x r M-w   <span style="color:red">copy-rectangle-as-kill</span>
+
+
+## その他
+- C-x n n : narrow-to-region  選択範囲だけを表示
+- C-x n w : widen
+
+
+
+## 参考リンク
+
+- [Emacs Manual - Registers](https://www.gnu.org/software/emacs/manual/html_node/emacs/Registers.html)
+- [Emacs Manual - Prefix Argument (C-u)](https://www.gnu.org/software/emacs/manual/html_node/emacs/Arguments.html)
+
+
+
+

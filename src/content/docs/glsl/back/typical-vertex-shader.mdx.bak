@@ -1,0 +1,206 @@
+---
+title: ＊）典型的なvertex shader
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+# WebGLにおけるシェーダー描画範囲の制御手法
+
+## 概要
+
+WebGLとThree.jsでシェーダーを実装する際、描画範囲を画面全体に表示するか、3Dオブジェクトとして限定された範囲に表示するかで、実装方法が大きく異なる。本レポートでは両アプローチの実装手法と技術的差異を解説する。
+
+## 画面全体に描画する方法
+
+画面全体にシェーダーエフェクトを適用する手法は、一般的にフルスクリーンクワッドと呼ばれる。
+
+### 標準的な実装パターン
+
+- 頂点シェーダー
+  ```glsl
+  precision highp float;
+  
+  void main() {
+    gl_Position = vec4(position, 1.0);
+  }
+  ```
+
+- ジオメトリの設定
+  ```javascript
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  ```
+
+- 座標系の理解
+  - このアプローチでは正規化デバイス座標（NDC）を直接使用
+  - 座標範囲は (-1,-1) から (1,1) で画面全体をカバー
+  - (0,0) が画面中央、(-1,-1) が左下、(1,1) が右上
+
+- カメラ設定
+  - カメラの設定は実質的に不要（使用しない）
+  - 変換行列を適用せず、頂点座標を直接使用
+
+### 実装上の注意点
+
+1. 変換行列不使用
+   - `modelViewMatrix` や `projectionMatrix` を使わない
+   - カメラの位置や回転に影響されない
+
+2. セグメント数の最適化
+   - 単純な表示なら `PlaneGeometry(2, 2)` でセグメント数は最小限でよい
+   - ただし、頂点シェーダーで変形を行う場合は、より多くのセグメント数が必要
+
+3. フラグメントシェーダーとの連携
+   - UV座標を渡す場合は追加の varying 変数が必要
+   ```glsl
+   varying vec2 vUv;
+   
+   void main() {
+     vUv = uv;
+     gl_Position = vec4(position, 1.0);
+   }
+   ```
+
+## 3Dオブジェクトとして描画する方法
+
+シェーダーを特定のジオメトリに適用し、3D空間内のオブジェクトとして描画する手法。
+
+### 標準的な実装パターン
+
+- 頂点シェーダー
+  ```glsl
+  varying vec2 vUv;
+  varying vec3 vPosition;
+  
+  void main() {
+    vUv = uv;
+    vPosition = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+  ```
+
+- ジオメトリの設定
+  ```javascript
+  // 複雑な表面効果のためにセグメント数を増やす
+  const geometry = new THREE.PlaneGeometry(2, 2, 128, 128);
+  ```
+
+- カメラ設定
+  ```javascript
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 1;
+  ```
+
+### 実装上の注意点
+
+1. 変換行列の利用
+   - `modelViewMatrix` と `projectionMatrix` を使って3D空間からスクリーン空間への変換を行う
+   - オブジェクトの位置、回転、スケールが反映される
+
+2. セグメント数の重要性
+   - 流体シミュレーションなど複雑な効果には多くのセグメント数が必要
+   - 分割数が多いほど滑らかな変形が可能になるが、パフォーマンスコストも増加
+
+3. カメラ設定の影響
+   - カメラの位置、視野角、投影方式がジオメトリの見え方に影響
+   - 視野角（FOV）が広いほど遠近感が強くなる
+
+## 両アプローチの使い分け
+
+| 特性 | 画面全体 | 3Dオブジェクト |
+|------|---------|---------------|
+| 使用場面 | ポストプロセス効果、画面効果 | マテリアル効果、部分的効果 |
+| 座標系 | 正規化デバイス座標 (NDC) | ワールド/ローカル座標から変換 |
+| カメラの影響 | なし | あり |
+| z軸操作 | 基本的に不要 | 重要 |
+| 他オブジェクトとの連携 | 難しい | 容易 |
+
+## 実装例の比較
+
+### 画面全体表示（フルスクリーンシェーダー）
+
+```javascript
+// シェーダーマテリアル作成
+const material = new THREE.ShaderMaterial({
+  vertexShader: `
+    void main() {
+      gl_Position = vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    void main() {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // 赤色
+    }
+  `
+});
+
+// 平面ジオメトリ作成（画面全体）
+const geometry = new THREE.PlaneGeometry(2, 2);
+const mesh = new THREE.Mesh(geometry, material);
+
+// 直接シーンに追加（カメラの設定は影響しない）
+scene.add(mesh);
+```
+
+### 3Dオブジェクト表示
+
+```javascript
+// シェーダーマテリアル作成
+const material = new THREE.ShaderMaterial({
+  vertexShader: `
+    varying vec2 vUv;
+    
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying vec2 vUv;
+    
+    void main() {
+      gl_FragColor = vec4(vUv.x, vUv.y, 0.0, 1.0); // UVに基づく色
+    }
+  `
+});
+
+// 平面ジオメトリ作成（セグメント多め）
+const geometry = new THREE.PlaneGeometry(2, 2, 64, 64);
+const mesh = new THREE.Mesh(geometry, material);
+
+// カメラ設定
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 2;
+
+// シーンに追加
+scene.add(mesh);
+```
+
+## 用語説明
+
+- **正規化デバイス座標 (NDC)**: WebGLでの標準座標系。X, Y, Z軸とも -1.0 から 1.0 の範囲で表される。
+- **modelViewMatrix**: オブジェクトのローカル座標をカメラから見た座標に変換する行列。
+- **projectionMatrix**: 3D空間の座標を2Dの画面座標に投影するための行列。
+- **フルスクリーンクワッド**: 画面全体を覆う四角形。ポストプロセッシングに広く使用される。
+- **セグメント数**: ジオメトリの分割数。多いほど詳細な変形が可能だが処理コストも高い。
+
+## リファレンス
+
+- [Three.js Documentation](https://threejs.org/docs/)
+- [WebGL Fundamentals](https://webglfundamentals.org/)
+- [The Book of Shaders](https://thebookofshaders.com/)
+- [Learn WebGL](http://learnwebgl.brown37.net/)

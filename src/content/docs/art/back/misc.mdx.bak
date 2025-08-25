@@ -1,0 +1,99 @@
+---
+title: sandboxes
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+### rtpMIDI
+- rtpで受信したMIDIをWeb MIDI API経由でTypescriptで受信、three.jsのアニメーションに反映させるコード
+<div style="display:flex; align-items:flex-end;gap:18px;padding-left:40px">
+ <div><img src="/subproject/rtpMIDI.png" width="820" style="display: block;"/></div>
+</div>
+
+### g-sandbox(glsl sandobx)
+- html.ts/g-sandbox
+#### 
+#### branch: uzu01
+- attractor/repellorを作って、そのポテンシャルを作って、ポテンシャル値に応じた背景色をHSVで塗る
+- 等高線を白色で作成し、fract(beatTime)で移動させる)。ちゃんとしたビートになっていないが
+- UIを表示してパラメータ変更などする
+- 等方的なポテンシャルに三角関数＋ノイズで非等方的に
+- ノイズ関数のutility
+- hide/UIのボタンで画面キャプチャできる。ダブルクリックもしくはスマホ2点ポイントでUI再表示。これは再利用が必要
+
+<div style="display:flex; align-items:flex-end;gap:18px;padding-left:40px">
+ <div><img src="/subproject/uzu01-1.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-2.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-3.png" width="120" style="display: block;"/></div>
+ <div><img src="/subproject/uzu01-4.png" width="120" style="display: block;"/></div>
+</div>
+
+#### branch: SDF/metal-life
+- full screen quadのSDF
+- 図形を表す関数を作成
+- map関数を
+
+#### branch: SDF/still
+- 静止画生成に特化
+- SDFの基本を
+
+#### pingpong/boids
+- Boidsとは、同じオブジェクトをまるでその単体がたくさんいるように動かしてモブを作り出す手法をいう
+- 並列処理には、GLSLを用いてPing-Pongバッファを利用
+- Boidsのアルゴリズムは3つの原則に基づくベクトル加算により個体の運動ベクトルを更新する
+
+<center><img src="/subproject/boids.png" width="300"/></center>
+
+###### Ping-Pong アルゴリズム
+- GLSLではuniform sampler2Dで入力テクスチャで前フレームを受け取る
+- 各ピクセルでBoidの状態を計算し`gl_FragColor`に次の状態を書き込む
+- フレームごとにAとBを入れ替え
+
+
+##### Boids アルゴリズム
+
+- 各Boid $i$ は位置ベクトル $\vec{p}\_i$ と速度ベクトル $\vec{v}\_i$ を持つ
+- 近傍Boidとの相互作用により加速度ベクトル $\vec{a}\_i$ を更新
+- 近傍集合を $N\_i$ とする
+
+#### Cohesion（中心へ向かう）
+$$
+\vec{a}_{\text{coh}} = k_c \cdot \left( \frac{1}{|N_i|} \sum_{j \in N_i} \vec{p}_j - \vec{p}_i \right)
+$$
+#### Alignment（方向を合わせる）
+$$
+\vec{a}_{\text{ali}} = k_a \cdot \left( \frac{1}{|N_i|} \sum_{j \in N_i} \vec{v}_j - \vec{v}_i \right)
+$$
+#### Separation（密集を避ける）
+$$
+\vec{a}_{\text{sep}} = k_s \cdot \sum_{j \in N_i} \frac{\vec{p}_i - \vec{p}_j}{\|\vec{p}_i - \vec{p}_j\|^2 + \varepsilon}
+$$
+* 最終的な加速度と速度・位置更新：
+$$
+\vec{a}_i = \vec{a}_{\text{coh}} + \vec{a}_{\text{ali}} + \vec{a}_{\text{sep}}\\
+\vec{v}_i \leftarrow \text{clamp}(\vec{v}_i + \vec{a}_i, v_{\min}, v_{\max})\\
+\vec{p}_i \leftarrow \vec{p}_i + \vec{v}_i
+$$
+* $k\_c, k\_a, k\_s$：各原則の重み係数
+* $\varepsilon$：ゼロ除算防止項
+### 参考
+* Reynolds, C. W. (1987). "Flocks, herds and schools: A distributed behavioral model." SIGGRAPH
+* [https://www.red3d.com/cwr/boids/](https://www.red3d.com/cwr/boids/)
+
+### 3-sandbox

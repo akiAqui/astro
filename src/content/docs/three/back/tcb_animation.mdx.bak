@@ -1,0 +1,620 @@
+---
+title: ＊）TCB animation
+description: tension continuity bias animation
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+# TCBスプラインによるThree.jsアニメーション実装
+
+## 要約
+
+本レポートでは、Three.jsとGSAPを用いたキーフレームアニメーションでTCB（Tension-Continuity-Bias）スプラインを実装する方法を解説する。TCBスプラインの数学的基礎からプログラム実装まで説明し、特に点や線の属性変更アニメーションにおける滑らかな補間方法を提案する。
+
+## TCBスプラインの数学的基礎
+
+### エルミートスプラインとその拡張
+
+TCBスプラインの基礎となるのはエルミートスプラインである。エルミートスプライン補間は、2つの点とその接線を使用して滑らかな曲線を生成する：
+
+$$
+P(t) = h_{00}(t)P_0 + h_{10}(t)m_0 + h_{01}(t)P_1 + h_{11}(t)m_1, \quad 0 \leq t \leq 1
+$$
+
+ここで：
+- $P_0$, $P_1$ は始点と終点
+- $m_0$, $m_1$ は始点と終点での接線ベクトル
+- $h_{xx}(t)$ はエルミート基底関数：
+  $$
+  \begin{align}
+  h_{00}(t) &= 2t^3 - 3t^2 + 1 \\
+  h_{10}(t) &= t^3 - 2t^2 + t \\
+  h_{01}(t) &= -2t^3 + 3t^2 \\
+  h_{11}(t) &= t^3 - t^2
+  \end{align}
+  $$
+
+TCBスプラインの特徴：
+TCBスプライン（Kochanek-Bartelsスプライン）は、エルミートスプラインを拡張し、接線ベクトルの計算に3つのパラメータを導入することで曲線の形状を柔軟に制御できるようにしたもの。
+
+### TCBパラメータの定義と影響
+
+TCBスプラインでは各制御点に3つのパラメータを設定：
+
+- Tension（緊張度）$t$: 曲線の「緊張」を制御（-1?1）
+  - $t = -1$: 緩やかな曲線（接線が長くなる）
+  - $t = 0$: 標準的な曲線
+  - $t = 1$: 引き締まった曲線（接線が短くなる）
+
+- Continuity（連続性）$c$: 曲線の連続性を制御（-1?1）
+  - $c = -1$: 鋭い角を形成（接線の不連続）
+  - $c = 0$: 連続的な曲線
+  - $c = 1$: 連続性が高い曲線
+
+- Bias（偏り）$b$: 曲線が前後どちらに偏るかを制御（-1?1）
+  - $b = -1$: 後方（次の点）に偏る
+  - $b = 0$: 偏りなし
+  - $b = 1$: 前方（前の点）に偏る
+
+### TCBスプラインの数学的表現
+
+エルミートスプラインとTCBスプラインの主な違いは接線ベクトルの計算方法にある。TCBスプラインでは、接線ベクトルが以下のように計算される：
+
+$$
+\begin{align}
+D_{i,i+1}^- &= \frac{(1-t)(1+b)(1+c)}{2}(P_i - P_{i-1}) + \frac{(1-t)(1-b)(1-c)}{2}(P_{i+1} - P_i) \\
+D_{i,i+1}^+ &= \frac{(1-t)(1+b)(1-c)}{2}(P_i - P_{i-1}) + \frac{(1-t)(1-b)(1+c)}{2}(P_{i+1} - P_i)
+\end{align}
+$$
+
+ここで：
+- $P_i$は制御点（コントロールポイント）を表す
+- $D_{i,i+1}^-$ は点 $P_i$ での出力接線（右側の接線）
+- $D_{i,i+1}^+$ は点 $P_{i+1}$ での入力接線（左側の接線）
+- $t, c, b$ はそれぞれ Tension, Continuity, Bias パラメータ
+
+これらの接線ベクトルをエルミートスプライン式に代入することで、TCBスプラインが得られる：
+
+$$
+P(u) = h_{00}(u)P_i + h_{10}(u)D_{i,i+1}^- + h_{01}(u)P_{i+1} + h_{11}(u)D_{i,i+1}^+
+$$
+
+ここで $u$ は $[0,1]$ の補間パラメータで、$h_{xx}(u)$ はエルミート基底関数。
+
+
+
+- TCBスプラインにおいて
+  - P_i は i 番目の制御点の位置ベクトルを表します
+  - 例えば、3次元空間では $P_i = (x_i, y_i, z_i)$ となります
+  - スプラインは一連の制御点 $P_0, P_1, P_2, ..., P_n$ を通過する曲線です
+- TCBスプラインの数式において：
+  - $P_i$ と $P_{i+1}$ は隣接する制御点で、スプラインの1つのセグメントの始点と終点です
+  - $P_{i-1}$ と $P_{i+2}$ は、接線の計算に使用される隣接セグメントの制御点です
+- 接線ベクトルを計算する際：
+  - $D_{i,i+1}^-$ は点 $P_i$ での出力接線（$P_i$ から $P_{i+1}$ に向かう方向の接線）
+  - $D_{i,i+1}^+$ は点 $P_{i+1}$ での入力接線（$P_i$ から $P_{i+1}$ に向かってくる方向の接線）
+-これらの接線は$P_{i-1}, P_i, P_{i+1}, P_{i+2}$ の位置と、TCBパラメータによって決まります。
+
+
+## TCBスプラインの高度な特性
+
+### 数値安定性とオーバーシュート
+
+TCBスプラインは極端なパラメータ値で数値的不安定性を示すことがあり、特に注意が必要である：
+
+- オーバーシュートの数学的根拠：
+  Tensionが-1に近づくと、接線ベクトルの大きさが増大する。接線ベクトルの計算式で $(1-t)$ の項を考えると、$t = -1$ のとき係数は $2$ となり、接線が通常の2倍の長さになる。この長い接線が曲線の形状に反映されると、制御点を超えて大きく振れる「オーバーシュート」が発生する。
+
+  数学的には、エルミート基底関数 $h_{10}(u)$ と $h_{11}(u)$ の係数が大きくなり、補間点が制御点の位置から離れる：
+  
+  $$
+  \begin{align}
+  P(u) &= h_{00}(u)P_i + h_{10}(u)D_{i,i+1}^- + h_{01}(u)P_{i+1} + h_{11}(u)D_{i,i+1}^+ \\
+  &= h_{00}(u)P_i + h_{10}(u)(2 \cdot \textrm{normal\_tangent}) + h_{01}(u)P_{i+1} + h_{11}(u)(2 \cdot \textrm{normal\_tangent})
+  \end{align}
+  $$
+
+  特に $u = 0.5$ 付近では、接線成分の寄与が大きくなり、オーバーシュートが顕著になる。
+
+- 対策：
+  実装時にはTensionの値を -0.9 から 0.9 の範囲にクランプするなどの対策が効果的。
+
+### 局所性と大域性のトレードオフ
+
+TCBスプラインの重要な特性の一つは、制御点ごとに独立したパラメータを持ちながらも、隣接点との関係性を保つ点である：
+
+- 各制御点でのパラメータ変更は、その点を通る2つのセグメントに影響
+- 完全な局所制御（一点のみに影響）は不可能だが、影響範囲は限定的
+- これにより、全体的な滑らかさを保ちながら局所的な形状制御が可能
+
+### 接線計算の直感的理解
+
+TCBパラメータの効果を直感的に理解するには、接線ベクトルへの影響を以下のように解釈すると効果的：
+
+- Tension（緊張度）: 接線ベクトルの「長さ」を制御
+  - 負の値: 接線が長くなり、曲線がより「弛んだ」形に
+  - 正の値: 接線が短くなり、曲線が「引き締まった」形に
+
+- Continuity（連続性）: 入力と出力の接線間の「角度差」を制御
+  - 負の値: 接線の不連続性が増し、鋭角的な曲がり
+  - 正の値: 接線がより滑らかにつながり、連続的な曲がり
+
+- Bias（偏り）: 接線の「方向の非対称性」を制御
+  - 負の値: 次の点への方向に偏る
+  - 正の値: 前の点からの方向に偏る
+
+### 近似的物理シミュレーション
+
+TCBパラメータは物理的な動きを近似するパラメータとして解釈することも可能：
+
+- Tension: バネの硬さや材質の剛性に類似
+  - 高い値: 硬い材質（金属のような動き）
+  - 低い値: 柔らかい材質（ゴムのような動き）
+
+- Continuity: 慣性や摩擦に類似
+  - 高い値: 滑らかに流れる動き（低摩擦）
+  - 低い値: 急激な方向転換（高摩擦）
+
+- Bias: 外力や片寄った重力のような影響
+  - 正/負の値: 特定方向への偏り（風や傾斜の影響）
+
+この解釈を用いると、自然な動きを模倣するパラメータ設定が直感的に行えるようになる。
+
+## TCBスプラインの実装
+
+### アルゴリズム詳細
+
+TCBスプラインを実装するための詳細なアルゴリズム：
+
+1. 各制御点に対してTCBパラメータを設定
+2. 各セグメントの接線ベクトルを計算
+3. 補間パラメータに基づいてエルミート補間を実行
+
+```javascript
+class TCBSpline {
+  constructor(points, tensions = [], continuities = [], biases = []) {
+    this.points = points;
+    // デフォルト値を設定（すべてのポイントで0）
+    this.tensions = tensions.length ? tensions : Array(points.length).fill(0);
+    this.continuities = continuities.length ? continuities : Array(points.length).fill(0);
+    this.biases = biases.length ? biases : Array(points.length).fill(0);
+  }
+
+  // 補間曲線上の点を取得
+  getPoint(t) {
+    // t は 0〜1の間の値
+    const segments = this.points.length - 1;
+    const segment = Math.min(Math.floor(t * segments), segments - 1);
+    const segmentT = (t * segments) - segment;
+    
+    // 4つの制御点を取得（端点の場合は適切に処理）
+    const p0 = segment > 0 ? this.points[segment - 1] : this.points[segment];
+    const p1 = this.points[segment];
+    const p2 = this.points[segment + 1];
+    const p3 = segment < segments - 1 ? this.points[segment + 2] : this.points[segment + 1];
+    
+    return this.interpolate(
+      p0, p1, p2, p3,
+      segmentT,
+      this.tensions[segment + 1],
+      this.continuities[segment + 1],
+      this.biases[segment + 1]
+    );
+  }
+
+  // TCBパラメータを考慮した補間
+  interpolate(p0, p1, p2, p3, t, tension, continuity, bias) {
+    // TCBパラメータに基づいて接線を計算
+    const a = (1 - tension) * (1 + bias) * (1 + continuity) / 2;
+    const b = (1 - tension) * (1 - bias) * (1 - continuity) / 2;
+    const c = (1 - tension) * (1 - bias) * (1 + continuity) / 2;
+    const d = (1 - tension) * (1 + bias) * (1 - continuity) / 2;
+    
+    // 接線ベクトルを計算
+    const v1x = a * (p1.x - p0.x) + b * (p2.x - p1.x);
+    const v1y = a * (p1.y - p0.y) + b * (p2.y - p1.y);
+    const v1z = a * (p1.z - p0.z) + b * (p2.z - p1.z);
+    
+    const v2x = c * (p2.x - p1.x) + d * (p3.x - p2.x);
+    const v2y = c * (p2.y - p1.y) + d * (p3.y - p2.y);
+    const v2z = c * (p2.z - p1.z) + d * (p3.z - p2.z);
+    
+    // エルミート基底関数の係数を計算
+    const t2 = t * t;
+    const t3 = t2 * t;
+    
+    const h1 = 2 * t3 - 3 * t2 + 1;
+    const h2 = t3 - 2 * t2 + t;
+    const h3 = -2 * t3 + 3 * t2;
+    const h4 = t3 - t2;
+    
+    // エルミート補間で結果を計算
+    return {
+      x: h1 * p1.x + h2 * v1x + h3 * p2.x + h4 * v2x,
+      y: h1 * p1.y + h2 * v1y + h3 * p2.y + h4 * v2y,
+      z: h1 * p1.z + h2 * v1z + h3 * p2.z + h4 * v2z
+    };
+  }
+}
+```
+
+### Three.jsでの実装例
+
+Three.jsでTCBスプラインを実装し、アニメーションに利用する例：
+
+```javascript
+// TCBスプライン制御点を設定
+const points = [
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(5, 10, 0),
+  new THREE.Vector3(10, 0, 0),
+  new THREE.Vector3(15, -5, 0)
+];
+
+// TCBパラメータを設定（各制御点ごと）
+const tensions = [0, -0.5, 0.5, 0];       // 負の値ほど緩やか、正の値ほど鋭い
+const continuities = [0, 0, -0.5, 0];     // 接線の連続性
+const biases = [0, 0.5, -0.5, 0];         // 前後への偏り
+
+// TCBスプラインのインスタンスを作成
+const spline = new TCBSpline(points, tensions, continuities, biases);
+
+// 線を描画するためのジオメトリ
+const geometry = new THREE.BufferGeometry();
+const linePoints = [];
+
+// スプラインに沿って点を生成
+for (let i = 0; i <= 100; i++) {
+  const t = i / 100;
+  const point = spline.getPoint(t);
+  linePoints.push(new THREE.Vector3(point.x, point.y, point.z));
+}
+
+geometry.setFromPoints(linePoints);
+const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+const line = new THREE.Line(geometry, material);
+scene.add(line);
+```
+
+### GSAPとの連携例
+
+GSAPとTCBスプラインを組み合わせた実装例：
+
+```javascript
+// TCBスプラインのインスタンスを作成（上記と同じ）
+const spline = new TCBSpline(points, tensions, continuities, biases);
+
+// GSAPでアニメーション
+gsap.to({t: 0}, {
+  t: 1,
+  duration: 5,
+  ease: "power1.inOut", // イージング関数
+  onUpdate: function() {
+    const point = spline.getPoint(this.targets()[0].t);
+    cube.position.set(point.x, point.y, point.z);
+  },
+  repeat: -1, // 無限に繰り返す
+  yoyo: true  // 往復アニメーション
+});
+```
+
+### アニメーションでの時間変数の高度な扱い
+
+GSAPとTCBスプラインを組み合わせる場合、時間変数の操作によって表現力を大きく向上させることができる：
+
+- 二重のイージング
+  TCBスプラインの空間的な補間とGSAPの時間的なイージングを組み合わせると、複雑で自然な動きが実現できる：
+  
+  ```javascript
+  // 空間（スプライン）と時間（GSAP）の二重イージング
+  gsap.to({t: 0}, {
+    t: 1,
+    duration: 5,
+    ease: "elastic.out(1, 0.3)", // バウンドするような時間イージング
+    onUpdate: function() {
+      const point = spline.getPoint(this.targets()[0].t);
+      object.position.copy(point);
+    }
+  });
+  ```
+
+- ループするスプラインの処理
+  閉じたループを形成するスプラインの場合、特別な処理が必要：
+  
+  ```javascript
+  // ループするスプラインの場合
+  // 最初と最後の点が同じになるよう設定
+  const loopPoints = [...points, points[0]];
+  const loopTensions = [...tensions, tensions[0]];
+  const loopContinuities = [...continuities, continuities[0]];
+  const loopBiases = [...biases, biases[0]];
+  
+  // ループアニメーションのタイムライン
+  const tl = gsap.timeline({repeat: -1});
+  tl.to({t: 0}, {
+    t: 1,
+    duration: 10,
+    ease: "none",
+    onUpdate: function() {
+      const point = spline.getPoint(this.targets()[0].t);
+      object.position.copy(point);
+    }
+  });
+  ```
+
+- パフォーマンス最適化
+  多数のオブジェクトをアニメーションする場合、計算結果のキャッシュが効果的：
+  
+  ```javascript
+  // 事前計算による最適化
+  const cachedPoints = [];
+  const resolution = 1000; // キャッシュの分解能
+  
+  // 事前に点を計算
+  for (let i = 0; i <= resolution; i++) {
+    cachedPoints.push(spline.getPoint(i / resolution));
+  }
+  
+  // GSAPでキャッシュから補間
+  gsap.to({progress: 0}, {
+    progress: resolution,
+    duration: 5,
+    ease: "power1.inOut",
+    onUpdate: function() {
+      const index = Math.floor(this.targets()[0].progress);
+      const nextIndex = Math.min(index + 1, resolution);
+      const remainder = this.targets()[0].progress - index;
+      
+      // キャッシュした点間の線形補間
+      const point = {
+        x: lerp(cachedPoints[index].x, cachedPoints[nextIndex].x, remainder),
+        y: lerp(cachedPoints[index].y, cachedPoints[nextIndex].y, remainder),
+        z: lerp(cachedPoints[index].z, cachedPoints[nextIndex].z, remainder)
+      };
+      
+      object.position.set(point.x, point.y, point.z);
+    }
+  });
+  
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+  ```
+
+## TCBパラメータの視覚的効果
+
+各TCBパラメータの視覚的効果を理解するための例：
+
+### Tension（緊張度）の影響
+
+```javascript
+// 異なるTensionでの比較
+const lowTension = new TCBSpline(points, [-0.8, -0.8, -0.8, -0.8]); // 緩やか
+const normalTension = new TCBSpline(points);                        // 通常
+const highTension = new TCBSpline(points, [0.8, 0.8, 0.8, 0.8]);    // 引き締まった
+```
+
+### Continuity（連続性）の影響
+
+```javascript
+// 異なるContinuityでの比較
+const sharpCorners = new TCBSpline(
+  points, 
+  [0, 0, 0, 0],               // 通常のTension
+  [-0.8, -0.8, -0.8, -0.8]    // 角が鋭くなる
+);
+const smoothCurve = new TCBSpline(
+  points, 
+  [0, 0, 0, 0],               // 通常のTension
+  [0.8, 0.8, 0.8, 0.8]        // より滑らかになる
+);
+```
+
+### Bias（偏り）の影響
+
+```javascript
+// 異なるBiasでの比較
+const forwardBias = new TCBSpline(
+  points,
+  [0, 0, 0, 0],               // 通常のTension
+  [0, 0, 0, 0],               // 通常のContinuity
+  [0.8, 0.8, 0.8, 0.8]        // 前方に偏る
+);
+const backwardBias = new TCBSpline(
+  points,
+  [0, 0, 0, 0],               // 通常のTension
+  [0, 0, 0, 0],               // 通常のContinuity
+  [-0.8, -0.8, -0.8, -0.8]    // 後方に偏る
+);
+```
+
+## 実装戦略
+
+効率的な実装のためのステップバイステップアプローチ：
+
+1. 基本実装
+   - Three.jsの標準機能とGSAPで実装開始
+   - 単純な属性変更には基本的な補間で十分
+
+2. TCBスプライン実装
+   - 上記のTCBスプラインクラスを実装
+   - キーポイントとTCBパラメータの設定
+   - 数値安定性を考慮した実装
+   ```javascript
+   // Tensionの値をクランプする安全な実装
+   function clampTension(tension) {
+     return Math.max(-0.95, Math.min(0.95, tension));
+   }
+   
+   // 安全なTCBスプライン使用
+   interpolate(p0, p1, p2, p3, t, tension, continuity, bias) {
+     // 安全なTension値を使用
+     tension = clampTension(tension);
+     
+     // 以下、通常の計算...
+   }
+   ```
+
+3. GSAP連携
+   - GSAPのタイムラインとイージング機能を活用
+   - 複数の属性を同時にアニメーション
+
+4. 最適化と拡張
+   - パフォーマンス評価と最適化
+   - 特殊なケース（ループなど）の処理
+   - デバッグと視覚化ツールの追加
+   ```javascript
+   // TCBパラメータの視覚化ヘルパー
+   function visualizeTCBParameters(spline, scene) {
+     const tensionArrows = [];
+     const continuityMarkers = [];
+     const biasIndicators = [];
+     
+     // 各制御点にビジュアルインジケータを追加
+     for (let i = 0; i < spline.points.length; i++) {
+       // Tensionの視覚化（矢印の長さで表現）
+       // Continuityの視覚化（角度マーカー）
+       // Biasの視覚化（方向インジケーター）
+       // ...
+     }
+     
+     return {
+       update: function() {
+         // パラメータ変更時に視覚要素を更新
+       }
+     };
+   }
+   ```
+
+## 結論
+
+TCBスプラインは、エルミートスプラインを拡張し、接線計算に3つのパラメータを導入することで、より柔軟な曲線制御を実現している。Three.jsとGSAPを組み合わせることで、点や線の属性変更アニメーションを滑らかかつ細かく制御できる。特に、段階的に変化する複雑な動きを表現する場合に効果的である。
+
+---
+
+## 用語説明
+- GSAP: GreenSock Animation Platform。JavaScriptアニメーションライブラリ
+- エルミートスプライン: 点と接線の情報から構築される3次スプライン
+
+## リファレンス
+
+- [Three.js公式ドキュメント](https://threejs.org/docs/)
+- [GSAP公式ドキュメント](https://greensock.com/docs/)
+- [Kochanek?Bartels spline (TCB spline)](https://en.wikipedia.org/wiki/Kochanek%E2%80%93Bartels_spline)
+- [Hermite curve interpolation](https://en.wikipedia.org/wiki/Hermite_interpolation)

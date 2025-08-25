@@ -1,0 +1,217 @@
+---
+title: o) double buffering
+description: RenderTarget
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import {TimeStamp} from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+## source code
+- 初期化
+  - WebGLRenderTargetをarrayにして持つ
+  - geometryを一つ作るこれを使いまわす。このgeometryに摘要するMaterialは二つ作る！
+  - fragment shaderで書き下すためにShaderMaterialでfragment shaderを定義
+    - uniforms Objectを使ってPreviousFrameを含め値をtextureを想定する
+- 暫定処理
+  - 画面に書き込む初期状態のtexure暮らすデータをDataTexture()でwidth*hightのBGBAFormatで作成
+  - setRenderTarget(renderTarget0で)で最初に書き込むバッファを決定
+  - 暫定でMeshBasicMaterialを最初に作ったtextureクラスを使って作成
+  - 暫定でmeshを暫定materialで作成
+  - 一度だけレンダリングして、暫定で作ったmeshは削除する
+- setRenderTarget(null)で書き込み先バッファを指定せず画面書き込みにする
+- animation繰り返し
+  - 時間更新
+  - uniforms.previousFrame.valueに現在のrenderTarget.textureを書き込む
+  - 次に書き込むnextTargetにもう一つのrenderTargetを指定して一度目のrenderingする
+  - 次に書き込むrenderTargetをnullにしてレンダリングして二度目のrenderingをして画面に反映
+  - 
+
+## shderコード
+- vertex shader, fragment shaderはレンダリングの瞬間に計算される
+- PlaneGeometoryでは４点で張られるテクスチャの貼り付けられる面がUV座標系になっている
+- フラグメントシェーダでは、v_uvが各頂点間で線形補間されます。
+  - 100x100の四角形のPlaneGeometryで、ピクセルが100x100ならそのピクセル位置が(23,91)ならフラグメントシェーダでその位置は(0.23,0.91)となってv_uvに値が代入される
+  
+
+
+```javascript
+// Import necessary modules
+import * as THREE from 'three';
+
+// Create a WebGL renderer
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create a scene and camera
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(
+    -window.innerWidth / 2,
+    window.innerWidth / 2,
+    window.innerHeight / 2,
+    -window.innerHeight / 2,
+    -1,
+    1
+);
+
+// Create render targets
+const renderTargets = [
+    new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight),
+    new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight)
+];
+
+let currentRenderTarget = 0;
+
+// Quad geometry and material for rendering
+const geometry = new THREE.PlaneGeometry(window.innerWidth, window.innerHeight);
+
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uPreviousFrame: { value: null },
+        u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        u_time: { value: 0.0 }
+    },
+    vertexShader: `
+        varying vec2 v_uv;
+        void main() {
+            v_uv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D uPreviousFrame;
+        uniform vec2 u_resolution;
+        varying vec2 v_uv;
+
+        void main() {
+            vec2 texelSize = 1.0 / u_resolution;
+
+            // Get the value of the pixel above, applying periodic boundary conditions
+            vec2 upperUV = vec2(v_uv.x, v_uv.y - texelSize.y);
+            if (upperUV.y < 0.0) {
+                upperUV.y += 1.0;
+            }
+            vec4 upperColor = texture2D(uPreviousFrame, upperUV);
+
+            // Get current pixel value
+            vec4 currentPixel = texture2D(uPreviousFrame, v_uv);
+
+            // Linear interpolation between current and upper pixel values
+            vec4 newColor = mix(currentPixel, upperColor, 0.5);
+            gl_FragColor = newColor;
+        }
+    `,
+});
+
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+// Initialize the texture with a two-color pattern
+const initTexture = () => {
+    const size = window.innerWidth * window.innerHeight * 4;
+    const data = new Uint8Array(size);
+    const midY = Math.floor(window.innerHeight / 2);
+
+    for (let y = 0; y < window.innerHeight; y++) {
+        for (let x = 0; x < window.innerWidth; x++) {
+            const index = (y * window.innerWidth + x) * 4;
+            if (y < midY) {
+                data[index] = 255; // Red
+                data[index + 1] = 0; // Green
+                data[index + 2] = 0; // Blue
+                data[index + 3] = 255; // Alpha
+            } else {
+                data[index] = 0; // Red
+                data[index + 1] = 0; // Green
+                data[index + 2] = 255; // Blue
+                data[index + 3] = 255; // Alpha
+            }
+        }
+    }
+
+    const texture = new THREE.DataTexture(data, window.innerWidth, window.innerHeight, THREE.RGBAFormat);
+    texture.needsUpdate = true;
+    return texture;
+};
+
+// Initialize first render target with the pattern
+const initialTexture = initTexture();
+renderer.setRenderTarget(renderTargets[0]);
+const tempMaterial = new THREE.MeshBasicMaterial({ map: initialTexture });
+const tempMesh = new THREE.Mesh(geometry, tempMaterial);
+scene.add(tempMesh);
+renderer.render(scene, camera);
+scene.remove(tempMesh);
+renderer.setRenderTarget(null);
+
+// Animation loop
+const animate = () => {
+    material.uniforms.u_time.value += 0.01;
+
+    // Set the previous frame texture
+    material.uniforms.uPreviousFrame.value = renderTargets[currentRenderTarget].texture;
+
+    // Render to the other render target
+    const nextTarget = (currentRenderTarget + 1) % 2;
+    renderer.setRenderTarget(renderTargets[nextTarget]);
+    renderer.render(scene, camera);
+
+    // Render to screen
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+
+    // Swap render targets
+    currentRenderTarget = nextTarget;
+
+    requestAnimationFrame(animate);
+};
+
+animate();
+```

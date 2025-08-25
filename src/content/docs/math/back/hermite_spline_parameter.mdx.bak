@@ -1,0 +1,239 @@
+---
+title: ＊）エルミートスプラインのパラメータtの決定方法
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+# 
+
+## 要約
+エルミートスプラインにおけるパラメータtの決定は補間の動きと速度に大きく影響する。本セクションでは各パラメータ化手法の数学的基礎とその特性を解説し、適切な選択方法を示す。
+
+## パラメータtの数学的意義
+
+エルミートスプラインの基本式は以下の通り：
+
+$$
+P(t) = h_{00}(t)P_0 + h_{10}(t)m_0 + h_{01}(t)P_1 + h_{11}(t)m_1, \quad 0 \leq t \leq 1
+$$
+
+ここでパラメータtは曲線上の位置を決定する重要な要素であり、その選択方法によって曲線の形状や動きの特性が変わる。
+
+## パラメータtの主要な決定方法とその数学的基礎
+
+### 1. 一様パラメータ化（Uniform Parameterization）
+
+最も基本的なパラメータ化で、tを等間隔で増加させる：
+
+- 数学的定義
+  - n個の制御点${P_{0}, P_{1}, ..., P_{n}}$に対して
+  - t = i/(n-1), i = 0,1,...,n-1
+
+- 数学的性質
+  - パラメータ空間で等間隔
+  - 実空間では点間の距離に関係なく同じ増分
+
+一様パラメータ化の場合、制御点間の実際の距離に関わらず同じtの増分を使用するため、点間の距離が大きく異なると速度感が不均一になる。
+
+### 2. 弧長パラメータ化（Arc-length Parameterization）
+
+曲線に沿った実際の距離（弧長）に基づいてtを決定：
+
+- 数学的定義
+  - 曲線C上の点Pから点Qまでの弧長：
+    $$s(P, Q) = \int_{t_P}^{t_Q} \left\| \frac{d\mathbf{C}(t)}{dt} \right\| dt$$
+  
+  - 全弧長を[0,1]に正規化：
+    $$t(s) = \frac{s}{s_{total}}$$
+    ここでs_totalは曲線の総弧長
+
+- 弧長パラメータ化の重要な性質
+  - 曲線に沿った移動速度が一定
+  - $\left\| \frac{d\mathbf{C}(t)}{dt} \right\|$ が定数になる
+
+弧長パラメータ化は数学的に理想的だが、多くの曲線で弧長の閉形式の解が存在せず、数値計算や近似が必要になる。
+
+### 3. コード長パラメータ化（Chord-length Parameterization）
+
+実用的な弧長の近似として、制御点間の直線距離（コード長）を使用：
+
+- 数学的定義
+  - 点間のユークリッド距離に基づくパラメータ化
+  - 各区間の距離：$d_i = \|\mathbf{P_i} - \mathbf{P_{i-1}}\|$
+  - 累積距離：$D_i = \sum_{j=1}^{i} d_j$
+  - パラメータ：$t_i = \frac{D_i}{D_n}$, ここでD_nは総距離
+
+- 数学的特性
+  - 直線的な近似であり計算が簡単
+  - 曲線が複雑でない場合は弧長の良い近似
+  - $t_i - t_{i-1} \propto \|\mathbf{P_i} - \mathbf{P_{i-1}}\|$
+
+### 4. 遠心パラメータ化（Centripetal Parameterization）
+
+点間の距離の平方根に基づくパラメータ化：
+
+- 数学的定義
+  - $\Delta t_i \propto \sqrt{\|\mathbf{P_i} - \mathbf{P_{i-1}}\|}$
+  - 正規化すると：$t_i = \frac{\sum_{j=1}^{i} \sqrt{d_j}}{\sum_{j=1}^{n} \sqrt{d_j}}$
+
+- 数学的に重要な特性
+  - 曲線のループや尖りを防止する能力
+  - 特に点間の距離が大きく異なる場合に効果的
+  - Yuksel等の研究によれば形状保存性が優れている
+
+## パラメータ選択の理論的根拠
+
+各パラメータ化手法の理論的特性：
+
+- 一様パラメータ化
+  - 最も単純だが、点の分布が不均一な場合に問題が生じる
+  - 数学的には $\frac{d\mathbf{C}(t)}{dt}$ が点間の距離に比例して変化
+
+- 弧長パラメータ化
+  - 理論的に最適：$\left\| \frac{d\mathbf{C}(t)}{dt} \right\| = constant$
+  - 計算が複雑で、多くの場合数値積分が必要
+
+- コード長パラメータ化
+  - 弧長の効率的な近似
+  - 点分布に適応するが曲線の曲率を考慮しない
+
+- 遠心パラメータ化
+  - 数学的に証明された特性：形状保存と自己交差回避
+  - $\alpha = 0.5$ (平方根)が一般的だが、理論的には $\alpha \in [0, 1]$ の範囲で調整可能
+  - $\Delta t_i \propto \|\mathbf{P_i} - \mathbf{P_{i-1}}\|^\alpha$
+
+## パラメータ化の数学的影響分析
+
+異なるパラメータ化がスプライン曲線に与える影響の数学的解析：
+
+- 曲率への影響
+  - 一様パラメータ化：点間隔が不均一な場合、曲率分布も不均一
+  - 弧長パラメータ化：曲率が自然に分布
+  - 遠心パラメータ化：曲率が過度に集中することを防ぐ
+
+- 速度分布
+  - 一様パラメータ化：$\|v(t)\| \propto \|\mathbf{P_i} - \mathbf{P_{i-1}}\|$
+  - 弧長パラメータ化：$\|v(t)\| = constant$
+  - コード長/遠心：$\|v(t)\|$ は点の分布に応じて調整される
+
+- 加速度分布
+  - 数学的には加速度 $a(t) = \frac{d^2\mathbf{C}(t)}{dt^2}$
+  - 各パラメータ化で加速度分布が異なり、動きの滑らかさに影響
+

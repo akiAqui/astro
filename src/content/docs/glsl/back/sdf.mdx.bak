@@ -1,0 +1,350 @@
+---
+title: GLSLでSDFを利用して高品質な静止画を描画するノウハウ
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+ - [x] nothing
+
+## 前提方針
+
+- 目的は高品質な静止画像の生成
+- 計算資源は積極的に投入し、GPUは最大限活用
+- 一方で、無意味なループや不要な処理は排除
+
+## 静止画生成ではanimationループ不要
+- requestAnimationFrameによる描画ループ不要
+- OrbitControls(GLSLでは無効)のマウスでの画面制御不要
+
+## 開発時と完成時の設定
+- antialias 
+  - 高DPIであれば false にしても見た目の影響は小さいが
+  - 最終出力時はtrueでいいだろう
+- depthTest, depthWrite の無効化
+  - 2Dのフルスクリーンクアッドであれば不要
+
+
+
+
+## 実際のmain.ts
+- 一度だけ描画し、画面の大きさを変えたらまた一度描画する
+
+```javascript
+import * as THREE from 'three'
+//import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import fragmentShader from './fragment.glsl'
+import vertexShader from './vertex.glsl'
+
+const scene = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100)
+camera.position.z = 90
+
+const renderer = new THREE.WebGLRenderer({ antialias: true })
+renderer.setSize(window.innerWidth, window.innerHeight)
+document.body.appendChild(renderer.domElement)
+
+//const controls = new OrbitControls(camera, renderer.domElement)
+
+const geometry = new THREE.PlaneGeometry(200, 200)
+const material = new THREE.ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+  glslVersion: THREE.GLSL3,
+  uniforms: {
+    time: { value: 0.0 },
+    resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+  }
+})
+
+const quad = new THREE.Mesh(geometry, material)
+scene.add(quad)
+
+/* アニメーションなどの時はこちら
+function animate(t: number) {
+  material.uniforms.time.value = t * 0.001
+  renderer.render(scene, camera)
+  requestAnimationFrame(animate)
+}
+requestAnimationFrame(animate)
+*/
+
+// 一度だけ描画。静止画ならこれで十分
+function renderOnce() {
+  material.uniforms.time.value = 0.0  // 必要なら任意の値
+  renderer.render(scene, camera)
+}
+
+renderOnce()
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight
+  camera.updateProjectionMatrix()
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight)
+  renderOnce();,
+})
+```
+
+
+## powerPreference
+- powerPreference は WebGLRenderer のオプションであり、
+  three.js の内部で `canvas.getContext("webgl2", {...})` に渡される
+  WebGL API の context 作成パラメータのひとつ
+- WebGL 2.0 context attributes の一部であり
+  仕様上の型は "default" | "low-power" | "high-performance" のいずれか
+- WebGL が使用する GPU の選択ヒントとなるパラメータ
+  - 'high-performance' を指定すると外部GPUが優先されやすい
+  - 'low-power' を指定すると内蔵GPUが選ばれやすい
+- 高負荷なSDFの場合外部GPUの使用が望ましため、
+  powerPreference を 'high-performance' とすべき
+
+### 使い方
+main.ts内部では下記の様に指定する
+```ts
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  powerPreference: 'high-performance'  // または 'low-power' や 'default'
+})
+```
+内部的には下記のように変換される。
+```ts
+canvas.getContext("webgl2", {
+  powerPreference: 'high-performance'
+})
+```
+
+公式仕様：　https://www.khronos.org/registry/webgl/specs/latest/2.0/#5.2.1
+
+## window.devicePixelRatio
+- WebAPI、windowオブジェクトの読み取り専用プロパティ
+- CSSピクセルと物理ピクセルの比率
+  - 例：値が2なら framebuffer の横解像度は2倍
+- 高DPI環境では描画解像度が上昇し、SDF計算が重くなる
+
+
+## renderer.setPixelRatio
+- THREE.jsのAPIでTHREE.WebGLRenderer クラスのメソッド
+- どのくらいの密度で WebGL が framebuffer を構築するかを指定
+- 描画解像度（内部フレームバッファの物理ピクセル数）をプログラム側から明示的に制御するAPI
+- WebGLレンダラーが生成する内部フレームバッファのピクセル密度を設定
+
+```ts
+const renderer = new THREE.WebGLRenderer()
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.setPixelRatio(window.devicePixelRatio)
+```
+- setSize(width, height) で指定するサイズは「CSSピクセル数」
+- setPixelRatio(r) を組み合わせると、内部的には (width x r, height x r) のピクセルバッファが確保される
+  - 例：setSize(800, 600) に対して setPixelRatio(2.0) を指定すると、実際のレンダリングは 1600 x 1200
+- 開発前やプログラム開始時のログとして
+  - window.devicePixelRatioをconsole.logで確認し、
+    仮に1.0以上の値でその値を採用すると開発時のPC負荷が上がるなら、静的に1.0を指定するのもいいだろう
+  
+## 最終的な出力の考慮
+- 画面サイズ（window.innerWidth / innerHeight）に依存し描画解像度が決定。
+  - browserを広げると画像の出力解像度も上がる!
+- 画面表示とは無関係にオフスクリーン描画をする方が画像解像度を大きくできる
+- 下記のように、canvasに任意の大きさを設定して、display=noneにstyleを設定することで実現できる
+- 下記のように、preserveDrawingBuffer: true を指定しないと、描画後に toDataURL() で画像を取得できない（WebGLの仕様）
+- setPixelRatio() も使えばスケーリングできるが、画素数は setSize で決まるので、画質の主因は width × height
+- 仕組みとしては、WebGLバックエンドが framebuffer 上に描画し、それを toDataURL() などで取得する
+
+
+```ts
+// 任意の出力解像度
+const width = 2048
+const height = 2048
+const pixelRatio = 1.0  // devicePixelRatioを使うならそれでもよい
+
+// 非表示canvasを使う
+const hiddenCanvas = document.createElement('canvas')
+hiddenCanvas.style.display = 'none'
+document.body.appendChild(hiddenCanvas)
+
+const hiddenRenderer = new THREE.WebGLRenderer({
+  canvas: hiddenCanvas,
+  preserveDrawingBuffer: true // これが必要（保存可能に）
+})
+hiddenRenderer.setSize(width, height)
+hiddenRenderer.setPixelRatio(pixelRatio)
+
+// シーン・カメラの再構成または既存の使い回し
+hiddenRenderer.render(scene, camera)
+
+// PNG出力
+const link = document.createElement('a')
+link.download = 'highres.png'
+link.href = hiddenRenderer.domElement.toDataURL('image/png')
+link.click()
+
+// 後片付け
+document.body.removeChild(hiddenCanvas)
+```
+- 理論上の上限は下記のように得られるが
+  メモリ使用状況や preserveDrawingBuffer の有無によって現実には到達できないこともある。
+- MAX_RENDERBUFFER_SIZE：framebufferの幅と高さの最大値
+  - 最大描画理論サイズ=(MAX_RENDERBUFFER_SIZE)×(MAX_RENDERBUFFER_SIZE)
+  - GPU上では、width × height × 4bytes (RGBA) のメモリが必要になる
+- MAX_TEXTURE_SIZE：テクスチャとして割り当て可能な最大サイズ
+  - テクスチャを使う時に影響
+  - テクスチャの一辺の長さの最大値
+  -最大テクスチャサイズ=MAX_TEXTURE_SIZE×MAX_TEXTURE_SIZE
+
+- 通常は 4096 〜 16384 程度（ハイエンドGPUでは 16384 が多い）
+
+```ts
+const gl = renderer.getContext()
+const maxSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)
+console.log('MAX_RENDERBUFFER_SIZE:', maxSize)
+
+```
+
+```ts
+const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+console.log('MAX_TEXTURE_SIZE:', maxTexSize)
+
+```
+- 下記のようにfall backの仕組みを導入することも想定できる
+- エラーは WebGL: INVALID_FRAMEBUFFER_OPERATION などの形でコンソールに出るし、もちろん出ないこともある
+- toDataURL() が失敗することもある（nullを返す）
+
+```ts
+function tryRenderSize(renderer, scene, camera, size) {
+  try {
+    renderer.setSize(size, size)
+    renderer.render(scene, camera)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
+let size = 8192
+while (size >= 1024) {
+  if (tryRenderSize(renderer, scene, camera, size)) {
+    console.log(`Success at ${size} x ${size}`)
+    break
+  }
+  size = size / 2
+}
+```
+## 本PCの性能
+```txt
+WebGL Version:       WebGL 2.0 (OpenGL ES 3.0 Chromium)
+GLSL Version:        WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)
+Vendor:              WebKit
+Renderer:            WebKit WebGL
+Unmasked Vendor:     Google Inc. (Intel)
+Unmasked Renderer:   ANGLE (Intel, Intel(R) UHD Graphics (0x00008A56) Direct3D11 vs_5_0 ps_5_0, D3D11)
+
+--- Capabilities ---
+MAX_RENDERBUFFER_SIZE: 16384
+MAX_TEXTURE_SIZE:      16384
+MAX_VIEWPORT_DIMS:     32767,32767
+
+--- Display Info ---
+window.devicePixelRatio: 1.1799999475479126
+Screen Resolution:       1085 x 1737
+Available Screen Size:   1085 x 1696
+
+```
+この結果を出力するコード
+```html
+    <pre id="info" style="font-family: monospace; white-space: pre-wrap;"></pre>
+<script>
+(async function() {
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+
+  let info = '';
+
+  if (!gl) {
+    info = 'WebGL not supported in this environment.';
+  } else {
+    const dbgRenderInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+    info += `WebGL Version:       ${gl.getParameter(gl.VERSION)}\n`;
+    info += `GLSL Version:        ${gl.getParameter(gl.SHADING_LANGUAGE_VERSION)}\n`;
+    info += `Vendor:              ${gl.getParameter(gl.VENDOR)}\n`;
+    info += `Renderer:            ${gl.getParameter(gl.RENDERER)}\n`;
+
+    if (dbgRenderInfo) {
+      info += `Unmasked Vendor:     ${gl.getParameter(dbgRenderInfo.UNMASKED_VENDOR_WEBGL)}\n`;
+      info += `Unmasked Renderer:   ${gl.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL)}\n`;
+    }
+
+    info += `\n--- Capabilities ---\n`;
+    info += `MAX_RENDERBUFFER_SIZE: ${gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)}\n`;
+    info += `MAX_TEXTURE_SIZE:      ${gl.getParameter(gl.MAX_TEXTURE_SIZE)}\n`;
+    info += `MAX_VIEWPORT_DIMS:     ${gl.getParameter(gl.MAX_VIEWPORT_DIMS)}\n`;
+
+    info += `\n--- Display Info ---\n`;
+    info += `window.devicePixelRatio: ${window.devicePixelRatio}\n`;
+    info += `Screen Resolution:       ${window.screen.width} x ${window.screen.height}\n`;
+    info += `Available Screen Size:   ${window.screen.availWidth} x ${window.screen.availHeight}\n`;
+  }
+
+  document.getElementById('info').textContent = info;
+})();
+</script>
+```
+
+## 画面サイズ一覧（横×縦, アスペクト比, 用途）
+
+### モニタ・ディスプレイ向け
+
+| 名称       | 解像度       | アスペクト比 | 備考                       |
+|------------|--------------|---------------|----------------------------|
+| HD         | 1280 x 720   | 16:9          | テレビ、低解像度配信       |
+| Full HD    | 1920 x 1080  | 16:9          | 一般的なノートPCや動画再生 |
+| WQHD       | 2560 x 1440  | 16:9          | 高精細モニタ                |
+| 4K UHD     | 3840 x 2160  | 16:9          | 高解像度テレビ・PC表示     |
+| 5K         | 5120 x 2880  | 16:9          | 一部のMac、制作向け        |
+| 8K UHD     | 7680 x 4320  | 16:9          | 展示、研究、高精細表示     |
+
+### スマートフォン向け
+
+| デバイス        | 解像度        | アスペクト比 | 備考                  |
+|-----------------|---------------|---------------|-----------------------|
+| iPhone SE       | 640 x 1136    | 約9:16        | 小型デバイス           |
+| iPhone 13/14    | 1170 x 2532   | 約9:19.5      | Retinaディスプレイ     |
+| Android 高解像度 | 1440 x 3200   | 約9:20        | 主流の縦長スマートフォン |
+
+### SNS・画像投稿向け
+
+| 用途              | 解像度       | アスペクト比 | 備考                         |
+|-------------------|--------------|---------------|------------------------------|
+| Instagram 正方形  | 1080 x 1080  | 1:1           | 基本の投稿サイズ              |
+| Instagram 縦長    | 1080 x 1350  | 4:5           | 推奨サイズ                    |
+| Twitter 横長      | 1200 x 675   | 約16:9        | サムネイルやヘッダー向け     |
+
+
+
+
+## 用語説明
+
+- devicePixelRatio：ブラウザが報告する CSSピクセルと物理ピクセルのスケーリング比率
+- powerPreference：WebGLRendererにおけるGPU使用のヒント（内蔵か外部か）
+- framebuffer：GPU上に確保される描画用ピクセルバッファ
+- map関数：SDFで各オブジェクトまでの距離を合成するユーザ定義関数
+
+## 参考資料
+
+- WebGL powerPreference 設定と実際のGPU選択挙動（https://webglfundamentals.org/webgl/lessons/webgl-performance.html）
+- devicePixelRatioと高DPI描画の仕組み（https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio）
+- SDFにおけるフラグメント負荷の要因解説（https://iquilezles.org/articles/distfunctions/）
+- WebGLRenderer.setPixelRatioの意味と推奨使用法（https://threejs.org/docs/#api/en/renderers/WebGLRenderer.setPixelRatio）
+
+

@@ -1,0 +1,168 @@
+---
+title: ∇、偏微分記号
+description: nabla等
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+        .sl-markdown-content  {
+           font-size:15px;
+        }
+        .sl-markdown-content h1 {
+           font-size:  27px;
+           text-decoration: underline;
+           font-weight: bold
+        }
+        .sl-markdown-content h2 {
+           font-weight: normal;
+           text-decoration: underline;
+           font-size:25px;
+        }
+        .sl-markdown-content h3 {
+           font-size:20px;
+           font-weight: normal;
+           font-style: italic;
+           text-decoration: underline;
+        }
+        .sl-markdown-content h4 {
+           font-size:15px;
+           font-weight: normal;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content h5 {
+           font-size:12px;
+           font-weight: bold;
+           font-style: italic;           
+           text-decoration: underline;
+        }
+        .sl-markdown-content th {
+           font-size:12px;
+        }
+        .sl-markdown-content td {
+           font-size:12px;
+        }
+        
+ `}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+
+
+### 1. 直交座標系 (x, y, z)
+
+#### 勾配演算子
+$$
+∇ = (\frac{∂}{∂x}, \frac{∂}{∂y}, \frac{∂}{∂z})
+$$
+
+#### 勾配（gradient）
+$$
+∇f = (\frac{∂f}{∂x}, \frac{∂f}{∂y}, \frac{∂f}{∂z})
+$$
+
+#### 発散（divergence）
+$$
+∇ \cdot \vec{F} = \frac{∂F_x}{∂x} + \frac{∂F_y}{∂y} + \frac{∂F_z}{∂z}
+$$
+
+#### 回転（curl）
+$$
+∇ × \vec{F} = (\frac{∂F_z}{∂y} - \frac{∂F_y}{∂z})\vec{i} + (\frac{∂F_x}{∂z} - \frac{∂F_z}{∂x})\vec{j} + (\frac{∂F_y}{∂x} - \frac{∂F_x}{∂y})\vec{k}
+$$
+
+#### ラプラシアン
+$$
+∇^2 = \frac{∂^2}{∂x^2} + \frac{∂^2}{∂y^2} + \frac{∂^2}{∂z^2}
+$$
+
+### 2. 円柱座標系 (ρ, φ, z)
+
+#### 勾配演算子
+$$
+∇ = (\frac{∂}{∂ρ}, \frac{1}{ρ}\frac{∂}{∂φ}, \frac{∂}{∂z})
+$$
+
+#### 勾配
+$$
+∇f = \frac{∂f}{∂ρ}\vec{e_ρ} + \frac{1}{ρ}\frac{∂f}{∂φ}\vec{e_φ} + \frac{∂f}{∂z}\vec{k}
+$$
+
+#### 発散
+$$
+∇ \cdot \vec{F} = \frac{1}{ρ}\frac{∂}{∂ρ}(ρF_ρ) + \frac{1}{ρ}\frac{∂F_φ}{∂φ} + \frac{∂F_z}{∂z}
+$$
+
+#### 回転
+$$
+∇ × \vec{F} = (\frac{1}{ρ}\frac{∂F_z}{∂φ} - \frac{∂F_φ}{∂z})\vec{e_ρ} + (\frac{∂F_ρ}{∂z} - \frac{∂F_z}{∂ρ})\vec{e_φ} + \frac{1}{ρ}(\frac{∂(ρF_φ)}{∂ρ} - \frac{∂F_ρ}{∂φ})\vec{k}
+$$
+
+#### ラプラシアン
+$$
+∇^2 = \frac{1}{ρ}\frac{∂}{∂ρ}(ρ\frac{∂}{∂ρ}) + \frac{1}{ρ^2}\frac{∂^2}{∂φ^2} + \frac{∂^2}{∂z^2}
+$$
+
+### 3. 球座標系 (r, θ, φ)
+
+#### 勾配演算子
+$$
+∇ = (\frac{∂}{∂r}, \frac{1}{r}\frac{∂}{∂θ}, \frac{1}{r\sin θ}\frac{∂}{∂φ})
+$$
+
+#### 勾配
+$$
+∇f = \frac{∂f}{∂r}\vec{e_r} + \frac{1}{r}\frac{∂f}{∂θ}\vec{e_θ} + \frac{1}{r\sin θ}\frac{∂f}{∂φ}\vec{e_φ}
+$$
+
+#### 発散
+$$
+∇ \cdot \vec{F} = \frac{1}{r^2}\frac{∂}{∂r}(r^2F_r) + \frac{1}{r\sin θ}\frac{∂}{∂θ}(\sin θF_θ) + \frac{1}{r\sin θ}\frac{∂F_φ}{∂φ}
+$$
+
+#### 回転
+$$
+∇ × \vec{F} = \frac{1}{r\sin θ}(\frac{∂(F_φ\sin θ)}{∂θ} - \frac{∂F_θ}{∂φ})\vec{e_r} + \frac{1}{r}(\frac{1}{\sin θ}\frac{∂F_r}{∂φ} - \frac{∂(rF_φ)}{∂r})\vec{e_θ} + \frac{1}{r}(\frac{∂(rF_θ)}{∂r} - \frac{∂F_r}{∂θ})\vec{e_φ}
+$$
+
+#### ラプラシアン
+$$
+∇^2 = \frac{1}{r^2}\frac{∂}{∂r}(r^2\frac{∂}{∂r}) + \frac{1}{r^2\sin θ}\frac{∂}{∂θ}(\sin θ\frac{∂}{∂θ}) + \frac{1}{r^2\sin^2 θ}\frac{∂^2}{∂φ^2}
+$$
+
+### 4. 重要な関係式
+#### ベクトル場の回転の発散
+$$
+∇ \cdot (∇ × \vec{F}) = 0
+$$
+
+#### スカラー場の勾配の回転
+$$
+∇ × (∇f) = \vec{0}
+$$
+
+#### 二重回転
+$$
+∇ × (∇ × \vec{F}) = ∇(∇ \cdot \vec{F}) - ∇^2\vec{F}
+$$
+
+#### ベクトル場の発散の勾配
+$$
+∇ × (∇ × \vec{F}) = ∇(∇ \cdot \vec{F}) - ∇^2\vec{F}
+$$
+
+#### ストークスの定理
+$$
+\oint_C \vec{F} \cdot d\vec{r} = \iint_S (∇ × \vec{F}) \cdot d\vec{S}
+$$
+
+#### ガウスの発散定理
+$$
+\iiint_V (∇ \cdot \vec{F})dV = \oiint_S \vec{F} \cdot d\vec{S}
+$$

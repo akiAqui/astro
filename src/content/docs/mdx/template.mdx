@@ -245,7 +245,6 @@ import StandardStyle from '../../../components/StandardStyle';
 - このコンポーネントを使えば`<center></center>`で中央ぞろえできる。なんか冗長だけど。
 - さらに進めれば事前定義したところに`<center></center>`でカッコておけば問題は解決する。
 - しかし「エッジのラベル」と呼ばれる分岐の`Yes`や`No`みたいなものは事前定義できない。泣。
-- 当然先頭に`import MermaidChart from '../../../components/MermaidChart.astro';`が必要です
 - 本来なら、少なくともclassDefで下記コードで実現できるはずだが、中央ぞろえにならないのはmermaidの既存バグ
 ```
     classDef default text-align:center
@@ -258,7 +257,6 @@ import StandardStyle from '../../../components/StandardStyle';
 ````
 
 
-<MermaidChart code={`
     C{<center>Decision</center>}
     A[<center>Start</center>] --> B[<center>uuauau</center>]
     B --> C
@@ -301,7 +299,6 @@ graph TD
 <TwoColumn>
 <Left>
 ```
-<MermaidChart code={`
 sequenceDiagram
     Alice->>John: Hello John, how are you?
     John-->>Alice: Great!
@@ -310,7 +307,6 @@ sequenceDiagram
 ```
 </Left>
 <Right>
-<MermaidChart code={`
 sequenceDiagram
     Alice->>John: Hello John, how are you?
     John-->>Alice: Great!
@@ -329,7 +325,6 @@ sequenceDiagram
 <TwoColumn>
 <Left>
 ```
-<MermaidChart code={`
 ---
 title: Simple sample
 ---
@@ -352,7 +347,6 @@ title: Simple sample
 </Left>
 <Right>
 ```txt
-<MermaidChart code={`
 ---
 title: Simple sample
 --- 
@@ -383,7 +377,6 @@ title: Simple sample
 <TwoColumn>
 <Left>
 ```
-<MermaidChart code={`
 mindmap
   root((mindmap))
     Origins
@@ -405,7 +398,6 @@ mindmap
 ```
 </Left>
 <Right>
-<MermaidChart code={`
 mindmap
   root((mindmap))
     Origins

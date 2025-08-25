@@ -1,0 +1,201 @@
+---
+title: WebDAV/iphoneからwindowsにコピー
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+### todo
+- [ ] noteに書く？
+
+## 目的
+- iphoneからwindowsへファイルを転送するには、icloud, OneDriveなどを使えるがインターネットを迂回させることになる
+- 同じLAN内部ならwindows上でwebDAVサーバを動かすことも可能だろうがWSL2/Ubuntuに構築する方が容易だろう
+- Ubuntuからは`/mnt/c`でWindows上のディレクトリに容易にアクセスできる、つまりWindows/OneDriveにファイルを置ける
+- この考え方で環境を構築する
+
+## 概要
+- iphoneでwebdavを利用するためには、証明書をしっかり作らないと動かない
+- WebDAVを利用するにはiphone側のshortcutアプリではFileアプリを使わずPUT書かないと動かない
+- WebDAVサーバの相性もあるらしいのでApache2/modの組み合わせが現時点では確実
+
+## 0.要点
+  - 証明書生成：SANとCA:TRUEを含めたcrtの作成が必要
+  - Apacheとmod_dav構成、Basic認証設定
+  - 証明書のiOSインストールと信頼スイッチ
+  - Apache再起動による反映
+  - portproxyとfwによるWindows上のネットワーク設定
+  - AppleショートカットでのPUT構成、ファイル名の動的生成
+  - ApacheログによるPUT失敗の確認と原因特定
+
+## 1.サーバ側設定
+- サーバ証明書を作成
+- apache2/webDAVのmodをインストール
+- Basic認証設定
+- 再起動
+
+### 証明書生成（SAN, CA:TRUE）
+
+```
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = 192.168.1.131
+
+[v3_req]
+subjectAltName = @alt_names
+basicConstraints = critical, CA:true
+keyUsage = critical, keyCertSign, digitalSignature
+extendedKeyUsage = serverAuth
+
+[alt_names]
+IP.1 = 192.168.1.131
+```
+
+```
+openssl req -x509 -nodes -days 365 \
+  -newkey rsa:2048 \
+  -keyout webdav.key \
+  -out webdav.crt \
+  -config san.cnf
+```
+
+- 出力ファイルを以下に配置
+  - webdav.key → /etc/ssl/private/webdav.key
+  - webdav.crt → /etc/ssl/certs/webdav.crt
+
+### Apache + WebDAV インストール、 Basic認証設定
+
+```
+sudo apt install apache2 apache2-utils
+sudo a2enmod dav dav_fs ssl auth_basic
+```
+
+- /etc/apache2/.htpasswd を作成
+
+```
+sudo htpasswd -c /etc/apache2/.htpasswd a
+```
+
+- サイト設定例（/etc/apache2/sites-available/webdav.conf）
+
+```
+<VirtualHost *:443>
+  DocumentRoot /var/www/webdav
+  SSLEngine on
+  SSLCertificateFile /etc/ssl/certs/webdav.crt
+  SSLCertificateKeyFile /etc/ssl/private/webdav.key
+
+  <Directory /var/www/webdav>
+    DAV On
+    AuthType Basic
+    AuthName "WebDAV"
+    AuthUserFile /etc/apache2/.htpasswd
+    Require valid-user
+  </Directory>
+</VirtualHost>
+```
+
+- サイト有効化と再起動
+
+```
+sudo a2ensite webdav
+sudo apachectl restart
+```
+- 書き込み許可
+  - youridはユーザのid
+  
+```
+sudo mkidr /var/www/webdav
+sudo chown -R yourid:yourid /var/www/webdav
+sudo chmod +R 777 /var/www/webdav
+```
+もしくはOneDrive上の画像ディレクトリに
+`/mnt/c/Users/aquis/OneDrive/画像/iphone`ディレクトリを作って}
+```
+sudo ln -s /mnt/c/Users/aquis/OneDrive/画像/iphone /var/www/webdav
+```
+すれば、iphoneから、windows＆OneDriveに直接ファイルを保存できる,
+
+
+## 2.Windows側設定
+- 管理者権限有のpowershellにて実施
+
+### ポートフォワード設定
+
+```
+netsh interface portproxy add v4tov4 \
+  listenport=443 listenaddress=192.168.1.131 \
+  connectport=443 connectaddress=<WSL2のIP>
+```
+
+- WSL2のIPは `ip addr show eth0` で確認
+- 起動時に変わるので注意
+
+### ファイアウォール設定
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow HTTPS from LAN" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow
+```
+
+## 3.テスト
+- windows環境のweb browserでlocalhost, 実アドレスでwebdavにアクセスできるか確認
+- iphone/iPadで実アドレスでwebdavにアクセスできるか確認
+
+### Apacheログ確認
+```
+sudo tail -f /var/log/apache2/access.log
+sudo tail -f /var/log/apache2/error.log
+```
+
+## 4.iOS設定
+
+### 証明書インストール、信頼度設定
+
+- .crtをiPhoneに転送しプロファイルとしてインストール
+  - メールで送信してダウンロードし、設定を見るとプロファイルのインストールを求められる
+- 設定 → 一般 → 情報 → 証明書信頼設定 → 完全に信頼をオン
+
+### ショートカット作成
+- 複数ファイル選択、共有メニューで繰り返しwebDAVサーバにコピー
+- webDAVサーバへはPUTで送信。送信内容はファイル
+
+#### 手順
+- 入力：共有メニューでファイルまたは画像
+- 各項目を繰り返す
+  - 詳細を取得 → 名前（ファイル名）
+  - テキストで URL 構築
+    - 例： https://192.168.1.131/【ファイル名】
+  - URLの内容を取得
+    - メソッド：PUT
+    - 本文の種類：ファイル
+    - 本文：繰り返し項目
+    - ヘッダ：Authorization: Basic YTph
+
+
+### チェックポイント例
+  - パス：/webdav/webdav/...
+  - Permission denied：所有者不一致
+
+# 用語
+
+- Basic認証：ユーザー名とパスワードをBase64で送信する方式
+- Authorizationヘッダ：PUT時に必要な認証情報
+- SAN（Subject Alternative Name）：証明書に複数の識別子を持たせる拡張
+- CA:TRUE：証明書を信頼対象としてiOSが認識するための属性
+- portproxy：Windowsで他IPへのポート転送を行う仕組み
+
+

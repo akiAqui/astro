@@ -1,0 +1,246 @@
+---
+title: 彫刻
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+## 概要
+石を掘って模様が浮かび上がったような表現を実現したい。
+掘ったような模様の実現には、グレースケールPNGテクスチャをGLSLの頂点シェーダで頂点変位に利用する手法について記述する。
+
+## コード
+- Vertex Displacementを使っている
+- PNG画像の各ピクセルの**明るさ（0?1）**を高さ情報として扱う
+- 白（1.0）→ 最大高さ、黒（0.0）→ 変位なし
+- 頂点シェーダ内で normal 方向に押し出す
+- 白い部分が maxDepth × time 分だけ徐々に盛り上がる
+
+```
+// main.ts（彫りアニメーションと陰影ありの構成）
+import * as THREE from 'three'
+const renderer = new THREE.WebGLRenderer()
+renderer.setSize(window.innerWidth, window.innerHeight)
+document.body.appendChild(renderer.domElement)
+const scene = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5)
+camera.position.set(0, 0, 1.5)
+const light = new THREE.DirectionalLight(0xffffff, 1.0)
+light.position.set(1, 1, 1)
+scene.add(light)
+const loader = new THREE.TextureLoader()
+const texture = loader.load('engrave.png') // 黒背景・白模様のPNG
+const geometry = new THREE.PlaneGeometry(0.3, 0.3, 512, 512)
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    tex: { value: texture },
+    maxDepth: { value: 0.03 }, // 3cm
+    time: { value: 0.0 },
+    lightDir: { value: new THREE.Vector3(1, 1, 1).normalize() }
+  },
+  vertexShader: vertex,
+  fragmentShader: fragment
+})
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+function animate(t: number) {
+  material.uniforms.time.value = Math.min(t * 0.0004, 1.0) // 彫り進行（0.0→1.0）
+  renderer.render(scene, camera)
+  requestAnimationFrame(animate)
+}
+animate(0)
+```
+
+```
+// vertex.glsl（凹みのアニメーション）
+uniform sampler2D tex;
+uniform float maxDepth;
+uniform float time;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+void main() {
+  vUv = uv;
+  float h = texture2D(tex, uv).r;        // 白:1, 黒:0
+  // 1.0 - texture2D(...).rとすると彫る形  
+  float depth = h * maxDepth * time;     // 0 → 最大浮き出し
+  vec3 displaced = position - normal * depth;
+  vPosition = (modelViewMatrix * vec4(displaced, 1.0)).xyz;
+  vNormal = normalize(normalMatrix * normal);
+  gl_Position = projectionMatrix * vec4(vPosition, 1.0);
+}
+```
+
+
+```
+// vertex.glsl（凹みのアニメーション）
+uniform sampler2D tex;
+uniform float maxDepth;
+uniform float time;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+void main() {
+  vUv = uv;
+  float h = texture2D(tex, uv).r;
+  float depth = h * maxDepth * time;
+  vec3 displaced = position - normal * depth;
+  vPosition = (modelViewMatrix * vec4(displaced, 1.0)).xyz;
+  vNormal = normalize(normalMatrix * normal);
+  gl_Position = projectionMatrix * vec4(vPosition, 1.0);
+}
+```
+
+
+## Inkscapeでの編集
+- 画面は四角形を想像したほうがいいかもしれないが検討が必要
+- svgで好きな形を白黒で作成する
+- pngで出力すると白黒のデータが作成できる
+- 背景黒の四角形オブジェクトに、白のオブジェクトを乗せる
+
+## テクスチャの前提
+- 黒背景に白い模様（白=盛り上がり）
+- PNG形式、MxMでエクスポート（例では190x190pxにした）
+- Inkscapeでエクスポート時に周囲に透明部分がある場合、レンダリング結果に影響する可能性がある
+  - 周囲の透明ピクセルは値0として解釈され、縁が不自然に凹む可能性
+  - 対策として、エクスポート前に**アートボードとオブジェクトの境界を一致させる**必要あり
+    - Inkscape: メニュー > ファイル > ドキュメントのプロパティ > ページ > コンテンツに合わせてページサイズ変更
+
+## 技術的背景
+### 変位処理（Displacement）
+- 意味：ジオメトリ（メッシュ）の頂点位置そのものを変化させる処理。
+- 通常：頂点シェーダで法線方向に沿って押し出すなどして表面を変形
+- 実際にポリゴンの形が変わる → シルエットも変わる
+
+### バンプマッピング（Bump Mapping）
+- 意味：法線方向だけを視覚的に変化させる擬似的な凹凸表現
+- ジオメトリ自体は変わらない（＝頂点の位置は変わらない）
+- ライティング計算だけで「へこみ・出っ張りがあるように見せる」
+
+###パララックスマッピング（Parallax Mapping）
+- 意味：バンプより進化した技法で、**視点角度による見え方のズレ（視差）**を計算して擬似的な奥行き表現を行う技法
+- 法線だけでなく、UV座標をずらしてテクスチャの深さを表現
+- でもポリゴン自体は変形しない（＝依然として見かけだけ）
+
+## 凹凸表現技法の比較表（最終拡張版）
+- パララックスマッピングには複数の方法があり、最も高度なパララックスオクルージョンマッピングはディスプレイスメントマッピングと同様に高度である。
+- パララックスマッピングはバンプマッピングを包含する手法である
+- ディスプレイスメントマッピングとパララックスマッピングは併用可能
+
+
+
+
+| 項目                 | バンプマッピング       | パララックスマッピング                         | ディスプレイスメントマッピング       |
+|----------------------|------------------------|------------------------------------------------|--------------------------------------|
+| 変形対象             | 法線のみ               | 法線 + テクスチャ座標                          | 頂点位置（ジオメトリ）               |
+| ジオメトリの変形     | x                      | x                                              | ○                                   |
+| シルエット変化       | x                      | x                                              | ○                                   |
+| 実装層（GLSL）       | fragment shader        | fragment shader                                | vertex shader or tesselation         |
+| 表現のリアリティ     | △（擬似的）            | ◯ -◎（手法により変動）                         | ◎（物理的）                          |
+| 処理コスト比較       | 低                     | 中-高（手法により変動）                        | 高                                   |
+| メッシュ密度依存     | 低                     | 低                                             | 高                                   |
+| 併用可否             | ◯（パララックスと）    | ◯（バンプやディスプレイスメントと）            | ◯（補助的にバンプ等と併用可能）      |
+| Three.js対応         | x `normalMap`          | ShaderMaterial実装必要                         | ok `displacementMap` 対応あり        |
+| パララックス手法分類 | —                      | 基本／ステッピング／オクルージョン             | —                                    |
+| パララックス精度     | —                      | △-◎<br/>（基本：△、オクルージョン：◎）         | —                                    |
+| GLSLスニペット例     | `perturbNormal()`  | `parallaxMap()` (ステップ／オクルージョン対応) | 頂点座標 += `normal * height`        |
+| 適した用途           | 革のしわ／布目／肌     | 壁彫刻／石畳／装飾模様                         | 地形／根／つる／彫刻全体             |
+| 例（ユースケース）   | 擬似凹凸の質感表現     | 視差が効く模様                                 | 形状そのものを立体的に変形したい場合 |
+
+
+### perturNormal
+- フラグメントシェーダで利用
+- 法線マップから「擬似法線」を取得し、ライティング計算に使う
+- tangent, bitangent, normal から TBN 行列を構成
+  - TBNとは、Tangent, Bitangent, Normal の3つのベクトルからなる基底ベクトル系。接空間での変換に使う行列
+  - TBN = mat3(T, B, N)
+    - T：tangent
+    - B：bitangent
+    - N：normal
+- 法線マップは 接空間（tangent space） で用意されている
+
+```
+vec3 perturbNormal(sampler2D normalMap, vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent) {
+    mat3 TBN = mat3(normalize(tangent), normalize(bitangent), normalize(normal));
+    vec3 normalTex = texture(normalMap, uv).rgb * 2.0 - 1.0; // 接空間法線
+    return normalize(TBN * normalTex); // ワールド空間法線へ変換
+}
+```
+### parallaxMap
+
+- フラグメントシェーダで利用
+- 視線方向と高さマップから、視差補正された UV を計算する
+- 基本実装とステップ版（ループで奥を探す）
+```
+vec2 parallaxMap(vec2 uv, vec3 viewDirTS, sampler2D heightMap, float heightScale) {
+    float height = texture(heightMap, uv).r;
+    return uv + viewDirTS.xy * (height * heightScale);
+}
+```
+```
+vec2 parallaxMapStep(vec2 uv, vec3 viewDirTS, sampler2D heightMap, float heightScale, int steps) {
+    vec2 delta = viewDirTS.xy * heightScale / float(steps);
+    vec2 pUV = uv;
+    for (int i = 0; i < steps; ++i) {
+        float height = texture(heightMap, pUV).r;
+        if (height < float(i) / float(steps)) break;
+        pUV -= delta;
+    }
+    return pUV;
+}
+void main() {
+    vec3 viewDirTS = normalize(TBN * viewDir); // 視線ベクトルを接空間へ
+    vec2 uvP = parallaxMap(uv, viewDirTS, heightMap, 0.05); // 視差補正UV
+    vec3 perturbedNormal = perturbNormal(normalMap, uvP, normal, tangent, bitangent);
+    
+    // ライティング処理で perturbedNormal を使用
+    // 例：Lambert, Blinn-Phong, Cook-Torrance など
+}
+```
+
+
+## パララックスマッピング手法の比較表
+| 手法名                                                                           | 意味                                                              | 処理                                                     |   |                                                             |                                                                    |                                        |
+|----------------------------------------------------------------------------------|-------------------------------------------------------------------|----------------------------------------------------------|---|-------------------------------------------------------------|--------------------------------------------------------------------|----------------------------------------|
+| 単純パララックスマッピング                                                       | 1回のサンプルだけで視線補正、非常に簡易                           | UV を 1 回だけ補正して奥行き風にする                     |   
+| ステップパララックスマッピング <br/>(Step Parallax Mapping) | 視線に沿って「段階的に（step）」テクスチャの深さを調べ、UVをずらす | `for` ループで高さマップを階段状に探索 |
+| パララックス<br/>オクルージョンマッピング <br/>(Parallax Occlusion Mapping, POM) | より正確に「見えなくなる部分（遮蔽＝Occlusion）」までシミュレート | 高さマップに沿ってレイマーチングのように視線を貫通させる |   |                                                             |                                                                    |                                        |
+
+## パララックスマッピング手法の比較（拡張・縦横反転）
+| 項目           | 単純パララックスマッピング       | ステップパララックスマッピング (Step Parallax Mapping) | パララックスオクルージョンマッピング (Parallax Occlusion Mapping, POM) |
+|----------------|----------------------------------|----------------------------------------------------------|-------------------------------------------------------------------------|
+| 意味           | 1回のサンプルだけで視線補正、非常に簡易 | 視線に沿って「段階的に」テクスチャの深さを調べ、UVをずらす        | 見えなくなる部分（遮蔽）まで正確にシミュレート                                 |
+| 処理の本質     | UV を 1 回だけ補正して奥行き風にする      | `for` ループで高さマップを階段状に探索                         | 高さマップに沿ってレイマーチングのように視線を貫通させる                         |
+| 処理コスト     | 低                                 | 中                                                        | 高                                                                      |
+| 見た目の精度   | △ 擬似的な奥行き感                     | ◯ それなりに立体的に見える                                    | ◎ 遮蔽まで含めて非常にリアル                                            |
+| 使用推奨場面   | 遠景のテクスチャ／軽量なシーン            | 中距離の凹凸／軽量で済ませたい壁面や床                       | 近距離視点／彫刻・石畳・高精度装飾など遮蔽が重要な表現                         |
+
+## GLSLによる実装
+- 頂点シェーダで法線方向に対して高さを加算する
+  - $h = \text{texture2D}(tex, uv).r$
+  - $p' = p + h \cdot n \cdot d$
+    - $p$ = 頂点位置
+    - $n$ = 法線ベクトル
+    - $d$ = 最大変位量
+- 変位処理はバンプではなく実ジオメトリの変形（パララックス不要）
+## Three.js統合時
+- テクスチャ読み込みに `THREE.TextureLoader` を使い `uniform sampler2D tex` に渡す
+- PlaneGeometry に対して512以上のセグメントを持つ分割数を与える必要あり（例: 512x512）
+- カスタム `ShaderMaterial` を使い、positionとnormalを直接変更する頂点シェーダを記述する
+## 参考
+- Inkscapeドキュメントのページサイズ設定  
+  https://inkscape.org/doc/tutorials/tips/tutorial-tips.html#setting-the-page-size

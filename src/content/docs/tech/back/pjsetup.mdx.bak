@@ -1,0 +1,627 @@
+---
+title: プロジェクトセットアップと運用ガイド, typescript+three.js+csound
+description: 本レポートは、本資料は、three.js, @csound/browserを利用した作品をhtmlとして作成し、モダンブラウザで動かすことを想定してプロジェクト設定方法について検討
+---
+ <style>{`
+        .sl-markdown-content   div.ec-line {
+            margin-top: 0 !important;
+        }
+ `}</style>
+
+# プロジェクトセットアップと運用ガイド, typescript+three.js+csound
+
+## 1.目的と前提
+- 本資料は、three.js, @csound/browserを利用し、htmlとして作成し、モダンブラウザで動かすことを想定
+  - スマートフォンでも、PCの上でもどちらでも動く
+- 開発環境はWindowsOS/WSL2/Ubuntu/emacs,zsh
+- npm(Node.js), viteを採用,開発言語はtypescript
+  - eslintでlint。emacs/flycheck, npm run lint(package.json設定要)で実行
+  - githubでバージョン管理
+  - stats.jsを開発環境にインストールしてパフォーマンスを確認
+   - lighthouseも利用してパフォーマンスを確認する
+- 商用環境に相当するものをgithub.ioを想定する
+- デバッグ環境はVSCodeを利用し必要なプラグインをインストールすることはしない
+
+
+## ディレクトリ構造
+
+```plaintext
+project-root/
+│            
+├── styles/
+│   └── code-block.css            # code-blockタグのスタイルを定義
+│            
+├── src/                          # ソースコード
+│   ├── utils/                    # 再利用可能なユーティリティー群
+│   │   ├── audio.ts              # 多分これからつくる
+│   │   ├── code-block.js         # code-blockタグの実装
+│   │   └── toc.js                # toc作成のためのコード
+│   │                    
+│   ├── audio/            
+│   │   ├── csound/               # csound関連ファイル
+│   │   │   ├── instruments/      # csoundインストゥルメント定義（.orc）
+│   │   │   └── scores/           # csoundスコアファイル（.sco）
+│   │   └── samples/              # 音声サンプルファイル（.wav, .mp3）
+│   ├── scenes/
+│   │   ├── MainScene.ts
+│   │   └── components/
+│   ├── shaders/
+│   │   ├── vertex/
+│   │   └── fragment/
+│   ├── types/
+│   └── main.ts
+│            
+├── public/
+│   ├── assets/
+│   │   ├── textures/            # テクスチャファイル
+│   │   │   ├── environment/     # 環境マップ等
+│   │   │   └── materials/       # マテリアルテクスチャ
+│   │   ├── models/              # 3Dモデルファイル（.glb, .gltf）
+│   │   ├── audio/               # 音声ファイル
+│   │   │   ├── samples/         # 音声サンプル
+│   │   │   └── music/           # BGM等
+│   │   └── fonts/               # フォントファイル
+│   │            
+│   ├── code-samples/           (# サンプルコード,本index.htmlから読み出す）
+│   │   ├── tsconfig.json
+│   │   ├── vite.config.ts
+│   │   ├── eslint.config.js
+│   │   └── initializeCsound.ts
+│   │            
+│   └── favicon.ico
+│            
+├── tests/
+│   ├── unit/
+│   └── integration/
+├── .github/
+│   └── workflows/
+│   └── ci.yml
+├── config/
+│   ├── webpack/                 # Webpack設定（必要な場合）
+│   └── jest/                    # Jest設定
+├── scripts/                     # ビルドスクリプト等
+│   └── build.js
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD pipeline configuration
+│
+├── .vscode/                     # VSCode設定は今回
+│   ├── settings.json
+│   └── extensions.json
+│            
+├── index.html                   # サンプルあり
+├── spec.md                      # AIにソースコードを出力させる指示文
+├── package.json                 # サンプルあり
+├── vite.config.ts               # サンプルあり
+├── tsconfig.json                # サンプルあり
+├── .gitignore                   # サンプルあり
+├── .eslintrc.js                 # サンプルあり
+├── .eslintignore
+├── .prettierrc.js
+├── .prettierignore
+└── README.md
+```
+
+## 注意点
+
+- `public/assets/` 以下のファイルはビルド時にそのまま `dist/assets/` にコピーされます。
+- 大きなメディアファイルは `.gitignore` に追加し、別途管理をすべき
+- テクスチャや3Dモデルは可能な限り最適化してから配置
+- 音声ファイルは必要に応じて圧縮や最適化を検討
+
+## プロジェクトの初期化
+
+```bash
+mkdir my-3d-sound-project
+cd my-3d-sound-project
+npm create vite@latest . -- --template vanilla-ts  # Viteプロジェクトの作成（TypeScript + Vanillaを選択）
+npm install                              # 依存関係のインストール
+
+# 以下のnpmコマンドはpackage.jsonをコピーしてきていれば npm install ですべて済んでしまう
+
+# ここから
+npm i -D typescript @types/node          # TypeScriptのインストール
+npm i three                              # Three.jsをインストール
+npm i -D @types/three                    # Three.jsのTypeScript型定義をインストール
+npm i -D vite-plugin-glsl                # GLSLシェーダー用のプラグイン
+npm i @csound/browser                    # Csoundのインストール
+npm i -D eslint                          # ESLint
+npm i -D @typescript-eslint/parser @typescript-eslint/eslint-plugin # ESLint関連パッケージ
+npm i -D prettier eslint-config-prettier eslint-plugin-prettier # Prettierとその関連パッケージ
+npm i -D husky lint-staged               # Huskyとlint-staged
+npm pkg set scripts.prepare="husky install"   # package.jsonにprepareスクリプトを追加
+npm run prepare
+# ここまで
+
+npm list                                 # インストールされたパッケージ一覧
+npm list --prod                          # 本番環境で必要なパッケージだけを確認
+npm show three                           # three パッケージの情報を確認
+npm show three version                   # バージョンだけを確認
+
+npm run dev                              # プロジェクトの動作確認
+
+
+# gitのグローバル設定、sshの公開鍵と秘密鍵のペアを作ってある前提
+# さらにgithubに公開鍵を設定してある前提
+
+
+git init                                 # Gitの初期化
+echo "node_modules/" > .gitignore        # まずはシンプルな.gitignoreでnode_moduleを除外。のちに修正
+git add .
+git remote add origin git@github.com:akiAqui/repository_name.git
+git push -u origin master
+
+```bash
+- 一旦この型を作ってリポジトリに入れておけば、git clone <repository-url>をして、git intall すれば全て完了するので、その場合は、
+```
+npm run dev
+git init
+git add .
+git remote add origin git@github.com:akiAqui/repository_name.git
+git push -u origin master
+```
+と新しいのリポジトリに新しいコードを作る準備をすればいい
+
+- -Dオプションは--save-devと同じ
+- iはinstallと同じ
+
+### `.gitignore`の更新
+次に.gitignoreを全網羅するために以下のように変更する
+
+```plaintext
+# Dependencies
+node_modules/
+# Build output
+dist/
+build/
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+# Logs
+logs/
+*.log
+npm-debug.log*
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Media files
+*.mp3
+*.wav
+*.ogg
+*.glb
+*.gltf
+*.bin
+*.hdr
+*.exr
+# OS
+.DS_Store
+Thumbs.
+```
+
+
+## Git Hooksの設定
+さらにgit hookを個別に設定し動作を確認する。
+
+```bash
+npx husky add .husky/pre-commit "npx lint-staged"  # Huskyにlint-stagedを統合しpre-commit hookの追加
+npx husky add .husky/pre-push "npm run type-check"  # pre-push hookの追加
+```
+
+package.jsonにlint-stagedの設定を追加
+```json
+{
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
+```
+
+
+###
+
+
+
+## eslint.config.js
+
+```typescript
+import eslint from "@eslint/js";
+import typescript from "@typescript-eslint/eslint-plugin";
+import typescriptParser from "@typescript-eslint/parser";
+
+export default [
+    eslint.configs.recommended,
+    {
+        files: ["**/*.ts", "**/*.tsx"],
+        languageOptions: {
+            parser: typescriptParser,
+            parserOptions: {
+                project: "./tsconfig.json"
+            }
+        },
+        plugins: {
+            "@typescript-eslint": typescript
+        },
+        rules: {
+            ...typescript.configs.recommended.rules
+        }
+    }
+];
+
+```
+
+## .prettierrc.js
+
+```javascript
+# .prettierrc.jsファイルの作成
+module.exports = {
+    semi: true,
+    trailingComma: 'es5',
+    singleQuote: true,
+    printWidth: 100,
+    tabWidth: 2,
+    endOfLine: 'auto'
+};
+
+```
+
+
+## package.json
+```json
+# package.jsonのscriptsセクションを更新
+{
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "lint": "eslint . --ext .ts,.tsx",
+        "lint:fix": "eslint . --ext .ts,.tsx --fix",
+        "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+        "type-check": "tsc --noEmit",
+        "prepare": "husky install"
+        }
+}
+
+{
+    "name": "pj_setup_guide",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "lint": "eslint \"src/**/*.{ts,tsx}\""
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.18.1",
+        "@typescript-eslint/parser": "^8.18.1",
+        "eslint": "^9.17.0",
+        "typescript": "~5.6.2",
+        "vite": "^6.0.1"
+    },
+    "dependencies": {
+        "vite-plugin-glsl": "^1.3.1"
+    }
+}
+
+```
+##
+# 品質チェック
+```bash
+npm run type-check # 型チェック
+npm run lint       # リント実行
+npm run lint:fix   # リント自動修正
+npm run format     # コードフォーマット
+```
+
+## 重要な注意点
+
+- コミット前に必ずlintとtype-checkが実行されます。
+- pushする前に必ずtype-checkが実行されます。
+- 自動フォーマットされるファイルは.tsと.tsxのみです。
+- 環境変数は.envファイルで管理し、.gitignoreに追加してください。
+
+
+## 推奨される開発フロー- バージョン管理
+
+### タグの更新
+package.jsonのバージョン番号と、gitのタグで管理されるバージョン番号を一致させることが望まれる。
+- リリース前にバージョン番号を更新し、コメントも加える：
+  - パッチリリース時：
+    ```bash
+    npm version patch -m "パッチによる修正内容"
+    ```
+  - 互換性のある変更（機能追加、依存パッケージの更新、構成変更）：
+    ```bash
+    npm version minor -m "変更内容や新機能の説明"
+    ```
+  - 互換性のない変更（大幅なアップデート）：
+    ```bash
+    npm version major -m "互換性の詳細ノート"
+    ```
+
+### タグを個別の環境で最新化
+- タグの矛盾を防ぐため、以下を徹底：
+  - リモートタグをローカルに取得：
+    ```bash
+    git fetch --tags
+    ```
+  - ローカルの現在のタグを確認：
+    ```bash
+    git tag
+    ```
+  - 最新タグを確認（リモート含む）：
+    ```bash
+    git fetch --tags
+    git tag | tail -n 1
+    ```
+
+- npm version 実行前のルール：
+  - 必ず `git fetch --tags` を実行して最新タグを取得
+  - 必要に応じてタグ競合の解決を行う（削除やリネーム。コマンドなど詳細はTBD）
+
+### バージョン管理を含むプルリクエストのルール
+- プルリクエストのレビュー時に、最新のタグとバージョン番号が正確であることを確認(詳細はTBD)
+
+
+## 推奨される開発フロー2
+
+1. 新しい機能の開発を始める前に新しいブランチを作成。
+2. 定期的に`npm run type-check`を実行して型エラーをチェック。
+3. コミット前に`npm run lint`で全体のコード品質をチェック。
+4. プルリクエスト作成前に`npm run build`でビルドをテスト。
+
+
+
+## Appendix
+
+### Appendix 0:  メディアファイル形式
+
+| 種類       | フォーマット              | 備考                                    |
+|------------|--------------------------|-----------------------------------------|
+| テクスチャ | `.webp, .png, .jpg`      | WebPを優先、アルファチャンネルが必要な場合はPNG |
+| 3Dモデル   | `.glb`                   | 圧縮された単一ファイル形式を推奨        |
+| 音声       | `.mp3, .wav`             | WAVは非圧縮、MP3は圧縮音声用           |
+| 環境マップ | `.hdr, .exr`             | HDRレンダリング用                       |
+
+
+
+### Appendix 1: JavaScriptとTypeScriptのモジュール読み込み方法の比較
+
+以下の表は、JavaScriptとTypeScriptにおけるモジュール読み込み方法を比較したものです。  
+scriptタグ内部において、JavaScriptは動的インポートも静的インポートも記述可能ですが、TypeScriptのコードは必ずトランスパイルが必要であるため、scriptタグ内に直接記述できません。
+
+#### 静的インポートと動的インポートの違い
+
+- 静的インポート:  
+  実行時ではなくビルド時にモジュールが解決されます。  
+  コードの上部で `import` 文を使用します。  
+  最適化がしやすく、依存関係が明確。
+
+- 動的インポート:  
+  実行時に必要なタイミングでモジュールを読み込みます。  
+  非同期処理として動作し、`import()` 関数を使用します。  
+  条件付きでモジュールを読み込み動作を軽くするときに有用。
+
+#### 動的インポートのユースケース
+
+##### 必要なときにインポート
+
+```javascript
+document.getElementById('loadChart').addEventListener('click', async () => {
+  const { renderChart } = await import('./chartModule.js');
+  renderChart();
+});
+```
+
+##### プラグイン、テーマ、言語設定を選択的にインポート
+
+```javascript
+const language = navigator.language.startsWith('ja') ? 'japanese' : 'english';
+
+(async () => {
+  const module = await import(`./lang/${language}.js`);
+  console.log(module.greeting());
+})();
+```
+
+##### 特定のルートごとにコードを分割（コードスプリッティング）
+
+ユースケース: シングルページアプリケーション（SPA）で、ルートごとに異なるコードをロード。
+
+```javascript
+async function loadPage(route) {
+  const pageModule = await import(`./pages/${route}.js`);
+  pageModule.render();
+}
+
+window.addEventListener('hashchange', () => {
+  loadPage(location.hash.slice(1));
+});
+```
+
+#### 比較表
+| 方法             | JavaScript (ブラウザで動作する)     | TypeScript (トランスパイル後に動作) |
+|------------------|-------------------------------------|-------------------------------------|
+| 静的インポート   | JavaScriptの静的インポート(A)       | TypeScriptの静的インポート(C)       |
+| 動的インポート   | JavaScriptの動的インポート(B)       | TypeScriptの動的インポート(D)       |
+
+
+##### 注釈
+
+TBD: 以下の記述内容は要確認!!
+
+###### (A)静的インポート (JavaScript):
+```javascript
+import { specificExport } from './module.js';
+```
+```html
+<script type="module" src="main.js"></script>
+```
+
+###### (B)動的インポート (JavaScript):
+```javascript
+(async () => {
+  const module = await import('./module.js');
+  module.specificFunction();
+})();
+
+<script type="module" src="main.js"></script>
+```
+
+###### (C)静的インポート (TypeScript):
+```typescript
+// main.ts
+import { specificExport } from './module';
+```
+```html
+<script type="module" src="main.js"></script>
+```
+
+###### (D) 動的インポート (TypeScript):
+```typescript
+(async () => {
+  const module = await import('./module');
+  module.specificFunction();
+})();
+
+<script type="module" src="main.js"></script>
+```
+
+注意: TypeScriptファイル (`.ts`) を直接HTMLで参照することはできません。トランスパイルが必須です。
+
+### Appendix 2: 開発環境のみインストールするものの代表例
+
+| パッケージ名                  | 説明                                    | 使用タイミング                     |
+|-------------------------------|-----------------------------------------|----------------------------------|
+| `typescript`                 | TypeScriptコンパイラ本体               | 開発時のコンパイルとタイプチェック |
+| `eslint` と関連パッケージ      | コードの品質チェックとスタイルの統一    | 開発時の静的解析                  |
+| `prettier`                   | コードフォーマッター                    | 開発時のコード整形                |
+| `vite`                       | 開発サーバーとビルドツール              | 開発時とビルド時                  |
+| `jest`, `vitest`             | テストフレームワーク                    | テストの実行時                    |
+| `@testing-library/react`     | Reactコンポーネントのテストユーティリティ | テスト実行時                      |
+| `husky`                      | Gitフックの設定ツール                   | 開発時のGit操作時                 |
+| `sass`, `node-sass`          | Sassのコンパイラ                        | ビルド時                          |
+| `nodemon`                    | ファイル変更監視と自動再起動ツール       | 開発サーバー実行時                |
+| `storybook` と関連パッケージ  | UIコンポーネントの開発・テスト環境       | 開発時のコンポーネント確認        |
+
+```bash
+npm install -D typescript eslint prettier vite jest @testing-library/react husky sass nodemon @storybook/react
+```
+
+### Appendix 3: 参考コード
+#### `initializeCsound.ts`
+
+```typescript
+/**
+ * Csoundエンジンを初期化する
+ * 非同期で実行され、エラーハンドリングも含む。
+ * Applicationのクラスのメソッドとして通常定義する
+ */
+
+private async initializeCsound(): Promise<void> {
+  try {
+    
+    // Don't reinitialize if already exists
+    if (this.csound) return;
+    
+    // Initialize Csound using function call pattern, not constructor
+    this.csound = await Csound();
+    
+    console.log('Csound instance:', this.csound);
+    console.log('AudioContext state:', window.AudioContext || window.webkitAudioContext);
+    
+    // CSDファイルのコンパイルと初期化
+    await this.csound.setOption('-odac');
+    await this.csound.compileCsdText(csd);
+    
+    
+    // オーディオコンテキストの開始を待機するボタンを作成
+    const startAudioButton = document.createElement('button');
+    Object.assign(startAudioButton.style, {
+      position: 'fixed',
+      top: '120px',  // インストラクションの下に配置
+      left: '10px',
+      padding: '8px 16px',
+      backgroundColor: '#4CAF50',
+      color: 'white',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '14px',
+      zIndex: '100'
+    });
+    startAudioButton.textContent = 'Click to Enable Audio';
+    
+    // ボタンクリック時の処理
+    startAudioButton.onclick = async () => {
+      try {
+        await this.csound.start();
+        console.log('Csound audio started successfully');
+        // 音声が開始されたらボタンを削除
+        startAudioButton.remove();
+      } catch (error) {
+        console.error('Failed to start Csound audio:', error);
+        startAudioButton.textContent = 'Failed to start audio. Click to retry.';
+      }
+    };
+    
+    document.body.appendChild(startAudioButton);
+    console.log('Csound initialized - waiting for user interaction');
+    
+    
+    
+    // オーディオノードの設定
+    //const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    //await this.csound.connect(audioContext.destination);
+    //console.log('Csound初期化完了');      
+    
+  } catch (error) {
+    this.handleError(error, 'csound-initialization');
+    console.warn('Csoundの初期化に失敗しました - オーディオ機能は無効化されます');
+  }
+  
+}
+
+```
+
+
+
+### Appendix 3: サンプルコンテンツ
+#### 仕様
+- 2つのオブジェクトを空間に配置
+  1. 2つのオブジェクトが置かれている床を十分に広く配置
+  2. 床から浮かんだ位置に6面にテクスチャーを貼り付けたcubeを配置。
+     - 各面をクリックすると以下の動作を行う
+       - クリックされた面のテクスチャの輝度を上げる
+       - cubeはその重心を中心に回転を
+       - 回転は1回転から、2回転の間の乱数で決まっただけ回転
+       - 回転軸はランダムに決まる
+       - 回転している間はcsoundで音はsin波のようにボリュームを変化させて発音
+       - 面によって周波数が異なり、E2, G2, C3, E3, G3, C4の音が出る
+       - 回転が止まると発音はフェードアウト、面の輝度は元に戻る
+  3. 床から浮かんだ状態でBlenderで作成したオブジェクトを配置
+     - オブジェクトはその重心位置を中心に、大きさをsin波の要領で変化させる
+     - N=2からM=10の範囲で、大きさを変えて元に戻る
+     - 拡大・縮小をしている間はcubeで生成される6音が同時に発音
+     - 拡大・縮小が終わると音はフェードアウトして終了
+- マウス操作によって視界をつかさどるカメラ位置を変更できる
+  - 前進
+  - 後退
+  - 左右回転
+- 光源を配置して、二つのオブジェクトに陰影をつける
+
+#### コード(main.ts)
+```
+<TBD>
+```
+~/html.ts/pj_setup_guide/public/code-samples/

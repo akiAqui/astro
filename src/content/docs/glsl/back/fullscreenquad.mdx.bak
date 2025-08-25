@@ -1,0 +1,305 @@
+---
+title: ＊）RenderPassとFullScreenSquad
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## Effect Composer
+
+Effect Composer は Three.js でポストプロセッシングエフェクトを適用するためのパイプラインシステムです。
+
+- 基本構造: レンダラー → RenderPass(必ず先頭に来る) → エフェクトパス（複数可）→ 画面表示
+  - パスは追加順に実行され、前のパスの出力が次のパスの入力になる
+  - 用意されているエフェクト: ブルーム、被写界深度、モーションブラー、色収差
+  - カスタムエフェクトをShaderコードで実装することができる。これをShaderPassで実装
+- 実装：
+  - 初期化: Three.jsのレンダラー、シーン、カメラを作成した後、Effect Composerを初期化
+  - パス（Pass）の追加: エフェクトパイプラインに様々なエフェクトを追加
+  - レンダリング: 通常のレンダラーの代わりにEffect Composerを使用してレンダリング
+
+```txt
+// Effect Composerの設定
+const composer = new EffectComposer(renderer);
+
+// 基本的なレンダーパス（必須）
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// ブルームエフェクトの追加
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.5,  // 強度
+  0.4,  // 半径
+  0.85  // しきい値
+);
+composer.addPass(bloomPass);
+
+// アニメーションループ
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  cube.rotation.x += 0.01;
+  cube.rotation.y += 0.01;
+  
+  // シェーダーの時間更新
+  customPass.uniforms["time"].value = clock.getElapsedTime();
+  
+  // 通常のrenderer.render()の代わりに
+  // composer.render()を使用
+  composer.render();
+}
+
+animate();
+
+
+```
+
+## RenderPassの技術的役割
+
+RenderPassはThree.jsのポストプロセッシングシステムにおける最初のパスとして機能し、3Dシーンを描画するための基本コンポーネントである。
+
+### 基本的な機能
+
+- 3Dシーンとカメラを受け取り、指定されたレンダーターゲットにシーンをレンダリングする
+- 3Dオブジェクト、ライト、マテリアルなどすべての通常の3D要素を処理する
+- 結果をテクスチャとして次のパスへ渡す
+
+### 必要性
+
+RenderPassが必要なケース:
+- 3Dシーン（メッシュ、ライト、カメラなど）を描画する場合
+- 複数の3Dオブジェクトを含むシーンを処理する場合
+- 3Dシーンに対して後からポストプロセッシングエフェクトを適用したい場合
+
+### サンプルコード内での使われ方
+
+```typescript
+// 基本的なRenderPassの設定
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+
+// EffectComposerの設定
+const composer = new EffectComposer(renderer);
+
+// RenderPassの作成と追加
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// 他のエフェクトパスを追加
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.5, 0.4, 0.85
+);
+composer.addPass(bloomPass);
+
+// アニメーションループ
+function animate() {
+  requestAnimationFrame(animate);
+  composer.render(); // RenderPassからブルームまでのパイプラインを実行
+}
+```
+
+このコードでは、RenderPassが3Dシーンを描画し、その結果にブルームエフェクトが適用される。
+
+流体アートプログラムでは、以下のように使用されている:
+
+```typescript
+// 流体アートプログラムでのRenderPass使用例
+private setupPostProcessing(): void {
+  // レンダーターゲットの作成
+  const renderTarget = new THREE.WebGLRenderTarget(/*...*/);
+  
+  // エフェクトコンポーザーの作成
+  this.composer = new EffectComposer(this.renderer, renderTarget);
+  
+  // レンダーパスの追加 - 流体アートのメッシュを含むシーンをレンダリング
+  const renderPass = new RenderPass(this.scene, this.camera);
+  this.composer.addPass(renderPass);
+  
+  // ブルームエフェクトの追加
+  this.bloomPass = new UnrealBloomPass(/*...*/);
+  this.composer.addPass(this.bloomPass);
+  
+  // 色収差エフェクトの追加
+  this.chromaticAberrationPass = new ShaderPass(/*...*/);
+  this.composer.addPass(this.chromaticAberrationPass);
+}
+```
+
+ここでは、RenderPassが流体アートのメッシュを描画し、その結果にブルームと色収差エフェクトが順に適用される。
+
+## フルスクリーンクワッドへの移行
+
+フルスクリーンクワッドアプローチでは、3Dシーンのレンダリングを行わず、シェーダーのみで画面全体の視覚効果を生成する。
+
+### RenderPassが不要となる理由
+
+RenderPassが不要となる理由:
+- フルスクリーンクワッドでは3Dシーンをレンダリングしない
+- ShaderPassだけで画面全体を覆うエフェクトを直接描画できる
+- 処理の起点が3Dシーンではなく、シェーダー自体になる
+
+### フルスクリーンクワッドへの変更例
+
+元のコード:
+```typescript
+// 流体アートの実装
+this.geometry = new THREE.PlaneGeometry(2, 2, 128, 128);
+this.material = new THREE.ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    // その他のユニフォーム変数
+  }
+});
+this.mesh = new THREE.Mesh(this.geometry, this.material);
+this.scene.add(this.mesh);
+
+// ポストプロセッシング
+this.composer = new EffectComposer(this.renderer);
+const renderPass = new RenderPass(this.scene, this.camera);
+this.composer.addPass(renderPass);
+this.bloomPass = new UnrealBloomPass(/*...*/);
+this.composer.addPass(this.bloomPass);
+this.chromaticAberrationPass = new ShaderPass(/*...*/);
+this.composer.addPass(this.chromaticAberrationPass);
+```
+
+フルスクリーンクワッドへの変更:
+```typescript
+// 流体アートをShaderPassとして直接実装
+const fluidArtEffect = {
+  uniforms: {
+    tDiffuse: { value: null }, // ShaderPassで必須だが実際には使わない
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+    // その他のユニフォーム変数
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position, 1.0); // 注目: modelViewMatrixとprojectionMatrixを使わない
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    uniform vec2 uResolution;
+    uniform vec2 uMouse;
+    // その他のユニフォーム変数
+    uniform sampler2D tDiffuse; // 必須だが使わない
+    
+    varying vec2 vUv;
+    
+    void main() {
+      // 元のfragment.glslと同じ処理
+      // ただしtDiffuseは使わない
+      
+      // 最後に結果を出力
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `
+};
+
+// フルスクリーンのShaderPassを作成
+const fluidArtPass = new ShaderPass(fluidArtEffect);
+
+// ポストプロセッシング
+this.composer = new EffectComposer(this.renderer);
+this.composer.addPass(fluidArtPass); // RenderPassの代わりにフルスクリーンのShaderPassを使用
+this.bloomPass = new UnrealBloomPass(/*...*/);
+this.composer.addPass(this.bloomPass);
+this.chromaticAberrationPass = new ShaderPass(/*...*/);
+this.composer.addPass(this.chromaticAberrationPass);
+```
+
+### 主な変更点
+
+1. 頂点シェーダーの変更:
+   ```glsl
+   // RenderPassを使用する場合
+   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+   
+   // フルスクリーンクワッドの場合
+   gl_Position = vec4(position, 1.0);
+   ```
+
+2. 3Dシーンとメッシュの削除:
+   - 3Dシーン、カメラ、メッシュが不要になる
+   - すべての視覚効果はシェーダーコードのみで生成
+
+3. フラグメントシェーダーの調整:
+   - `tDiffuse`ユニフォームを追加（ShaderPassの仕様上必要）
+   - 実際の処理ではこの`tDiffuse`を使わない
+
+4. ShaderPassの配置変更:
+   - RenderPassを削除し、流体アートのShaderPassを最初のエフェクトとして配置
+
+### 実装例: アニメーションと更新処理
+
+```typescript
+// アニメーションループ
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // 時間の更新
+  const elapsedTime = clock.getElapsedTime();
+  
+  // フルスクリーンシェーダーのユニフォーム更新
+  fluidArtPass.uniforms.uTime.value = elapsedTime;
+  fluidArtPass.uniforms.uMouse.value.copy(mousePosition);
+  
+  // エフェクトコンポーザーでレンダリング
+  composer.render();
+}
+
+// マウス位置の更新
+function handleMouseMove(event) {
+  mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mousePosition.y = -(event.clientY / window.innerHeight) * 2 + 1;
+}
+```
+
+## フルスクリーンクワッド実装の利点と注意点
+
+### 利点
+
+- レンダリングパイプラインの簡略化
+- 3Dシーンの処理オーバーヘッドが削減される
+- シェーダーのみで完結するためコード構造がシンプルになる
+
+### 注意点
+
+- ShaderPassはtDiffuseユニフォームを必要とするため、未使用でも宣言する必要がある
+- 3Dコンテンツと組み合わせることが難しくなる
+- カスタムパスを最初に配置する場合、ShaderPassの代わりにRawShaderMaterialとフルスクリーンクワッドを直接使用する方法もある
+
+## 用語説明
+
+- **RenderPass**: Three.jsのポストプロセッシングシステムで3Dシーンをレンダリングするためのパス
+- **ShaderPass**: カスタムシェーダーを使用してポストプロセス効果を適用するパス
+- **フルスクリーンクワッド**: 画面全体を覆う四角形で、ポストプロセスシェーダーの描画対象
+- **EffectComposer**: Three.jsでポストプロセッシングパイプラインを管理するクラス
+- **tDiffuse**: シェーダーパスで前のパスの結果を受け取るための標準ユニフォーム変数

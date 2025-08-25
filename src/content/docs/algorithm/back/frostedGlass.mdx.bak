@@ -1,0 +1,84 @@
+---
+title: 曇りガラス
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+Frosted glass（曇りガラス）の視覚効果は、光の多重散乱と位相変調を伴う波動干渉の結果であり、正確なシミュレーションには確率的手法（モンテカルロ）と統計的モデル（HG関数）を組み合わせる必要がある。
+## 曇りガラスの物理現象の構成
+* 入射光の振る舞い：
+  * ガラスに入射した光は、表面または内部の粒子で散乱される
+  * 散乱の分布は異方的で、方向性を持つ（主に前方）
+* 主な構成要素：
+  * 多重散乱（multiple scattering）
+  * ミー散乱（Mie scattering）
+  * ヘンイェイ=グリーンスタイン関数（Henyey-Greenstein phase function）
+  * サーフェス・サブスキャッタリング（SSS）
+  * 伝搬中の拡散（diffusive blur）
+## SDFベースでの解釈と非対応点
+* SDFでは1レイ = 1サンプルベース
+  * 単一の入射点・出射点で完結しがち
+  * 多重散乱や方向性散乱の統計効果が含まれない
+* 曇りガラス表現に必要な項
+  * 入射位置から拡散的に再分布されるレイ（散乱レイ群）
+  * それぞれの方向 $\omega_i$ に対し、
+    * 強度 $I(\omega_i)$
+    * フェーズ関数 $p(\cos\theta)$ に従った方向分布
+* SDFでは以下のような工夫が必要：
+  * 入射点にノイズベースの拡散分布を持たせ、複数レイを発生
+  * 各レイの寄与を合成（加重平均 or ストカスティックブラー）
+## 各構成モデルの役割と計算対象
+### 多重散乱（multiple scattering）
+  * 概念：光が曇りガラス内で複数回ランダムに散乱
+  * 対象：経路積分における全体的なぼかし効果
+  * 実装：モンテカルロ積分による経路追跡
+### ミー散乱（Mie scattering）
+  * 概念：粒子サイズ $a$ が波長 $\lambda$ に近いまたは大きい
+  * 計算対象：粒子1個あたりの散乱角度分布、効率係数 $Q_{sca}(\lambda)$
+  * 式：
+    $$
+    x = \frac{2\pi a}{\lambda},\quad Q_{sca} = \frac{2}{x^2} \sum_{n=1}^\infty (2n+1)(|a_n|^2 + |b_n|^2)
+    $$
+### ヘンイェイ=グリーンスタイン関数（HG関数）
+  * 概念：散乱方向分布の近似モデル
+  * 式：
+    $$
+    p(\cos\theta) = \frac{1 - g^2}{(1 + g^2 - 2g\cos\theta)^{3/2}} \cdot \frac{1}{4\pi}
+    $$
+  * 対象：方向ごとの強度分布。$g \sim 0.7$ は曇りガラスに近い
+### サーフェスサブスキャッタリング（SSS）
+  * 概念：表面付近での光の広がり（皮膚などに近い）
+  * 式モデル：ディフューズ近似やBSSRDFに基づく
+  * SDFでの扱い：ノイズ変調付き表面透過と見なすことで近似
+### 拡散伝搬（blur）
+  * 概念：全体の統計的ぼやけ
+  * 対象：単一レイではなく多方向からの合成光により発生
+  * 実装：ポストプロセスのカーネルブラー or ストカスティックサンプリング
+## 対応関係まとめ
+| 概念       | モデル  | 対応方式                  | 実装法例         |
+| -------- | ---- | --------------------- | ------------ |
+| 単一散乱     | ミー散乱 | $Q_{sca}(\lambda)$ | 波長別係数設定      |
+| 散乱方向     | HG関数 | $p(\cos\theta)$     | サンプル方向の確率選択  |
+| 入射→出射の経路 | 多重散乱 | 経路積分                  | モンテカルロ       |
+| 表面透過     | SSS  | BSSRDF近似              | 拡張法線・散乱半径設定  |
+| 全体ぼけ     | 拡散伝搬 | 合成像ブラー                | ガウス/ノイズベース合成 |
+## 参考文献
+\[1] Chandrasekhar, Radiative Transfer, 1950.
+\[2] Mie, G., "Beitrage zur Optik trubter Medien," Ann. Phys., 1908.
+\[3] Jensen et al., "A Practical Model for Subsurface Light Transport", SIGGRAPH 2001.
+\[4] Henyey, Greenstein, "Diffuse radiation in the galaxy", ApJ, 1941.

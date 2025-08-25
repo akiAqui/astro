@@ -1,0 +1,397 @@
+---
+title: ＊）流体力学/オイラー保存形方程式
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC from "../../../components/c-c.astro";
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import WhiteBox from '../../../components/WhiteBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+import StandardStyle from '../../../components/StandardStyle';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+
+## 序論
+
+流体力学における保存形オイラー方程式は、
+個々の物理保存則（質量保存、運動量保存、エネルギー保存）を統一的な数学形式でまとめたものである。
+このレポートでは各保存則の基本形から始め、それらがどのように統合されて保存形オイラー方程式を形成するかを解説する。
+
+### 前提
+圧縮性流体に対して、適用する。密度は温度と圧力の関数と考えられる。
+$$
+ \rho=\rho(T,P)
+$$
+
+
+- マッハ0.3以上の流れやせん断層の解析では圧縮性流体であることが重要になる 
+
+## 個別保存則の基本形
+
+### 質量保存則（連続の式）
+
+質量保存則は「系の質量は生成も消滅もしない」という原理に基づく。
+
+微分形式での表現:
+
+$$
+\frac{\partial \rho}{\partial t} + \frac{\partial (\rho v_{x})}{\partial x} + \frac{\partial (\rho v_{y})}{\partial y} + \frac{\partial (\rho v_{z})}{\partial z} = 0
+$$
+
+
+- $\rho$: 密度[$kg/m^3$]
+- $\overrightharpoon{v}=(v_{x},v_{y},v_{z})$は流体の速度[$m/s$]
+- $\rho \cdot \overrightharpoon{v}$ は質量流束（mass flux）[$kg/(m^2 \cdot s)$]
+- $\frac{\partial \rho}{\partial t}$: 密度の時間変化率
+- $\frac{\partial (\rho u)}{\partial x}$: $x$方向の質量流入出率
+- $\frac{\partial (\rho v)}{\partial y}$: $y$方向の質量流入出率
+
+### 運動量保存則（ニュートンの第二法則）
+
+運動量保存則はニュートンの第二法則に基づく。
+
+$x$方向の運動量保存:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u u)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} = -\frac{\partial p}{\partial x}
+$$
+
+$y$方向の運動量保存:
+
+$$
+\frac{\partial (\rho v)}{\partial t} + \frac{\partial (\rho v u)}{\partial x} + \frac{\partial (\rho v v)}{\partial y} = -\frac{\partial p}{\partial y}
+$$
+
+意味:
+- 左辺第1項: 運動量の時間変化率
+- 左辺第2,3項: 対流による運動量の流入出
+- 右辺: 圧力勾配による力
+
+### エネルギー保存則（熱力学第一法則）
+
+エネルギー保存則は「エネルギーは生成も消滅もせず、形態が変換されるだけ」という原理に基づく。
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial (E u)}{\partial x} + \frac{\partial (E v)}{\partial y} = -\frac{\partial (p u)}{\partial x} - \frac{\partial (p v)}{\partial y}
+$$
+
+意味:
+- 左辺第1項: 全エネルギーの時間変化率
+- 左辺第2,3項: 流れによるエネルギーの流入出
+- 右辺: 圧力による仕事（圧力エネルギーの流れ）
+
+### エネルギー保存則（補)
+
+**エネルギー流束**:
+   - 全エネルギー $E$ の流束は $(E + p) u$。
+
+#### 状態方程式の導出
+
+エネルギー密度 $E$ は、運動エネルギーと内部エネルギーの和で表される。
+
+$$
+E = \frac{1}{2} \rho |
+\mathbf{u}|^2 + \frac{p}{\gamma - 1}
+$$
+
+この関係を用いることで、状態方程式（理想気体の関係式）が得られる。
+
+$$
+p = (\gamma - 1) \left( E - \frac{1}{2} \rho |
+\mathbf{u}|^2 \right)
+$$
+
+ここで、
+- $\rho$ [kg/m3]: 密度
+- $u, v$ [m/s]: 速度成分
+- $p$ [Pa]: 圧力
+- $E$ [J/m3]: エネルギー密度
+- $\gamma = 1.4$: 比熱比（空気の値）
+
+
+
+
+## 流体の質量保存則と連続の式
+
+連続の式は質量保存則を表現した流体力学の基本方程式である：
+
+$$
+\frac{\partial \rho}{\partial t} + \frac{\partial (\rho v_{x})}{\partial x} + \frac{\partial (\rho v_{y})}{\partial y} + \frac{\partial (\rho v_{z})}{\partial z} = 0
+$$
+
+ここで：
+- $\rho$: 密度[$kg/m^3$]
+- $\overrightharpoon{v}=(v_{x},v_{y},v_{z})$: 流体の速度[$m/s$]
+- $\rho \cdot \overrightharpoon{v}$: 質量流束（mass flux）[$kg/(m^2 \cdot s)$]
+- $\frac{\partial \rho}{\partial t}$: 密度の時間変化率
+- $\frac{\partial (\rho v_x)}{\partial x}$: $x$方向の質量流入出率
+- $\frac{\partial (\rho v_y)}{\partial y}$: $y$方向の質量流入出率
+- $\frac{\partial (\rho v_z)}{\partial z}$: $z$方向の質量流入出率
+
+ベクトル形式では：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = 0
+$$
+
+## 質量保存則の導出
+
+### コントロールボリュームの考え方
+
+空間内の任意の固定体積 $V$ を考える。この体積内の質量変化率は、体積に流入する質量から流出する質量を引いたものに等しい。
+
+### 数学的表現
+
+体積 $V$ 内の総質量は $\int_V \rho dV$ である。この時間変化率は：
+
+$$
+\frac{d}{dt}\int_V \rho dV = -\int_S \rho \vec{v} \cdot \vec{n} dS
+$$
+
+ここで：
+- 左辺：体積 $V$ 内の質量の時間変化率
+- 右辺：表面 $S$ を通過する質量流束（マイナスは流出が正として定義）
+- $\vec{n}$：表面の単位法線ベクトル
+
+### ガウスの発散定理
+
+ガウスの発散定理によると、ベクトル場 $\vec{F}$ に対して：
+
+$$
+\int_S \vec{F} \cdot \vec{n} dS = \int_V \nabla \cdot \vec{F} dV
+$$
+
+この定理を $\vec{F} = \rho \vec{v}$ に適用すると：
+
+$$
+\int_S \rho \vec{v} \cdot \vec{n} dS = \int_V \nabla \cdot (\rho \vec{v}) dV
+$$
+
+### 方程式の変形
+
+質量保存の式に発散定理を適用：
+
+$$
+\frac{d}{dt}\int_V \rho dV = -\int_V \nabla \cdot (\rho \vec{v}) dV
+$$
+
+積分の中に微分を入れると：
+
+$$
+\int_V \left(\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v})\right) dV = 0
+$$
+
+### 微分形式
+
+この式は任意の体積 $V$ で成立する必要があるため、被積分関数自体がゼロでなければならない：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = 0
+$$
+
+これが連続の式（質量保存則）の微分形式である。
+
+## 物質微分との関係
+
+物質微分と質量保存則は互いに関連しており、物質微分を用いると質量保存則を流体粒子の視点で解釈できる。
+
+### 物質微分の定義
+
+物質微分（Material Derivative）は流体要素に沿って測定される量の時間変化率：
+
+$$
+\frac{D}{Dt} = \frac{\partial}{\partial t} + \vec{v} \cdot \nabla
+$$
+
+### 連続の式との関係
+
+連続の式を展開すると：
+
+$$
+\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho \vec{v}) = \frac{\partial \rho}{\partial t} + \vec{v} \cdot \nabla \rho + \rho \nabla \cdot \vec{v} = 0
+$$
+
+物質微分の定義を適用：
+
+$$
+\frac{D\rho}{Dt} + \rho \nabla \cdot \vec{v} = 0
+$$
+
+この式は流体要素に沿った密度の変化率が、流体の膨張・収縮率（$\nabla \cdot \vec{v}$）に比例することを示している。
+
+### 特殊ケース：非圧縮性流体
+
+非圧縮性流体では $\nabla \cdot \vec{v} = 0$ であり、この場合：
+
+$$
+\frac{D\rho}{Dt} = 0
+$$
+
+つまり、流体要素に沿った密度変化はない。
+
+## 用語説明
+
+- **連続の式**: 質量保存則を表現した偏微分方程式
+- **コントロールボリューム**: 流体解析において考慮する固定された空間領域
+- **ガウスの発散定理**: ベクトル場の発散を体積積分と面積分で関連付ける定理
+- **物質微分**: 流体粒子に沿って観測される物理量の時間変化率
+- **非圧縮性流体**: 密度が一定の流体。$\nabla \cdot \vec{v} = 0$ という条件を満たす
+
+## リファレンス
+
+- Anderson, J. D. (2011). *Fundamentals of Aerodynamics*.
+- Batchelor, G. K. (2000). *An Introduction to Fluid Dynamics*.
+- Kundu, P. K., Cohen, I. M., & Dowling, D. R. (2015). *Fluid Mechanics*.
+- White, F. M. (2016). *Fluid Mechanics*.
+
+
+
+
+## 保存形への変換プロセス
+
+個別の保存則を保存形に変換するには、右辺の項を左辺に移動させ、発散形式にまとめる。
+
+### 運動量方程式の変形
+
+$x$方向運動量保存則:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u u)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} + \frac{\partial p}{\partial x} = 0
+$$
+
+これを整理:
+
+$$
+\frac{\partial (\rho u)}{\partial t} + \frac{\partial (\rho u^2 + p)}{\partial x} + \frac{\partial (\rho u v)}{\partial y} = 0
+$$
+
+$y$方向運動量保存則も同様:
+
+$$
+\frac{\partial (\rho v)}{\partial t} + \frac{\partial (\rho u v)}{\partial x} + \frac{\partial (\rho v^2 + p)}{\partial y} = 0
+$$
+
+### エネルギー方程式の変形
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial (E u)}{\partial x} + \frac{\partial (E v)}{\partial y} + \frac{\partial (p u)}{\partial x} + \frac{\partial (p v)}{\partial y} = 0
+$$
+
+これを整理:
+
+$$
+\frac{\partial E}{\partial t} + \frac{\partial ((E + p) u)}{\partial x} + \frac{\partial ((E + p) v)}{\partial y} = 0
+$$
+
+## ベクトル形式への統合
+
+各保存則が「時間変化率 + 空間的な流れの発散 = 0」の形になったので、これらをベクトル形式でまとめる。
+
+### 保存量ベクトル $U$ の定義
+
+$$
+U = \begin{bmatrix} 
+\rho \\
+\rho u \\
+\rho v \\
+E
+\end{bmatrix}
+$$
+
+各成分は:
+- 質量密度
+- $x$方向運動量密度
+- $y$方向運動量密度
+- 全エネルギー密度
+
+### 流束ベクトル $F$ の定義
+
+流束ベクトルは方向によって分解される:
+
+$x$方向流束ベクトル:
+
+$$
+F_x = \begin{bmatrix} 
+\rho u \\
+\rho u^2 + p \\
+\rho u v \\
+(E + p) u
+\end{bmatrix}
+$$
+
+$y$方向流束ベクトル:
+
+$$
+F_y = \begin{bmatrix} 
+\rho v \\
+\rho u v \\
+\rho v^2 + p \\
+(E + p) v
+\end{bmatrix}
+$$
+
+流束ベクトルの各成分は:
+- 質量の流れ（質量流束）
+- 運動量の流れと圧力効果（運動量流束）
+- エネルギーの流れと圧力仕事（エネルギー流束）
+
+### 統合された保存形オイラー方程式
+
+個別の保存則を統合すると:
+
+$$
+\frac{\partial U}{\partial t} + \frac{\partial F_x}{\partial x} + \frac{\partial F_y}{\partial y} = 0
+$$
+
+あるいはベクトル表記で:
+
+$$
+\frac{\partial U}{\partial t} + \nabla \cdot F = 0
+$$
+
+ここで $\nabla \cdot F$ は流束ベクトルの発散を表す。
+
+## 統合形式の意義
+
+保存形オイラー方程式の統合形式には以下の利点がある:
+
+- 数学的に簡潔な表現
+- 物理的保存則の明示的表現
+- 数値解法への適用が容易
+- 保存則の構造的類似性の表現
+- 有限体積法などの保存則ベース数値解法との親和性
+
+## 物理的解釈
+
+統合された形式は、各保存則の本質的な構造が同じであることを示している:
+
+1. 保存量の時間変化率
+2. 保存量の流入出率（流束の発散）
+3. 合計がゼロ（保存則）
+
+この構造的類似性は、質量、運動量、エネルギーという異なる物理量が同じ数学的枠組みで扱えることを意味する。
+
+## 用語説明
+
+- 保存則: 特定の物理量が生成も消滅もせず保存されるという法則
+- 発散: ベクトル場から流出入する量を表す微分演算子
+- 対流項: 流体の移動に伴う物理量の輸送を表す項
+- 圧力勾配: 空間的な圧力の変化率
+
+## リファレンス
+
+- Panton, R. L. (2013). Incompressible Flow. John Wiley & Sons.
+- White, F. M. (2016). Fluid Mechanics. McGraw-Hill Education.
+- Anderson, J. D. (1995). Computational Fluid Dynamics: The Basics with Applications. McGraw-Hill.
+- Hirsch, C. (2007). Numerical Computation of Internal and External Flows. Butterworth-Heinemann.
+- LeVeque, R. J. (2002). Finite Volume Methods for Hyperbolic Problems. Cambridge University Press.

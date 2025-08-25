@@ -1,0 +1,343 @@
+---
+title: ＊＊＊）パイプライン処理
+description: パイプライン
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+import {TwoColumn,Left,Right}  from '../../../components/TwoColumn';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+## 要約
+本レポートはWebGLレンダリングパイプラインにおけるVertex ShaderとFragment Shaderの実行メカニズム、ラスタライズプロセス、およびシェーダー間データ伝播の仕組みについて解説する。特に頂点データの処理からピクセル描画までの一連の流れと、補間処理のメカニズムに焦点を当てる。
+
+## シェーダーパイプラインの基本構造
+グラフィックスパイプラインにおけるVertex ShaderとFragment Shaderの実行は以下の順序で行われる:
+
+- Vertex Shader処理
+  - 各頂点に対して実行。実行回数はプログラム内容による
+  - 出力として頂点位置(クリップ空間座標)と各種頂点属性を計算
+  - `gl_Position`にはクリップ空間座標を設定
+  
+- ラスタライズ処理
+  - 三角形プリミティブをピクセルグリッドに変換
+  - 頂点属性の補間計算
+
+- Fragment Shader処理
+  - 三角形内の各フラグメント(ピクセル候補)で実行
+  - 出力として各フラグメントの色を決定
+
+## Vertex Shaderの実行特性
+- 実行契機: 描画命令によってGPUに送信された頂点データに対して処理（[実行回数の詳細](#vertex-shaderの実行特性)）
+- 実行回数: 描画呼び出しでGPUに送信される頂点数に依存
+  - インデックスバッファ未使用時: 各頂点ごとに1回（共有頂点も複数回）
+    - 例: 四角形(2三角形) = 頂点6個分の処理(各頂点が重複)
+  - インデックスバッファ使用時: 各ユニーク頂点ごとに1回
+    - 例: 四角形(2三角形) = 頂点4個分の処理(共有頂点は1回のみ)
+- 主な責務:
+  - 頂点の変換処理(モデル座標→スクリーン座標)
+  - 各頂点属性(色、法線、UV座標など)の計算
+  - Fragment Shaderへ引き継ぐ属性値の設定
+
+## ラスタライズ処理
+- 定義: ベクトル形式のジオメトリをピクセルグリッドに変換するプロセス
+- 実行ステップ:
+  - 三角形の境界を決定
+  - 三角形内部に位置するピクセル群を特定
+  - 各ピクセルに対する頂点属性の補間計算
+- 特徴:
+  - GPU内部で自動的に実行される処理
+  - $gl\_Position$は三角形を構成する頂点位置として使用
+  - 三角形内部の決定にはエッジ関数等のアルゴリズムを使用
+
+## 座標系の変換
+- Vertex Shaderでの座標変換:
+  - モデル空間(オブジェクト空間): オブジェクト固有の座標系
+  - ワールド空間: 3D空間全体の座標系
+  - ビュー空間(カメラ空間): カメラを原点とした座標系
+  - クリップ空間: 投影変換後の4次元同次座標空間。$x,y,z$座標はいずれも$w$成分との比較で$-w$から$+w$の範囲内にある場合に画面に表示される。この空間での座標が$gl\_Position$に設定される
+  - `gl_Position`に設定される最終的な座標はクリップ空間座標
+
+- ラスタライズ後の座標:
+  - 正規化デバイス座標(NDC): クリップ空間座標をw除算した$(-1,-1,-1)$から$(1,1,1)$の範囲
+  - スクリーン空間: ビューポート変換後のピクセル座標(左上原点)
+
+- Fragment Shaderでの座標:
+  - `gl_FragCoord`: スクリーン空間でのフラグメント座標(左下原点)
+  - その他の座標はVertex Shaderから補間された値を使用
+
+## シェーダー間のデータ伝播
+- 変数の宣言:
+  - WebGL 1.0: `varying`修飾子を使用
+  - WebGL 2.0: `out`(Vertex)と`in`(Fragment)修飾子を使用
+
+- データの流れ:
+  - Vertex Shader: 各頂点での値を計算し`varying`変数に設定
+  - ラスタライザ: 三角形内部の各フラグメント位置での値を補間
+  - Fragment Shader: 補間された値を受け取り処理
+
+- 補間メカニズム:
+  - バリセントリック座標(重心座標)による補間
+  - フラグメント位置$P$での補間値: $w_1V_1 + w_2V_2 + w_3V_3$
+    - $w_1, w_2, w_3$: 重み係数 ($w_1 + w_2 + w_3 = 1$)
+    - $V_1, V_2, V_3$: 三角形の各頂点での属性値
+  - 通常はパースペクティブ補間(遠近感を考慮)
+  - `flat`修飾子使用時は最も近い頂点の値を使用(補間なし)
+
+## Fragment Shaderの実行特性
+- 実行契機: ラスタライズで生成された各フラグメントに対して実行
+- 実行回数: 三角形がカバーするピクセル数に依存
+  - 透明部分や描画対象がない領域では実行されない
+  - 重なり合う三角形や透明度処理では同一ピクセルで複数回実行の可能性
+- 主な責務:
+  - 各フラグメントの最終色の決定
+  - テクスチャサンプリング
+  - ライティング計算
+  - その他の視覚効果の適用
+
+## 用語説明
+- クリップ空間
+  - 3D座標を画面に投影する前の座標空間
+  - 頂点が視錐台内にあるかの判定(クリッピング)に使用される
+  - $x,y,z$各成分が$-w$から$+w$の範囲外の頂点は画面外としてクリップされる
+- クリップ空間座標
+  - 4次元の同次座標系 (x, y, z, w)
+  - Vertex Shaderが出力するgl_Positionの座標
+  - x, y, z成分はそれぞれ-wからw範囲内にあるかでクリッピング判定に使用
+  - 投影行列適用後、w除算(透視除算)前の座標
+- 正規化デバイス座標(NDC):
+  - 3次元の座標系 (x, y, z)
+  - クリップ空間座標にw除算を適用した結果
+  - x, y, z成分はすべて-1から+1の範囲に正規化される
+  - 例：クリップ空間で(2, 3, 4, 2)の点は、NDCでは(1, 1.5, 2)となる
+  - クリップ空間座標から各成分をw成分で割ることで正規化デバイス座標に変換される
+  - このw除算が透視投影効果(遠くのものが小さく見える)を生み出す
+  - w除算はGPUによって自動的に行われる処理
+- フラグメント
+  - ピクセルの候補となる描画単位。Fragment Shaderの処理対象
+- バリセントリック座標
+  - 三角形内部の点を三頂点からの相対的な重みで表現する座標系
+- ラスタライズ
+  - ベクトルデータ(三角形)をピクセルグリッドに変換するプロセス
+- プリミティブ
+  - 描画の基本単位(点、線、三角形など)
+
+## リファレンス
+- [WebGL Fundamentals](https://webglfundamentals.org/)
+- [OpenGL Wiki - Fragment Shader](https://www.khronos.org/opengl/wiki/Fragment_Shader)
+- [OpenGL Wiki - Vertex Shader](https://www.khronos.org/opengl/wiki/Vertex_Shader)
+- [Learn WebGL - Shader Pipeline](https://learnwebgl.brown37.net/the_big_picture/shader_pipeline.html)
+
+
+--------------------------------
+
+
+# WebGLにおけるクリップ空間座標システム
+
+## 要約
+本レポートはWebGLレンダリングパイプラインにおけるクリップ空間座標の特性と役割について解説する。クリップ空間座標と正規化デバイス座標(NDC)の違い、w成分の意義と計算方法、視錐台クリッピングの判定基準などを中心に詳述する。
+
+## クリップ空間の基本概念
+- 定義:
+  - 投影変換後の4次元同次座標空間
+  - Vertex Shaderの最終出力(`gl_Position`)が配置される空間
+  - クリッピング操作（表示対象外の頂点・ポリゴンの除外）が行われる空間
+
+- 特徴:
+  - 4次元ベクトル $(x, y, z, w)$ で表現
+  - $w$ 成分によって正規化された範囲が決定される
+  - 視錐台内部の判定に使用される
+  - モデルビュー投影変換（MVP変換）の最終段階
+
+## クリップ空間とNDCの関係
+- 正規化デバイス座標(NDC)への変換:
+  - クリップ空間座標 $(x, y, z, w)$ に対して $w$ 除算を適用
+  - 結果として得られる座標: $(x/w, y/w, z/w)$
+  - この変換はGPUによって自動的に行われる
+
+- 主な違い:
+  - クリップ空間: 4次元同次座標、各成分が $-w$ から $+w$ の範囲で判定
+  - NDC空間: 3次元座標、各成分が $-1$ から $+1$ の範囲に正規化
+
+- 例:
+  - クリップ空間の点 $(2, 3, 4, 2)$ は NDC空間では $(1, 1.5, 2)$
+  - クリップ空間の点 $(0.5, -0.5, 0.8, 1)$ は NDC空間でも $(0.5, -0.5, 0.8)$
+
+## w成分の役割と計算
+- 投影行列による算出:
+  - 透視投影の場合:
+    - 一般式: $w = -z_{eye} \cdot scale + offset$
+    - $z_{eye}$: カメラ空間でのz座標（視点からの距離）
+    - $scale$と$offset$: 投影行列のパラメータから導出される係数
+  
+  - 平行投影の場合:
+    - 基本的に $w \approx 1$ で一定値に近い
+
+- 遠近効果との関係:
+  - $w$ の値が大きいほど、NDC変換後のサイズは小さくなる
+  - 視点から遠い頂点ほど $w$ 値が大きくなるため、遠くの物体は小さく表示される
+
+- 特殊なケース:
+  - $w = 0$: 無限遠点（方向ベクトル）を表現
+  - $w < 0$: 視点の背後にある点を表現
+  - 非常に小さい $w$ 値: 数値的不安定性の原因となることがある
+
+## 視錐台クリッピング
+- 判定条件:
+  - 点 $(x, y, z, w)$ が視錐台内にあるための必要十分条件:
+    - $-w \leq x \leq w$
+    - $-w \leq y \leq w$
+    - $-w \leq z \leq w$
+
+- クリッピング処理:
+  - 上記6つの不等式のいずれかを満たさない頂点は画面外と判定
+  - 三角形の一部が視錐台の外にある場合、新しい頂点を生成して三角形を分割
+  - 完全に視錐台外の三角形は破棄
+
+- 効率性:
+  - 同次座標による表現により、3D空間での複雑な錐台判定が単純な比較操作に変換
+  - ハードウェアレベルで効率的に実装可能
+
+## 座標変換の流れ
+- 変換シーケンス:
+  1. モデル空間（オブジェクト空間）: $(x_{obj}, y_{obj}, z_{obj}, 1)$
+  2. ワールド空間: $(x_{world}, y_{world}, z_{world}, 1)$
+  3. ビュー空間（カメラ空間）: $(x_{eye}, y_{eye}, z_{eye}, 1)$
+  4. クリップ空間: $(x_{clip}, y_{clip}, z_{clip}, w_{clip})$
+  5. NDC空間: $(x_{ndc}, y_{ndc}, z_{ndc}) = (x_{clip}/w_{clip}, y_{clip}/w_{clip}, z_{clip}/w_{clip})$
+  6. スクリーン空間: $(x_{screen}, y_{screen}, z_{depth})$
+
+- 変換行列:
+  - モデルビュー変換: $M_{modelview} = M_{view} \cdot M_{model}$
+  - 投影変換: $M_{projection}$
+  - 最終変換式: $P_{clip} = M_{projection} \cdot M_{modelview} \cdot P_{obj}$
+
+## 用語説明
+- 同次座標: n次元空間の点を(n+1)次元ベクトルで表現する座標系。射影変換を線形演算で実現可能にする
+- 視錐台: カメラから見たときにレンダリングされる3D空間の領域。通常は切頭四角錐の形状
+- w除算: クリップ空間座標を正規化デバイス座標に変換するための各成分をw値で割る操作
+- MVP変換: モデル変換、ビュー変換、投影変換の三つを組み合わせた変換。頂点をモデル空間からクリップ空間に変換する
+
+## リファレンス
+- [WebGL Fundamentals - WebGL 3D Perspective](https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html)
+- [OpenGL Wiki - Clip Space](https://www.khronos.org/opengl/wiki/Clip_Space)
+- [OpenGL Wiki - Homogeneous Coordinates](https://www.khronos.org/opengl/wiki/Homogeneous_Coordinates)
+- [Learn OpenGL - Coordinate Systems](https://learnopengl.com/Getting-started/Coordinate-Systems)
+
+
+----
+
+

@@ -1,0 +1,126 @@
+---
+title: blockとinline
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+
+中央揃えとフォーム入力要素の構造・振る舞いに関する技術レポート
+
+中央揃えに関する視覚的ずれの議論と、HTML要素のレンダリングモデルに基づく詳細な解析。
+
+display プロパティの体系と分類 [1]
+
+  - display は要素のレイアウト振る舞いを定義するCSSプロパティ
+  - 主に以下のカテゴリに分類される:
+    - block系: block, flow-root
+    - inline系: inline, inline-block
+    - flex系: flex, inline-flex
+    - grid系: grid, inline-grid
+    - table系: table, table-row, table-cell など
+    - その他: contents, none, run-in（非推奨）、inherit 等
+
+display の種類と特性の比較
+
+| display値       | 外部構造   | 内部構造        | 主な用途                     |
+|----------------|------------|------------------|------------------------------|
+| block          | 縦に積む   | ブロックレベル   | 段落、div、section など      |
+| inline         | 横に並ぶ   | テキスト         | span, a, strong など         |
+| inline-block   | 横に並ぶ   | ブロック扱い可能 | テキストと共存するUI         |
+| flex           | フレックス | 子要素を柔軟配置 | ナビゲーションやボックス配置 |
+| inline-flex    | インライン | フレックス       | テキスト内で柔軟配置         |
+| grid           | ブロック   | グリッド構造     | 複雑な2Dレイアウト            |
+| inline-grid    | インライン | グリッド構造     | テキスト流内で2Dレイアウト    |
+| table          | ブロック   | 表形式           | 表、セル、行の再現           |
+| contents       | 無視       | 子要素だけ残す   | Shadow DOM、slot用途         |
+| none           | 非表示     | DOMに残るが描画なし | 要素の除外               |
+
+基本例：inline-block, flex, block の比較 [1]
+
+```html
+<div style="display: block;">A</div>
+<div style="display: inline-block; width: 100px;">B</div>
+<div style="display: flex; gap: 8px;">
+  <div>X</div>
+  <div>Y</div>
+</div>
+```
+
+fontのベースラインと中央揃えに関係する話題 [2]
+
+  - テキスト要素は通常、ベースライン（baseline）を基準に配置される
+  - ベースライン揃えは inline, inline-block 要素に適用される
+  - UI部品（input, buttonなど）は vertical-align によって制御される
+  - 高さの違う要素を並べると、視覚的なずれが発生しやすい
+
+input[type=range] の構造と挙動 [3]
+
+  - スライダーUIを持つ特殊なinput要素
+  - ブラウザによってレンダリングが大きく異なる [5]
+  - vertical-align の影響を受けにくい
+  - display: inline-block のような構造だが、内部は `<div role="slider">` に近い振る舞いをする [4]
+  - DOM構造としては通常の input 要素だが、レンダリングエンジンがネイティブUI部品で上書きする
+
+input の type と整列の問題 [3]
+
+  - text, number
+    - 標準的なテキストフィールド。vertical-align: baseline が有効
+  - color
+    - 小さなボタンで、inline-blockとしてレンダリングされることが多い
+    - 高さが小さいため、他の要素と自然に中央に見えやすい
+  - range
+    - サイズが不定で、見た目の中心とテキストベースラインがずれる
+    - align-items: center でも補正しきれない場合がある
+
+中途半端な box-baseline とは
+
+  - input[type=range] は inputでありながら、UIの高さが固定されておらず、かつベースラインが明確でない
+  - そのため、ラベルや他のUIとの alignment に不安定さが出る
+  - CSS的には vertical-align を無視するか、独自実装される傾向がある [2]
+
+input[type=color] は inline-block に近いという意味
+
+  - input自体の初期displayは inline（全input共通）
+  - しかし type=color は UI的に box要素（ボタン）として表現される [3]
+  - サイズが小さく、テキストとの baseline 差が目立たない
+  - 結果として、display: flex や align-items: center での中央揃えがきれいに効く
+
+ボックスサイズが小さいため中央に見えるとはどういうことか
+
+  - 小さい要素は上下のズレが相対的に目立たない
+  - つまり中央に揃っていなくても、視覚的には揃って見える
+  - 真の整列基準はフォントのベースラインまたは flexbox の align-items による [1][2]
+
+input[type=range] と `<div role="slider"> `の違いと近さ [4]
+
+  - input[type=range] は semantic HTML のinput要素
+  - `<div role="slider">` は ARIAによるアクセシブルなスライダーの作法
+  - 両者はUIとして同じ目的を持つが:
+    - input[type=range] はネイティブUI（低レベルでレンダラーが制御）
+    - div role=slider はカスタムUI（JavaScriptで値や位置を制御）
+  - div role=slider の方がスタイル制御は完全にできる
+  - ただし、キーボード操作やアクセシビリティ実装は手動で行う必要がある
+
+参考文献
+
+[1] CSS display プロパティ: https://developer.mozilla.org/en-US/docs/Web/CSS/display
+[2] vertical-align / baseline の仕様: https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align
+[3] HTML input type の一覧と挙動差: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+[4] ARIA role="slider" の定義と挙動: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/slider_role
+[5] HTML Form Controls のレンダリング差異（W3C）: https://www.w3.org/TR/html-rendering/
+
+

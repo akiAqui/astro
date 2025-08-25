@@ -1,0 +1,290 @@
+---
+title: ＊）blobスキームとその周辺
+description: blob, dataなど
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:26px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:24px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:22px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:18px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+
+ - [x] nothing
+
+## スキームとは
+スキーム（scheme）とは、URL の先頭に付く識別子であり、ブラウザやアプリケーションがその後の情報をどのように解釈し、リソースにアクセスするかを決定するためのもの。スキームによって、データの送受信や取得の方法が異なる。
+
+## blobスキーム
+- ブラウザのメモリ上に保持された一時的なバイナリデータ
+- 一時的なURLを作成
+- ファイルダウンロード、プレビュー、Canvas保存などに広く使われる。
+- ページの実行中のみ有効な一時的なURL となる。
+- URL.createObjectURL(blob) を使用することで、Blob オブジェクトを指すURLを生成できる。
+
+```javascript
+const blob = new Blob(["Hello, World!"], { type: "text/plain" });
+const url = URL.createObjectURL(blob);
+console.log(url); // "blob:https://example.com/abcd1234-5678"
+```
+このURLを `<a>` タグや `<img>` タグに設定することで、ブラウザ上でバイナリデータを扱うことが可能になる。
+
+### blobスキームの特徴
+- 一時的なURL
+  - ページをリロードすると無効になる。
+  - 長期間保持されないため、不要になったら `URL.revokeObjectURL(url)` で解放する。
+- メモリ上のデータを指す
+  - ファイルをダウンロードしなくても、直接扱える。
+  - 大量のデータを扱う場合、不要なURLは解放しないとメモリリークを引き起こす。
+- 通常のURLと同様に利用可能
+  - `blob:` URL は `<img>`, `<video>`, `<a>` などの `src` や `href` に設定できる。
+
+```javascript
+const img = document.createElement("img");
+img.src = URL.createObjectURL(blob);
+document.body.appendChild(img);
+```
+
+### blobスキームの用途
+#### ファイルのダウンロード
+   ```javascript
+   const link = document.createElement("a");
+   link.href = URL.createObjectURL(blob);
+   link.download = "example.txt";
+   link.click();
+   ```
+#### 画像や動画の動的なプレビュー
+   ```javascript
+   const video = document.createElement("video");
+   video.src = URL.createObjectURL(blob);
+   video.controls = true;
+   document.body.appendChild(video);
+   ```
+#### Canvasの内容を保存
+   ```javascript
+   canvas.toBlob(blob => {
+       const url = URL.createObjectURL(blob);
+       const link = document.createElement("a");
+       link.href = url;
+       link.download = "canvas.png";
+       link.click();
+   });
+   ```
+
+#### blobスキームのメモリ管理
+URL.createObjectURL(blob) を使用すると、ブラウザのメモリに Blob データが確保される。これを適切に管理しないと、不要なデータが残り続け、メモリリークを引き起こす。このコードでは、Blob のデータを5秒後に解放し、ブラウザのメモリを確保する。`URL.revokeObjectURL(url)` を使う
+```javascript
+const url = URL.createObjectURL(blob);
+setTimeout(() => {
+    URL.revokeObjectURL(url);
+    console.log("URL revoked");
+}, 5000); // 5秒後に解放
+```
+
+
+
+
+## dataスキーム
+データそのものを表現する
+
+```text
+data:[<mediatype>][;base64],<data>
+```
+
+例えば、以下をブラウザのアドレスバーに直接入力すると、ページ上に Hello, World! というテキストが表示される。
+なぜなら`Hello, World!` を Base64 でエンコードしたデータなので、ブラウザはこれをデコードして表示する。
+
+```text
+data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==
+```
+
+### dataスキームの用途
+#### テキストデータのダウンロード
+   ```javascript
+   const dataUrl = "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
+   const link = document.createElement("a");
+   link.href = dataUrl;
+   link.download = "hello.txt";
+   link.click();
+   ```
+ このスクリプトを実行すると、ブラウザが「hello.txt」というファイルを作成し、
+ユーザーがダウンロードできるようになる。ファイルの内容は「Hello, World!」。
+
+
+#### JSONデータのダウンロード
+   ```javascript
+   function downloadJson() {
+       const jsonData = JSON.stringify({ key: "value" });
+       const dataUrl = "data:application/json;charset=utf-8," + encodeURIComponent(jsonData);
+       
+       const link = document.createElement("a");
+       link.href = dataUrl;
+       link.download = "data.json";
+       link.click();
+   }
+   ```
+ユーザーがこのスクリプトを実行すると、`data.json` というファイルがダウンロードされ、その中には `{ "key": "value" }` という JSON データが含まれる。
+
+
+#### 画像を HTML に直接埋め込む
+   ```javascript
+   const img = document.createElement("img");
+   img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAU=";
+   document.body.appendChild(img);
+   ```
+画像ファイルを外部リソースとして取得するのではなく、
+HTML に直接埋め込んで表示する。これにより、ネットワークなしでも表示可能。
+
+#### CSS 内でアイコンを直接指定
+   ```css
+   .icon {
+       background-image: url("data:image/svg+xml;charset=UTF-8,<svg ...></svg>");
+   }
+   ```
+小さなアイコンを外部ファイルなしで CSS 内に直接指定し、ページのロード時間を短縮する。
+
+#### 補足：ダウンロードと表示の違い
+
+`data:` スキームが 表示されるか、ダウンロードされるか は以下の要因によって決まる。
+
+##### MIME タイプ（コンテンツタイプ）
+   - `text/plain`, `image/png`, `image/jpeg` などの表示可能なデータは、ブラウザにそのまま表示される。
+   - `application/json`, `application/octet-stream` などのバイナリや未定義のフォーマットは、ダウンロードされることが多い。
+
+##### HTML の `download` 属性
+   ```html
+   <a href="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==" download="hello.txt">Download</a>
+   ```
+   - `download` 属性が指定されていると、ブラウザはそのデータを強制的にダウンロードする。
+
+##### ブラウザの設定とユーザー操作
+   - 一部のブラウザでは、特定の MIME タイプのデータを開くか、ダウンロードするかを選択できる。
+
+#### 例
+| データ形式                | MIME タイプ                    | デフォルトの挙動 |
+|------------------|--------------------------|----------------|
+| テキストファイル (`.txt`) | `text/plain`                | 表示           |
+| 画像 (`.png`, `.jpeg`)    | `image/png`, `image/jpeg`    | 表示           |
+| JSON (`.json`)           | `application/json`          | ダウンロード   |
+| バイナリ (`.bin`)        | `application/octet-stream`  | ダウンロード   |
+
+## blob vs data
+
+| `blob:`    | `data:`                 |
+| -------     | ------------------ |
+|  メモリ上のデータを指す一時的なURL | データをURLに直接埋め込む|
+| 大きなデータを扱える| 小さなデータの処理に適する|
+|リモートURLのように使用可能 | URLをコピーできる |
+|ページがリロードされると消えるメモリ管理が必要 | データサイズが大きいとメモリ消費が激しい      |
+
+
+
+

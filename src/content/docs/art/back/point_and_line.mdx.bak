@@ -1,0 +1,1352 @@
+---
+title: 点と線
+description: スコアを定義して、animationエンジンを作って3次元空間内で多数の点と線を動かす
+layout: '../../../layouts/BaseLayout.astro'
+---
+
+import CC  from "../../../components/c-c.astro";
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] nothing
+ - [ ] gsapの扱い方
+ - [ ] 同期方式の決定
+ - [ ] MIDI clockからの安定的な統計的BPM算出方式
+ - [ ] 動作発動、パラメータ、とMIDI信号マッピング方式
+ - [ ] 
+
+### ねらい/基本的な要件
+- 階層構造を持つ点と線のオブジェクトの集合を扱いアニメーションさせる
+- 音に合わせてアニメーションをシンクさせる
+- 振舞いは今後も次々と追加する想定でそれを容易にする
+- 点や線は数百や数千のオーダーで扱うことを想定する
+- 指示に従ってその様子を録画することができる
+
+
+### 前提
+
+## サマリー
+- 基本的な同期的な仕組みはMIDI/rtpMIDIで行う
+  - rtpMIDIで同一セグメントのネットワーク上での通信を想定する
+    - rtpMIDI, Bluetooth LE/MIDI, OSCなどの通信方法があるが、安定性の点からBluetoothは利用を想定できなかった
+    - OSCはデータ送信をUDPで行いlatencyは小さく、最も自由度が高いが、MIDIの同期的な性質を欠いている
+    - rtpは基本的にudp上で動作しFWを超えることを考えなければそのままudpで動くのでlatencyは小さい
+  - 通信がなくてもMIDIがベースであれば、Windows上でシーケンサーを動かすことができる
+  - rtpMIDIアプリケーションはwindows上で動作し、Compatible to the network MIDI included in Apple OS-X and iOS
+
+
+
+### アーキテクチャ
+- 同期的部分のスコアはMIDIに記載され、同期性はMIDIで担保する
+  - オーディオトラックとMIDIトラックをLogic Pro等のDAW環境で実現できることを考えるとMIDIでの同期が最適だろう
+- 同期をMIDIに任せてもchannel/note number/velocity/CCの値等とどう紐づけるかの表が別に必要になる
+- 同じch/noteでもタイミングによっては紐づける動作が異なることを考慮に入れる
+- GSAPをベースに・・・
+- JSONに記載されたスコアを読み込むことで環境定義、デバッグ設定、オブジェクト定義、グループ定義、アニメーション定義を行う。
+- JSONの記載が困難を伴う場合は外部プログラムを別途開発する可能性もある
+- setIndex, setDrawRangeの利用
+
+
+
+
+
+### 採用技術
+- テクスチャはcanvasにプログラム生成することを想定し
+
+### スコア要件
+
+### ■ MIDI信号の詳細（数の範囲を明示）
+
+| 種類                     | チャネル (16) | 値の範囲                             | 総数（種類）                  |
+|--------------------------|----------------|--------------------------------------|-------------------------------|
+| Note On                 | 16             | ノート番号 (128), ベロシティ (128)  | 262,144 (16 × 128 × 128)     |
+| Note Off                | 16             | ノート番号 (128), ベロシティ (128)  | 262,144 (16 × 128 × 128)     |
+| Control Change          | 16             | CC番号 (128), 値 (128)              | 262,144 (16 × 128 × 128)     |
+| Program Change          | 16             | プログラム番号 (128)                | 2,048 (16 × 128)             |
+| Pitch Bend              | 16             | 値 (14bit = 0?16383)               | 262,128 (16 × 16,384)        |
+| Channel Pressure        | 16             | 値 (128)                             | 2,048 (16 × 128)             |
+| Polyphonic Aftertouch   | 16             | ノート番号 (128), 値 (128)          | 262,144 (16 × 128 × 128)     |
+| Song Position Pointer   | 0 (Global)     | 値 (14bit = 0?16383)               | 16,384                       |
+| Song Select             | 0 (Global)     | ソング番号 (128)                    | 128                          |
+| Tune Request            | 0 (Global)     | 値なし                              | 1                            |
+| Start / Stop / Continue | 0 (Global)     | 値なし                              | 3                            |
+| Clock                   | 0 (Global)     | 値なし                              | 1                            |
+| Reset                   | 0 (Global)     | 値なし                              | 1                            |
+| System Exclusive        | 0 (Global)     | 任意長のデータ                      | 無制限                       |
+
+---
+
+
+
+### スコアの定義
+- 全ターゲットに対して一定時間内のアクションを定義した2次元の表をスコアと呼ぶ
+- スコアにはbpmを単位としてテンポ属性が含まれる
+- スコアには拍子(signature)が分数表記で含まれる
+- 一般的な楽譜にはないフレーム長(frame)という概念を導入する
+- frameは音符の単位を使ってその長さを表す
+- w (全音符)、h (2分音符)、q (4分音符)、e (8分音符)、s (16分音符)、t (32分音符)、x (64分音符)を表すものとする
+- 例えばframeは3w5h3s等とあらわされ、その長さを持つことを表す
+
+### ターゲット(tgt)
+- ターゲット(tgt)は以下に定義する、実オブジェクト、仮想オブジェクト、ディスプレイを総括してそう呼ぶ
+  - 系に含まれるターゲットは配列で管理される
+- 点(point)もしくは線(line)であるところの３Dオブジェクトを実オブジェクト(obj)と呼ぶ
+　- objは配列として管理される
+- 複数のobjを含むまとまりを仮想オブジェクト(vir)と呼ぶ
+　- virは配列として管理される
+
+### アクション(A)とふるまい(behavior)
+- アクション(A)はターゲットに対する動作を規定する
+- アクションは1つ以上のふるまい(behavior)から構成される
+- behaviorはframeとパラメータ(bprm)をもって具体的な動きを定義できる
+- パラメータは位置、角度、時間、関数とパラメータ、色、輝度等色々な値を取る
+- behaviorはtgtに対して、frame時間内での挙動を定義する
+
+```javascript
+function behavior(frame,target,prm1,prm2){
+  const position=target.getPosition;
+  position.x+=
+}
+```
+
+
+### スコアイメージ
+``` text
+bpm:  120
+signature: 4/4
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| time | frame| obj1 | obj2 | obj3 | obj4 | obj5 | obj6 | vir1 | vir2 | vir3 | vir4 | vir5 | vir6 |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| 0    |  w   |  A1  |  A1  |  A1  |  A1  |  A1  |  A1  |  R   |  R   |  R   |  R   |  R   |  R   |
+|      |      |p1,p2 |p3,p4 |p3,p4 |p1,p2 |p5,p6 |p7,p8 |      |      |      |      |      |      |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+|  w   |  w   |  A2  |  R   |  A2  |  R   |  A2  |  R   |  A2  |  R   |  R   |  R   |  R   |  A3  | 
+|      |      |p1,p2 |      |p3,p4 |      |p5,p6 |      |p7,p8 |      |      |      |      |p9,p0 |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| 2w   |  w2q |  R   |  A2  |  R   |  A2  |  R   |  A2  |  R   |  R   |  R   |  R   |  R   |  A3  |
+|      |      |      |      |      |      |      |      |      |      |      |      |      |      |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| 3w2q |  w2q |  A4  |  A4  |  R   |  R   |  R   |  R   |  A5  |  A5  |  R   |  R   |  R   |  R   |
+|      |      |      |      |      |      |      |      |      |      |      |      |      |      |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| 5w   |  w   |  C   |  C   |  R   |  R   |  R   |  R   |  L   |  L   |  R   |  R   |  R   |  R   |
+|      |      |      |      |      |      |      |      |      |      |      |      |      |      |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+
+| 6w   |  w   |  C   |  C   |  R   |  R   |  R   |  R   |  L   |  L   |  R   |  R   |  R   |  A6  |
+|      |      |      |      |      |      |      |      |      |      |      |      |      |      |
++------+------+------+------+------+------+------+------+------+------+------+------+------+------+ 
+```
+
+
+- あるアニメーションが終わったら、次を開始するという係り受けの構造を定義できた方がいいのかもしれない
+- そしてそれを解釈しなおして時間指定のViewで見えるようにすればいいのだろう。これがcsound/scoの+のようなものだ
+
+### vir定義イメージ
+```text
+vir1 := obj1, obj2
+vir2 := obj3, obj4
+vir3 := obj5, obj6
+vir4 := obj1, obj2, obj3
+vir5 := obj4, obj5, obj6
+vir6 := obj1, obj2, obj3, obj4, obj5, obj6
+```
+
+### アクション定義イメージ
+```text
+A1 := b1, b2
+A2 := b1, b3
+A3 := b2, b3, b4
+A4 := b1, b3, b5
+A5 := b4, b5, b6
+```
+
+## シーンの構造
+想定するシーンを説明する。これは一例に過ぎない
+- ある3DオブジェクトをN1個、別の3DオブジェクトをN2個含むようなグループをG1とする
+- G2,G3,G4というグループが存在するとする
+- G1～G4までをまとめてGとする
+- G以外に一つのカメラ、複数の光源、を含むようなシーングラフを想定する
+
+## プログラムのアーキテクチャ
+- 3Dオブジェクトの数はアニメーション中に変化するのでファクトリーモデルを想定する
+- AnimationObject: 全ての３Dオブジェクトの共通的な汎用型とする
+- AnimationObjectのファクトリー型を定義する
+- １つ種類の１つのの3Dオブジェクトに対応する型を汎用型から継承された型として定義する
+- 
+
+------
+
+## 結論
+setIndexとsetDrawRangeを組み合わせた構成は、点・線・ポリゴンを柔軟かつ高効率に制御できる。Point/Line系専用の描画よりも表現範囲が広く、アニメーションや表示切替にも向いている。
+---
+## VertexIDと呼び出し制御
+* vertex shaderは描画時にindexに基づいて呼び出される
+* 非インデックス描画（gl.drawArrays）では `gl_VertexID` が直接増加する
+* インデックス描画（gl.drawElements）では `setIndex` による指定で描画対象が制御される
+* 呼び出し回数は `setDrawRange(start, count)` により制限可能
+---
+## setIndexの役割と利点
+* 頂点の再利用によるメモリ節約
+* 描画順や構造の切替がインデックス列だけで可能
+* 同じpositionバッファを複数用途（点/線/面）に使い回せる
+* 表示対象を切り替える場合にも `setIndex([...])` の差し替えで即対応可能
+---
+## setDrawRangeの役割
+* index列の連続部分のみを描画対象に限定する
+* 部分描画、LOD制御、表示アニメーションなどに使用
+* 非連続な構造には不向き（その場合はindex列を切り替える）
+---
+## Point/Line構成との比較
+* THREE.Points, LineSegments はgl.POINTS / gl.LINESとして解釈される
+* いずれもBufferGeometryのposition属性を用い、setDrawRangeで部分表示は可能
+* 複合表現（点から線、線からポリゴン）には、setIndex方式の方が柔軟
+* 描画種別（点・線・面）は使用するクラスで決定（Mesh, Points, LineSegmentsなど）
+---
+## アニメーション・表現拡張
+* 点→線、線→面などの遷移は、同一positionバッファに対し複数の描画クラスを用意して切り替えることで実現可能
+* 表示範囲や構成要素の変更は、setDrawRangeとsetIndexの併用で高効率に行える
+* 表現の幅、パフォーマンス、メモリ効率の観点からも、setIndexを基軸とした設計が有利
+---
+## 実践コード例：同一頂点から点・線・ポリゴンを描く
+```ts
+const vertices = new Float32Array([
+  -1, -1,  0,   0, -1,  0,   1, -1,  0,
+  -1,  0,  0,   0,  0,  0,   1,  0,  0,
+  -1,  1,  0,   0,  1,  0,   1,  1,  0,
+   0,  2,  0,   0, -2,  0
+]); // 20頂点（vec3 * 20 = 60要素）
+const geometry = new THREE.BufferGeometry();
+geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+// ポイント描画
+const pointIndices = Array.from({ length: 20 }, (_, i) => i);
+geometry.setIndex(pointIndices);
+geometry.setDrawRange(0, 20);
+const points = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.1, color: 0xff0000 }));
+scene.add(points);
+// 線描画（10本の線分）
+const lineIndices = [
+  0, 1, 1, 2,
+  3, 4, 4, 5,
+  6, 7, 7, 8,
+  9,10,10,11,
+  12,13,13,14
+];
+geometry.setIndex(lineIndices);
+geometry.setDrawRange(0, lineIndices.length);
+const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x00ff00 }));
+scene.add(lines);
+// 三角形描画（ポリゴン面：4枚）
+const triIndices = [
+  0, 1, 4,  0, 4, 3,
+  1, 2, 5,  1, 5, 4,
+  3, 4, 7,  3, 7, 6,
+  4, 5, 8,  4, 8, 7
+];
+geometry.setIndex(triIndices);
+geometry.setDrawRange(0, triIndices.length);
+const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x0000ff, side: THREE.DoubleSide, wireframe: true }));
+scene.add(mesh);
+```
+* `setIndex([...])` を差し替えることで、描画対象（点・線・面）を即座に切り替え可能
+* `setDrawRange(0, N)` によって各構成の一部のみを描画する制御も可能
+
+
+------
+## アニメーションエンジン
+
+設計の指示文
+アニメーション開始時の状態記録:
+
+アニメーションを開始する際、オブジェクトの現在の位置、スケール、回転（世界座標系）を記録。
+アニメーションの残り時間（カウントダウン）を指定し、動作ロジック（メソッドとパラメータ）を登録する。
+アニメーション進行の制御:
+
+各フレームでカウントダウンを減少。
+カウントダウンが正の間、動作ロジックを実行して位置、スケール、回転を計算し、オブジェクトに適用。
+動作ロジックの役割:
+
+動作ロジックは、任意の時間における位置、スケール、回転を計算。
+ロジックは開始時の状態を考慮して計算を行う。
+アニメーション終了後の状態:
+
+カウントダウンが0以下になった場合、アニメーションを停止。
+次のアニメーションが設定されるまで、オブジェクトは静止状態になる。
+
+
+## 技術
+### animation
+- GSAPを利用してアニメーションシーケンスを実装を想定
+
+#### 調査項目
+- スコアを読み込んで、動的にシーケンス生成ができるか？
+- 壁打ちをchatGPTでした結果を以下に記す
+
+### 想定するプログラムアーキテクチャ概要
+
+#### クラス図
+
+```txt
+classDiagram
+    class IntegratedSystem {
+        -scene: THREE.Scene
+        -camera: THREE.PerspectiveCamera
+        -renderer: THREE.WebGLRenderer
+        -controls: OrbitControls
+        -objects: Map~string, Point|Line~
+        -groups: Map~string, string[]~
+        +loadFromJSON(data: SceneDefinition)
+        +animate()
+        -initRenderer()
+        -initCamera()
+        -configureEnvironment()
+        -updateObjects()
+        +getGroup(groupId: string)
+    }
+
+    class Point {
+        -behavior: Behavior
+        -geometry: THREE.BufferGeometry
+        -material: THREE.PointsMaterial
+        -points: THREE.Points
+        +constructor(position, size, color)
+        +static createFromDefinition()
+        -static createGrid()
+        -static createCircle()
+        -static createCube()
+        -static createSphere()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Line {
+        -geometry: THREE.BufferGeometry
+        -material: THREE.LineBasicMaterial
+        -line: THREE.Line
+        -behavior: Behavior
+        +constructor(position, width, length, color)
+        +static createFromDefinition()
+        -static createGrid()
+        -static createRadial()
+        -static createCubeFrame()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Behavior {
+        #protected initialPosition: THREE.Vector3
+        #protected currentPosition: THREE.Vector3
+        #protected time: number
+        +constructor(initialPosition)
+        +abstract update(deltaTime)
+        +getPosition()
+        #protected updateTime()
+    }
+
+    class RotationBehavior {
+        -rotationAxis: THREE.Vector3
+        -rotationSpeed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class TranslationBehavior {
+        -direction: THREE.Vector3
+        -distance: number
+        -speed: number
+        -initialDirection: THREE.Vector3
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class OrbitBehavior {
+        -radius: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class StaticBehavior {
+        +update(deltaTime)
+    }
+
+    class PointTexture {
+        +static create(color: string)
+    }
+
+    IntegratedSystem --> Point : contains
+    IntegratedSystem --> Line : contains
+    Point --> Behavior : uses
+    Line --> Behavior : uses
+    Point --> PointTexture : uses
+    Behavior <|-- RotationBehavior : extends
+    Behavior <|-- TranslationBehavior : extends
+    Behavior <|-- OrbitBehavior : extends
+    Behavior <|-- StaticBehavior : extends
+
+    note for IntegratedSystem "Manages the overall 3D scene<br />including objects, camera, and<br />rendering. Handles JSON loading<br />and scene updates."
+    
+    note for Point "Represents a point in 3D space.<br />Supports various pattern-based<br />generation methods and<br />behaviors."
+    
+    note for Line "Represents a line in 3D space.<br />Supports various pattern-based<br />generation methods and<br />custom behaviors."
+    
+    note for Behavior "Abstract base class for<br />object behaviors. Defines<br />common movement patterns."
+
+```
+
+#### シーケンス図
+
+```txt
+sequenceDiagram
+    participant Main
+    participant System as IntegratedSystem
+    participant Scene as THREE.Scene
+    participant Point
+    participant Line
+    participant Behavior
+
+    Main->>System: new IntegratedSystem()
+    activate System
+    System->>Scene: new THREE.Scene()
+    System->>System: initRenderer()
+    System->>System: initCamera()
+    System->>System: setupEventListeners()
+    deactivate System
+
+    Main->>System: loadFromJSON(sceneData)
+    activate System
+    System->>System: configureEnvironment(data)
+    Note over System: Configure camera position<br/>and axis helper if specified
+
+    loop For each objectDefinition
+        alt type is "point"
+            System->>Point: createFromDefinition(def)
+            activate Point
+            
+            alt pattern is "grid"
+                Point->>Point: createGrid(params)
+            else pattern is "circle"
+                Point->>Point: createCircle(params)
+            else pattern is "cube"
+                Point->>Point: createCube(params)
+            else pattern is "sphere"
+                Point->>Point: createSphere(params)
+            end
+            
+            Point-->>System: return Point[]
+            deactivate Point
+            
+        else type is "line"
+            System->>Line: createFromDefinition(def)
+            activate Line
+            
+            alt pattern is "grid"
+                Line->>Line: createGrid(params)
+            else pattern is "circle"
+                Line->>Line: createRadial(params)
+            else pattern is "cube"
+                Line->>Line: createCubeFrame(params)
+            end
+            
+            Line-->>System: return Line[]
+            deactivate Line
+        end
+        
+        System->>Scene: add(mesh)
+    end
+
+    loop For each group definition
+        alt type is "index"
+            System->>System: resolveIndexBasedGroup()
+        else type is "spatial"
+            System->>System: resolveSpatialGroup()
+        end
+    end
+    deactivate System
+
+    Main->>System: animate()
+    activate System
+    loop Animation Frame
+        System->>System: updateObjects()
+        loop For each object
+            System->>Point: update(deltaTime)
+            Point->>Behavior: update(deltaTime)
+            System->>Line: update(deltaTime)
+            Line->>Behavior: update(deltaTime)
+        end
+        System->>Scene: render()
+    end
+    deactivate System
+
+    Note over Main,Behavior: System supports extensible patterns<br/>for object generation and grouping.<br/>Behaviors can be dynamically<br/>assigned to objects.
+
+```
+
+#### アニメーション追加後の想定クラス図
+
+
+
+- GSAPManager: GSAP自体の管理
+- AnimationController: アニメーション全体の制御
+- SceneAnimation: 個別アニメーションの管理
+- AnimationTarget: アニメーション対象のラッパー
+- AnimationConfig/StartCondition: アニメーション設定
+- IntegratedSystem: AnimationControllerとの連携追加
+
+
+```txt
+classDiagram
+    class 更IntegratedSystem {
+        -scene: THREE.Scene
+        -camera: THREE.PerspectiveCamera
+        -renderer: THREE.WebGLRenderer
+        -controls: OrbitControls
+        -objects: Map~string, Point|Line~
+        -groups: Map~string, string[]~
+        -animationController: AnimationController
+        +loadFromJSON(data: SceneDefinition)
+        +loadAnimationsFromJSON(data: AnimationDefinition[])
+        -configureEnvironment(data)
+        -generateObjectId(baseId, index)
+        -resolveIndexBasedGroup(generator, range)
+        -resolveSpatialGroup(generator, condition)
+        +getGroup(groupId: string)
+        -updateObjects()
+        +animate()
+    }
+
+    class 新GSAPManager {
+        -plugins: Map~string, boolean~
+        -defaultEasing: string
+        -defaultDuration: number
+        -registeredEffects: Map~string, Function~
+        +initialize()
+        +registerPlugin(plugin: string)
+        +createTimeline(options: object)
+        +createTween(target: object, props: object)
+        +getRegisteredEffects()
+        +cleanup()
+    }
+
+    class 新AnimationController {
+        -gsapManager: GSAPManager
+        -animations: Map~string, SceneAnimation~
+        -dependencies: Map~string, string[]~
+        +loadAnimations(data: AnimationDefinition[])
+        +playAnimation(id: string)
+        +stopAnimation(id: string)
+        -resolveDependencies()
+        -handleAnimationComplete(id: string)
+    }
+
+    class 新SceneAnimation {
+        -id: string
+        -timeline: gsap.timeline
+        -targets: AnimationTarget[]
+        -config: AnimationConfig
+        -gsapManager: GSAPManager
+        +initialize()
+        +play()
+        +stop()
+        -setupTimeline()
+        -handleComplete()
+    }
+
+    class Point {
+        -behavior: Behavior
+        -geometry: THREE.BufferGeometry
+        -material: THREE.PointsMaterial
+        -points: THREE.Points
+        +constructor(position, size, color)
+        +static createFromDefinition()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Line {
+        -geometry: THREE.BufferGeometry
+        -material: THREE.LineBasicMaterial
+        -line: THREE.Line
+        -behavior: Behavior
+        +constructor(position, width, length, color)
+        +static createFromDefinition()
+        +update(deltaTime)
+        +getMesh()
+        +setBehavior()
+    }
+
+    class Behavior {
+        <<abstract>>
+        #initialPosition: THREE.Vector3
+        #currentPosition: THREE.Vector3
+        #time: number
+        +constructor(initialPosition)
+        +abstract update(deltaTime)
+        +getPosition()
+    }
+
+    class RotationBehavior {
+        -rotationAxis: THREE.Vector3
+        -rotationSpeed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class TranslationBehavior {
+        -direction: THREE.Vector3
+        -distance: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class OrbitBehavior {
+        -radius: number
+        -speed: number
+        +constructor(initialPosition)
+        +update(deltaTime)
+    }
+
+    class StaticBehavior {
+        +update(deltaTime)
+    }
+
+    class PointTexture {
+        +static create(color: string)
+    }
+
+    class 新AnimationConfig {
+        +duration: number
+        +delay: number
+        +ease: string
+        +repeat: number
+        +properties: object
+        +startCondition: AnimationStartCondition
+    }
+
+    class 新AnimationStartCondition {
+        +type: string
+        +targetAnimation: string
+        +delay: number
+    }
+
+    class 新AnimationTarget {
+        -object: Point | Line
+        -initialState: object
+        +getGSAPTarget()
+        +resetToInitialState()
+    }
+
+    更IntegratedSystem --> 新AnimationController
+    新AnimationController --> 新GSAPManager
+    新AnimationController --> 新SceneAnimation
+    新SceneAnimation --> 新AnimationConfig
+    新SceneAnimation --> 新AnimationTarget
+    新AnimationTarget --> Point
+    新AnimationTarget --> Line
+    Point --> Behavior
+    Line --> Behavior
+    Point --> PointTexture
+    Behavior <|-- RotationBehavior
+    Behavior <|-- TranslationBehavior
+    Behavior <|-- OrbitBehavior
+    Behavior <|-- StaticBehavior
+    更IntegratedSystem --> Point
+    更IntegratedSystem --> Line
+    新AnimationConfig --> 新AnimationStartCondition
+
+    note for 新GSAPManager "Manages GSAP initialization<br/>and configuration globally"
+    
+    note for Behavior "Base class for all<br/>physical behaviors"
+    
+    note for 新AnimationController "Orchestrates all animations<br/>and their dependencies"
+
+
+```
+
+#### アニメーション追加後の想定シーケンス図
+
+```txt
+
+sequenceDiagram
+    participant Main
+    participant System as IntegratedSystem
+    participant GSAPMgr as GSAPManager
+    participant Controller as AnimationController
+    participant Animation as SceneAnimation
+    participant Target as AnimationTarget
+    participant Point
+    participant Line
+    participant Behavior
+
+    Main->>System: new IntegratedSystem()
+    activate System
+    System->>System: initRenderer()
+    System->>System: initCamera()
+    System->>System: setupEventListeners()
+    deactivate System
+
+    Main->>System: loadFromJSON(sceneData)
+    activate System
+    loop For each objectDefinition
+        alt type is point
+            System->>Point: createFromDefinition(def)
+            Point-->>System: return Point[]
+        else type is line
+            System->>Line: createFromDefinition(def)
+            Line-->>System: return Line[]
+        end
+    end
+    deactivate System
+
+    Main->>System: loadAnimationsFromJSON(animData)
+    activate System
+    System->>GSAPMgr: initialize()
+    activate GSAPMgr
+    GSAPMgr->>GSAPMgr: registerPlugin("timeline")
+    GSAPMgr-->>System: initialized
+    deactivate GSAPMgr
+
+    System->>Controller: loadAnimations(animData)
+    activate Controller
+    
+    loop For each animation definition
+        Controller->>Animation: new SceneAnimation(def)
+        activate Animation
+        
+        Animation->>Target: new AnimationTarget(object)
+        Target->>Point: getMesh()
+        Point-->>Target: THREE.Points
+        
+        Animation->>GSAPMgr: createTimeline()
+        GSAPMgr-->>Animation: gsap.timeline
+        
+        alt has startCondition
+            Animation->>Animation: registerDependency()
+            Note over Animation: Store reference to<br/>dependent animation
+        end
+        
+        Animation-->>Controller: return animation
+        deactivate Animation
+    end
+
+    Controller->>Controller: resolveDependencies()
+    Controller-->>System: animations loaded
+    deactivate Controller
+    deactivate System
+
+    Main->>System: animate()
+    activate System
+    loop Animation Frame
+        System->>Controller: update()
+        Controller->>Animation: updateAnimations()
+        
+        par Update Physical Behaviors
+            System->>Point: update(deltaTime)
+            Point->>Behavior: update(deltaTime)
+        and Update GSAP Animations
+            Animation->>Target: applyGSAPValues()
+            Target->>Point: updatePosition()
+        end
+    end
+    deactivate System
+
+    Note over Main,Behavior: Animation system combines:<br/>1. Physical behaviors (Behavior)<br/>2. GSAP animations<br/>3. Dependency management<br/>4. Sequential execution
+
+
+```
+
+### アニメーション検討時の想定する変更点
+
+#### 1. JSONのanimation部の変更
+
+```typescript
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Test scene with GSAP animations"
+  },
+  "environment": {
+    // 既存の環境設定
+  },
+  "objectDefinitions": [
+    // 既存のオブジェクト定義
+  ],
+  "groups": {
+    // 既存のグループ定義
+  },
+  "animations": [
+    {
+      "id": "rotation-anim",
+      "targets": {
+        "type": "group",
+        "id": "circle_points"
+      },
+      "config": {
+        "duration": 2,
+        "repeat": -1,
+        "ease": "power2.inOut",
+        "properties": {
+          "rotation": 360,
+          "scale": {
+            "from": 1,
+            "to": 1.5,
+            "yoyo": true
+          }
+        }
+      }
+    },
+    {
+      "id": "translation-anim",
+      "targets": {
+        "type": "single",
+        "id": "points/cube/0"
+      },
+      "config": {
+        "duration": 1.5,
+        "ease": "elastic.out(1, 0.3)",
+        "properties": {
+          "position": {
+            "y": "+= 2"
+          }
+        },
+        "startCondition": {
+          "type": "afterComplete",
+          "targetAnimation": "rotation-anim",
+          "delay": 0.5
+        }
+      }
+    },
+    {
+      "id": "wave-anim",
+      "targets": {
+        "type": "pattern",
+        "pattern": "stagger",
+        "ids": ["points/grid/0/*"],
+        "stagger": {
+          "amount": 1,
+          "from": "center"
+        }
+      },
+      "config": {
+        "duration": 0.5,
+        "properties": {
+          "position": {
+            "y": "+= 1",
+            "yoyo": true,
+            "repeat": -1
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+#### JSON変更点
+
+1. トップレベルに `animations` 配列を追加
+   - 各アニメーションの定義を格納
+   - アニメーション間の依存関係を定義可能
+   - 複数のアニメーションを並行して定義可能
+
+2. アニメーション定義の新規プロパティ
+   - `id`: アニメーション識別子（一意）
+   - `targets`: アニメーション対象の指定方法
+   - `config`: アニメーション設定
+   - `properties`: 変更するプロパティとその値
+
+3. ターゲット指定の種類
+   - `single`: 単一オブジェクト指定
+   - `group`: 定義済みグループ指定
+   - `pattern`: パターンベースの選択
+   - ワイルドカード（*）による複数オブジェクト指定
+
+4. アニメーション設定の拡張
+   - GSAP固有のプロパティ
+     - ease: イージング関数
+     - repeat: 繰り返し回数
+     - yoyo: 往復アニメーション
+   - 依存関係の定義（startCondition）
+     - afterComplete: アニメーション完了後
+     - afterStart: アニメーション開始後
+   - stagger効果の設定
+     - amount: 遅延時間
+     - from: 開始位置
+
+### 想定するアニメーション実装コード
+
+#### SceneAnimation.ts
+```typescript
+export class SceneAnimation {
+  private id: string;
+  private timeline: gsap.timeline;
+  private targets: AnimationTarget[];
+  private config: AnimationConfig;
+  private gsapManager: GSAPManager;
+
+  constructor(definition: AnimationDefinition, gsapManager: GSAPManager) {
+    this.id = definition.id;
+    this.gsapManager = gsapManager;
+    this.config = definition.config;
+    this.initialize();
+  }
+
+  private initialize(): void {
+    // タイムライン作成
+    this.timeline = this.gsapManager.createTimeline({
+      paused: true,
+      repeat: this.config.repeat,
+      onComplete: () => this.handleComplete()
+    });
+
+    // ターゲットの処理
+    if (this.config.properties.position) {
+      this.timeline.to(this.targets.map(t => t.getMesh().position), {
+        ...this.config.properties.position,
+        duration: this.config.duration,
+        ease: this.config.ease,
+        stagger: this.config.stagger
+      });
+    }
+
+    if (this.config.properties.rotation) {
+      this.timeline.to(this.targets.map(t => t.getMesh().rotation), {
+        ...this.config.properties.rotation,
+        duration: this.config.duration,
+        ease: this.config.ease,
+        stagger: this.config.stagger
+      });
+    }
+  }
+
+  public play(): void {
+    this.timeline.play();
+  }
+
+  public pause(): void {
+    this.timeline.pause();
+  }
+
+  private handleComplete(): void {
+    // アニメーション完了時の処理
+    if (this.config.onComplete) {
+      this.config.onComplete();
+    }
+  }
+}
+```
+
+#### AnimationController.ts
+```typescript
+export class AnimationController {
+  private animations: Map<string, SceneAnimation> = new Map();
+  private gsapManager: GSAPManager;
+
+  constructor(gsapManager: GSAPManager) {
+    this.gsapManager = gsapManager;
+  }
+
+  public loadAnimations(definitions: AnimationDefinition[]): void {
+    definitions.forEach(def => {
+      const animation = new SceneAnimation(def, this.gsapManager);
+      this.animations.set(def.id, animation);
+    });
+
+    // 依存関係の解決
+    this.resolveDependencies();
+  }
+
+  private resolveDependencies(): void {
+    this.animations.forEach(anim => {
+      const condition = anim.getStartCondition();
+      if (condition?.type === 'afterComplete') {
+        const targetAnim = this.animations.get(condition.targetAnimation);
+        targetAnim?.onComplete(() => {
+          setTimeout(() => anim.play(), (condition.delay || 0) * 1000);
+        });
+      }
+    });
+  }
+}
+```
+
+#### アニメーション設定の型定義
+```typescript
+interface AnimationDefinition {
+  id: string;
+  targets: AnimationTarget;
+  config: AnimationConfig;
+}
+
+interface AnimationTarget {
+  type: 'single' | 'group' | 'pattern';
+  id?: string;
+  ids?: string[];
+  pattern?: string;
+  stagger?: StaggerConfig;
+}
+
+interface AnimationConfig {
+  duration: number;
+  ease?: string;
+  repeat?: number;
+  properties: {
+    position?: PositionConfig;
+    rotation?: RotationConfig;
+    scale?: ScaleConfig;
+  };
+  startCondition?: StartCondition;
+}
+
+interface StartCondition {
+  type: 'afterComplete' | 'afterStart';
+  targetAnimation: string;
+  delay?: number;
+}
+```
+
+
+### 線分のテクスチャ検討
+
+#### 要件
+- canvasベースでテクスチャを生成できること
+- 外部ファイルのテクスチャを取り込めること
+- shaderでテクスチャを生成できること
+- パフォーマンス（GPUメモリ、テクスチャ切り替えコストなど）を想定すること
+
+#### 結論
+- 
+
+
+#### 選択肢
+| Material Type | Shader生成テクスチャ | 外部テクスチャ | Canvas動的生成 | データ保持形式 | 備考 |
+|--------------|-------------------|--------------|--------------|------------|------|
+| LineBasicMaterial | × | × | × | - | 色のみ設定可能 |
+| LineMaterial | △ | ○ | ○ | THREE.Texture | mapプロパティで設定 |
+| ShaderMaterial | ○ | ○ | ○ | uniform経由でTHREE.Texture | フラグメントシェーダーで自由に制御可能 |
+| RawShaderMaterial | ○ | ○ | ○ | uniform経由でTHREE.Texture | 完全なカスタムシェーダーが必要 |
+| LayerMaterial | ○ | ○ | ○ | 各レイヤーごとにTHREE.Texture | 複数のレイヤーを合成可能 |
+
+### マテリアルの特徴と制限
+
+#### LineBasicMaterial
+* 最も基本的なライン用マテリアル
+* テクスチャ非対応
+* 単色のみの設定が可能
+* パフォーマンスが最も優れている
+
+#### LineMaterial
+* LineBasicMaterialの拡張
+* THREE.Texture系すべてに対応
+* シェーダーのカスタマイズは限定的
+* 一般的な用途に適している
+
+```javascript
+const lineMaterial = new THREE.LineMaterial({
+    map: texture,
+    linewidth: 1,
+    color: 0xffffff
+});
+```
+
+#### ShaderMaterial
+* 最も柔軟なテクスチャ制御が可能
+* 独自のシェーダーコードが必要
+* パフォーマンスのチューニングが可能
+* Three.jsの組み込み変数が利用可能
+
+```javascript
+const shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        map: { value: texture }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D(map, vUv);
+        }
+    `
+});
+```
+
+#### RawShaderMaterial
+* 完全なカスタムシェーダーが必要
+* Three.jsの組み込み変数も自前で定義
+* 最も低レベルな制御が可能
+* パフォーマンスの最適化が可能
+
+```javascript
+const rawShaderMaterial = new THREE.RawShaderMaterial({
+    uniforms: {
+        map: { value: texture }
+    },
+    vertexShader: `
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        attribute vec3 position;
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        precision highp float;
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D(map, vUv);
+        }
+    `
+});
+```
+
+#### LayerMaterial
+* 複数のレイヤーを合成可能
+* 各レイヤーで異なるテクスチャタイプを使用可能
+* レイヤーごとに独立した制御が可能
+* ブレンドモードの指定が可能
+
+```javascript
+const layerMaterial = new THREE.LayerMaterial({
+    layers: [
+        new THREE.ShaderLayer({
+            fragmentShader: customShader,
+            uniforms: {
+                customTexture: { value: texture1 }
+            }
+        }),
+        new THREE.TextureLayer({
+            texture: texture2,
+            blendMode: 'add'
+        }),
+        new THREE.CanvasLayer({
+            texture: canvasTexture,
+            opacity: 0.5
+        })
+    ]
+});
+```
+
+### テクスチャの種類と利用パターン
+
+#### 基本テクスチャ
+* THREE.Texture: 基本クラス
+* THREE.CanvasTexture: Canvas要素から生成
+* THREE.DataTexture: バイナリデータから生成
+* THREE.CompressedTexture: 圧縮テクスチャ用
+
+```javascript
+// 基本的なテクスチャ生成
+const texture = new THREE.Texture(image);
+const canvasTexture = new THREE.CanvasTexture(canvas);
+const dataTexture = new THREE.DataTexture(data, width, height, format);
+```
+
+#### テクスチャアトラス
+* 複数のテクスチャを1枚のテクスチャとして管理
+* UVマッピングで部分的に使用
+* メモリ効率とドローコールの最適化に有効
+
+```javascript
+const atlasTexture = new THREE.Texture(atlasImage);
+// UVを適切に設定して部分使用
+geometry.setAttribute('uv', new THREE.BufferAttribute(uvData, 2));
+```
+
+#### データテクスチャ
+* バイナリデータを直接テクスチャとして利用
+* パフォーマンスが重要な場合に有効
+* カスタムデータの格納に適している
+
+```javascript
+const data = new Uint8Array([/* データ */]);
+const dataTexture = new THREE.DataTexture(
+    data,
+    width,
+    height,
+    THREE.RGBAFormat
+);
+dataTexture.needsUpdate = true;
+```
+
+#### 動的レンダーテクスチャ
+* レンダリング結果をテクスチャとして利用
+* リアルタイムの反射や影の計算に使用
+* パフォーマンスコストが高い
+
+```javascript
+const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType
+});
+renderer.setRenderTarget(renderTarget);
+renderer.render(scene, camera);
+material.map = renderTarget.texture;
+```
+
+### その他
+#### パフォーマンスの考慮事項
+
+* テクスチャサイズは2のべき乗を使用
+* 不要なテクスチャはdisposeを呼び出してメモリ解放
+* ミップマップは必要な場合のみ生成
+* テクスチャの更新頻度を最適化
+* 適切なテクスチャフォーマットを選択
+
+#### デバッグとトラブルシューティング
+
+* THREE.Textureのプロパティで状態確認
+* needsUpdateフラグの適切な使用
+* WebGLRendererのinfo機能でメモリ使用量確認
+* テクスチャ読み込みエラーのハンドリング
+* UVマッピングの視覚的デバッグ
+
+#### 補足事項
+
+* テクスチャのメモリ管理は重要
+* 適切なマテリアルとテクスチャの組み合わせを選択
+* 更新頻度とパフォーマンスのバランスを考慮
+* デバッグツールの活用
+
+
+
+
+
+### オーディオ解析
+- Tone.jsを利用して周波数解析と、波形解析から始める
+- もしこれで足りないならWebAudio API+数値演算の選択肢を選ぶべきだろう
+
+#### サンプルコード
+
+##### 未検証コード
+```javascript
+import * as THREE from 'three';
+import * as Tone from 'tone';
+
+// Three.jsのセットアップ
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// オーディオ解析用のTone.jsのセットアップ
+const analyser = new Tone.Analyser("fft", 256); // FFT解析ノード
+const player = new Tone.Player("path/to/audio.mp3").connect(analyser).toDestination();
+player.autostart = true;
+
+// Three.jsのジオメトリとマテリアル
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// アニメーションループ
+function animate() {
+  const data = analyser.getValue() as Float32Array; // FFTデータを取得
+
+  // データを使ってオブジェクトを変形
+  const scale = (data[0] + 100) / 100; // FFTの最初の値でスケールを変化
+  cube.scale.set(scale, scale, scale);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+animate();
+```
+
+csoundで音を作って、tone.jsに食わせて、three.jsでアニメできる？？
+
+##### 未検証コード
+```javascript
+import * as THREE from 'three';
+import * as Tone from 'tone';
+import { CsoundObj } from '@csound/browser';
+
+// Three.jsのセットアップ
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Three.jsオブジェクト
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// @csound/browserで音を生成
+const csound = new CsoundObj();
+const csdCode = `
+<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+instr 1
+    a1 oscil 0.5, 440, 1
+    out a1
+endin
+</CsInstruments>
+<CsScore>
+i 1 0 60
+</CsScore>
+</CsoundSynthesizer>
+`;
+
+async function setupCsound() {
+  await csound.compileCsdText(csdCode);
+  await csound.start();
+}
+setupCsound();
+
+// Web Audio APIのAudioNodeを取得
+const audioNode = await csound.getNode();
+
+// Tone.js解析ノードをセットアップ
+const analyser = new Tone.Analyser("fft", 256);
+const toneDestination = Tone.getDestination();
+audioNode.connect(toneDestination.context.destination);
+Tone.connect(audioNode, analyser);
+
+// アニメーションループ
+function animate() {
+  const data = analyser.getValue() as Float32Array;
+
+  // FFT解析結果を基にスケールを変更
+  const scale = (data[0] + 100) / 100; // FFTの最初の値でスケールを変化
+  cube.scale.set(scale, scale, scale);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+
+```

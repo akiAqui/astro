@@ -1,0 +1,969 @@
+---
+title: ＊）各種変換
+description: 色々な変換を集めた
+layout: '../../../layouts/BaseLayout.astro'
+---
+ <style>{`
+.sl-markdown-content > main > hr:not(:where(.not-content *)) {
+  border: none !important;
+  border-bottom: 4px double white !important;
+  margin-bottom: 14px;
+}
+ 
+.sl-markdown-content div.ec-line {
+margin-top: 0 !important;
+font-size:10px;
+}
+.sl-markdown-content{
+ font-size:15px;
+}
+
+.sl-markdown-content p,table,div.expressive-code {
+ padding:0em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+.sl-markdown-content p {
+ text-indent: 1em;
+}
+.sl-markdown-content li p {
+  text-indent: 0;
+  margin-left:0 !important;
+}
+
+.sl-markdown-content ul,ol,li::marker {
+ padding-left:2em;
+ margin-top: 0em !important;
+ margin-left: 1em !important;
+}
+
+
+.sl-markdown-content h2::before {
+content: "■ ";
+} 
+.sl-markdown-content h3::before {
+content: "> ";
+} 
+.sl-markdown-content h4::before {
+content: ">> ";
+} 
+.sl-markdown-content h5::before {
+content: ">>> ";
+} 
+.sl-markdown-content h6::before {
+content: ">>>> ";
+} 
+
+h1,h2,h3,h4,h5,h6 {
+ margin-top: 1em !important;
+
+}
+
+figure pre {
+ margin-top: 0.4em !important;
+}
+.sl-markdown-content h1 {
+ font-size:27px;
+ text-decoration: underline;
+ font-weight: bold
+}
+
+.sl-markdown-content h2 {
+ font-size:23px;
+ font-weight: normal;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h3 {
+ font-size:20px;
+ font-weight: normal;
+ font-style: italic;
+ text-decoration: underline;
+}
+
+.sl-markdown-content h4 {
+ font-size:18px;
+ font-weight: normal;
+ font-style: italic; 
+ text-decoration: underline;
+ margin-top: 2px;
+}
+.sl-markdown-content h5 {
+ font-size:16px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+.sl-markdown-content h6 {
+ font-size:15px;
+ font-weight: bold;
+ font-style: italic; 
+ text-decoration: underline;
+}
+
+.sl-markdown-content th {
+ font-size:13px;
+}
+.sl-markdown-content td {
+ font-size:13px;
+}
+`}</style>
+
+import CodeTitle from '../../../components/CodeTitle';
+import MermaidChart from '../../../components/MermaidChart.astro';
+import TimeStamp from '../../../components/TimeStamp';
+import Box from '../../../components/Box';
+import RedBox from '../../../components/RedBox';
+
+<TimeStamp fileUrl={import.meta.url} />
+
+##### TODOs
+ - [ ] Ripple/Wave Distortionが理解できない
+ - [ ] multiの変数のマッピング方法などが理解できていない
+ - [ ] 実装確認
+
+   - [ ] 射影変換
+   - [ ] 指数変換・対数変換
+   - [ ] 円反転
+   - [ ] べき写像
+   - [ ] リフレクション（つまらなそうなのでやらない）
+   - [ ] スワール変換
+   - [ ] ツワール変換
+   - [ ] フィッシュアイ変換
+   - [ ] ピンチ変換
+   - [ ] リップル変換
+   - [ ] ドロステ変換
+   - [ ] ハウスホルダー反射
+   - [ ] 双曲線回転/ローレンツ変換で現れる。拡張・ワープなどに応用。
+   - [ ] ケイリー変換
+   - [ ] バイリニア変換(メビウス変換)
+   - [ ] Z変換
+   - [ ] ラプラス変換
+   - [ ] メルリン変換
+   - [ ] ヒルベルト変換
+   - [ ] パラメータせん断変換
+   - [ ] 極座標変換
+   - [ ] バイケル変換/カオス的混合を示す1次元写像
+   - [ ] ヘノン写像/2次元力学系のカオスアトラクタを生む写像
+   - [ ] ニュートン反復
+   - [ ]
+  
+--------------------------------------------------------
+## 極座標系変換
+<Box>
+- 実装あり
+  - repository = g-sandbox
+  - branch = multi
+</Box>
+GLSLで `uv` (2D座標) を原点からの距離と角度の値をもとに図形を歪ませる際に便利な変換を10種挙げる。
+
+極座標系での変換を念頭に現在の$r,\theta$を下記のように定義し、
+変換先の$r', \theta'$を新たに求める式を複数掲載する。
+
+$$
+\begin{aligned}
+&r           &=& \sqrt{uv.x^2 + uv.y^2}\\
+&\theta      &=& \mathrm{atan2}(uv.y,\ uv.x), \\
+&\theta'     &=& f(r, \theta)\\
+&r'          &=& g(r, \theta)\\
+&\text{uv}'  &=& r' \bigl(\cos \theta',\,\sin \theta'\bigr)
+\end{aligned}
+$$
+
+$f(r,\theta),g(r,\theta)$を定義することがここで述べる変換の本質となる。
+fragment shaderでは、直交座標系から極座標系に変換し、$r',\theta'$を求めるため、
+全ての変換は本質的に下記のプロセスで変換する
+```text
+ varying vec2 vUv;                                     //vertex shaderのuvからfragment shaderに引き継ぐ
+ cartesianToPolar(uv, r, theta);                       //極座標変換
+ 
+ ...                                                   //変換処理で、rPrime(r')とthetaPrime(theta')を求める
+ 
+ vec2 uvPrime = polarToCartesian(rPrime, thetaPrime);  //直交座標変換
+ gl_FragColor = texture2D(uTexture, uvPrime);          //書き込む
+
+
+```
+
+### Spiral Zoom
+- 原点付近を中心に回転とズームを同時に行う
+- `k` 回転の強さ
+- `α` スケール
+- `ε` 原点の0を避けている小さな値
+- $\omega,t$ の項を入れるとアニメーション可能
+
+$$
+\begin{aligned}
+f(\theta,r) &= \theta' = \theta + k\,(\log(r + \epsilon) + \omega\,t),\\
+g(\theta,r) &= r'      = \alpha \cdot r, \\
+\end{aligned}
+$$
+
+
+### Twirl / Swirl
+- 中心から離れるほど回転量を増やす渦巻き効果
+- `\beta` を調整すると非線形なねじれが生まれる
+- $f(t, \omega)$ の項を入れるとアニメーション可能($f(t,\omega)=sin(\omega t)$など)
+
+$$
+\begin{aligned}
+f(\theta,r) &= \theta' = \theta + \mathrm{amount}\cdot r^\beta \cdot f(t,\omega) \\
+g(\theta,r) &= r'=r
+\end{aligned}
+$$
+
+### Pinch / Punch
+- 原点付近を引き絞る(Pinch)または膨らませる(Punch)
+- $\alpha>1$ で中心付近縮小，$\alpha<1$ で拡大
+- 例えば、$\alpha$を時間の関数にするとアニメーションになる
+
+$$
+\begin{aligned}
+f(\theta,r) &= \theta' = \theta\\
+g(\theta,r) &= r' = r^\alpha
+\end{aligned}
+$$
+
+
+### Nested Sine-Cosine Distortion
+- 角度を `sin -> cos` でネストして非線形歪み
+- 例: `cos(sin(\theta))` を振幅に掛けて，波打つようなパターンを作る
+
+$$
+\begin{aligned}
+f(\theta,r) &= \theta' = \cos(\sin(\theta)\cdot \mathrm{freq1}) \cdot \mathrm{freq2} \\
+g(\theta,r) &= r' = r^\alpha
+\end{aligned}
+$$
+
+### Ripple / Wave Distortion
+- `A,B` 振幅，`\omega` 周波数，`\phi` 位相
+- 格子全体が波打つような効果
+
+$$
+\begin{aligned}
+x' &= uv.x + A \cdot \sin(\omega \cdot uv.y + \phi), \\
+y' &= uv.y + B \cdot \sin(\omega \cdot uv.x + \phi)
+\end{aligned}
+$$
+
+### Polar Swirl
+- 半径方向に正弦歪み，かつ回転を掛ける複合エフェクト
+- 中心付近でトリッキーなうねりを生む
+
+$$
+\begin{aligned}
+r' &= r + \alpha \sin(\beta\,\theta) \\
+\theta' &= \theta + k\,r
+\end{aligned}
+$$
+
+### Zooming Swirl
+- 時間 `t` によるズーム + 回転を組み合わせ
+- アニメーション時に渦巻きが連続的に拡大・縮小
+
+$$
+\begin{aligned}
+r' &= r \cdot (1 + \delta \, t) \\
+\theta' &= \theta + k \, t
+\end{aligned}
+$$
+
+### Sinusoidal UV Warp
+- `uv.x` に対して `sin` を掛け足す，`uv.y` に対して `cos` を掛け足す
+- 縦横で違う周期や振幅を与えて歪みを作る
+
+$$
+\begin{aligned}
+x' &= uv.x + \mathrm{ampX}\,\sin\bigl(\mathrm{freqX}\,uv.x\bigr) \\
+y' &= uv.y + \mathrm{ampY}\,\cos\bigl(\mathrm{freqY}\,uv.y\bigr)
+\end{aligned}
+$$
+
+### Spiral Vortex
+- 半径が大きいほど回転角が小さくなる (指数減衰)
+- 中心部を強くねじり，外側は緩やか
+
+$$
+\begin{aligned}
+\theta' &= \theta + \alpha \,\exp(-\,\beta\,r), \\
+\end{aligned}
+$$
+
+### Double Spiral Zoom
+- 距離に応じた2種類の回転要素 (線形 + 対数) を重ねる
+- さらに `r'` によるズーム因子 `\gamma` を導入
+- 中心付近と外側とで異なる渦のかかり方
+
+$$
+\begin{aligned}
+\theta' &= \theta + k_1\,r + k_2\,\log(r + \epsilon) \\
+r' &= r\,\gamma \\
+\end{aligned}
+$$
+
+
+
+## 基本的な変換
+
+### アフィン変換
+行列 $A$ と並進ベクトル $\mathbf{b}$ による線形変換と平行移動の合成。拡大縮小、回転、せん断、平行移動
+$$
+\begin{pmatrix}
+x' \\
+y'
+\end{pmatrix}
+=
+A
+\begin{pmatrix}
+x \\
+y
+\end{pmatrix}
++
+\mathbf{b}
+$$
+
+### 射影変換
+斜めに写された写真を正面から写したように変換する
+
+$$
+\begin{pmatrix}
+x'\\
+y'\\
+1
+\end{pmatrix}
+\;\propto\;
+H
+\begin{pmatrix}
+x\\
+y\\
+1
+\end{pmatrix}
+$$
+
+### 円反転
+中心原点・半径 $r$ の円での反転 (複素数表現)。内側と外側が反転し、円周はそのまま
+$$
+w \;=\;\frac{r^2}{\overline{z}}
+$$
+
+### 指数変換、対数変換
+- 指数変換は帯状領域を円環領域に、対数変換は円環領域を帯状領域へ
+- 対数関数は多価性を持つ
+
+$$
+\left\{ \, \begin{aligned}
+ w & = e^z = e^{x+iy} = e^x(\cos y + i \sin y)\\
+ w & = \log z = \log|z| + i\,\arg z
+\end{aligned}\right.
+$$
+
+### べき写像
+複素数の極座標表示 $(r,\theta)\mapsto (r^\alpha,\alpha\theta)$。フラクタル生成や歪みエフェクト
+
+$$
+w = z^\alpha
+$$
+
+### リフレクション（鏡映）
+実軸反射の例（複素共役）。円・直線に対する反射
+
+$$
+z \;\mapsto\; \overline{z}
+$$
+
+
+### スワール変換(Swirl Transformation)
+渦巻き状の歪み。中心からの距離に応じて回転角を大きくする
+
+$$
+\begin{cases}
+x' = x\cos\phi - y\sin\phi,\\
+y' = x\sin\phi + y\cos\phi
+\end{cases}
+\quad
+(\phi = k\,r^2,\; r=\sqrt{x^2+y^2})
+$$
+
+### ツワール変換(Twirl Transformation)
+渦巻き状のねじれ。極座標で回転角を半径に比例させる。
+
+$$
+\theta' = \theta + k\,r
+$$
+
+
+### フィッシュアイ変換
+2次元極座標における半径変換。中心付近拡大、周辺圧縮の魚眼レンズ効果
+
+$$
+r' = \alpha\,\tan(\beta\,r)
+$$
+
+
+### ピンチ変換
+中心付近をつぶす・膨らませる歪み。$p>1$ で収縮, $p<1$ で拡大
+
+$$
+r' = r^p
+$$
+
+
+### リップル変換
+
+$$
+\begin{cases}
+x' = x + A\sin(\omega y),\\
+y' = y + B\sin(\omega x)
+\end{cases}
+$$
+
+画像を波打たせる歪み
+波動状の効果
+
+### ドロステ変換
+- 複素平面上での$z \rarr z'$への変換
+- 三段階（対数変換・平行移動／回転・指数変換）を繰り返し適用することでフラクタル状の効果を生む変換
+
+
+#### step1. 対数変換
+ $$
+ w = \log_{e}(z)
+ $$
+#### step2. 平行移動と回転・スケーリング
+ $$
+ w' = a + b\,w
+ $$
+ - $a = \alpha + i\,\beta$
+ - $b = \rho\,e^{i\,\theta}$
+ - $\rho > 0$ は拡大縮小率、$\theta$ は回転角
+
+#### step3. 指数変換
+$z'$ をふたたび通常空間に戻す
+ $$
+ z' = e^{\,w'}
+ $$
+
+#### 例1：単純な回転スパイラル
+- $a = 0$
+- $b = 0.9\, e^{\,i\,0.3}$
+- $\rho = 0.9, \ \theta = 0.3$
+- わずかに縮小しながら回転する自己相似パターンが出現
+
+#### 例2：中心をずらした自己相似形
+- $a = 0.3 + i\,0.2$
+- $b = 0.8\, e^{\,i\,0.5}$
+- $\rho = 0.8, \ \theta = 0.5$
+- 中心をずらしつつ回転・縮小を繰り返し、ずれた中心を軸とする自己相似形が形成
+
+
+### ハウスホルダー反射
+ベクトル$\mathbf{u}$に対する鏡映。任意の超平面に対する反射を実現
+
+$$
+\mathbf{x}' = \mathbf{x} - 2\,\frac{\mathbf{u}^\mathsf{T}\mathbf{x}}{\mathbf{u}^\mathsf{T}\mathbf{u}}\,\mathbf{u}
+$$
+
+
+### 双曲線回転
+ローレンツ変換で現れる。拡張・ワープなどに応用。
+
+$$
+\begin{pmatrix}
+x'\\
+y'
+\end{pmatrix}
+=
+\begin{pmatrix}
+\cosh \alpha & \sinh \alpha\\
+\sinh \alpha & \cosh \alpha
+\end{pmatrix}
+\begin{pmatrix}
+x\\
+y
+\end{pmatrix}
+$$
+
+
+### ケイリー変換
+上半平面と単位円を等角写像。双曲幾何などで重要
+
+$$
+w = \frac{z - i}{z + i}
+$$
+
+
+### バイリニア変換
+制御理論やDSPで $s$-$z$変換に用いられる。メビウス変換の特別な形。
+
+
+$$
+w = \frac{a z + b}{c z + d}
+$$
+
+
+### メルリン変換
+スケーリング不変性をもつ積分変換
+画像認識やスケール解析に応用例
+
+$$
+\mathcal{M}\{f(x)\}(s)
+=
+\int_{0}^{\infty}
+x^{s-1} f(x)\,dx
+$$
+
+
+
+
+### パラメータせん断変換
+平行四辺形化の歪みを与える
+アフィン変換の部分要素
+
+$$
+\begin{pmatrix}
+x'\\
+y'
+\end{pmatrix}
+=
+\begin{pmatrix}
+1 & k\\
+0 & 1
+\end{pmatrix}
+\begin{pmatrix}
+x\\
+y
+\end{pmatrix}
+$$
+
+
+### 極座標変換
+円形パターンや回転対称表現で便利
+
+$$
+\begin{cases}
+r = \sqrt{x^2 + y^2},\\
+\theta=\mathrm{atan2}(y,x)
+\end{cases}
+\quad\longleftrightarrow\quad
+\begin{cases}
+x = r\cos\theta,\\
+y = r\sin\theta
+\end{cases}
+$$
+
+### バイケル変換
+カオス的混合を示す1次元写像
+フラクタル理論・エントロピー解析
+
+$$
+B(x)=
+\begin{cases}
+2x,& 0\le x<0.5,\\
+2 - 2x,&0.5\le x<1
+\end{cases}
+$$
+
+### ヘノン写像
+2次元力学系のカオスアトラクタを生む写像
+$$
+\begin{cases}
+x_{n+1} = y_n + 1 - a\,x_n^2,\\
+y_{n+1} = b\,x_n
+\end{cases}
+$$
+
+### ニュートン反復
+方程式の数値解法、繰り返し描画でNewtonフラクタを生成
+
+$$
+z_{n+1} = z_n - \frac{f(z_n)}{f'(z_n)}
+$$
+
+### フレネル変換
+
+$$
+F\{f(x)\}(u)
+=
+e^{\,i\frac{\pi}{\lambda z}x^2}
+\int_{-\infty}^{\infty}
+f(\xi)\,
+e^{\,i\frac{\pi}{\lambda z}(\xi - x)^2}
+\,d\xi
+$$
+
+光学系の回折・干渉計算に登場
+波動光学シミュレーション
+
+### リース変換 (Riesz Transform)
+
+$$
+\widehat{R_k f}(\xi)
+=
+i\,\frac{\xi_k}{\|\xi\|}\,\hat{f}(\xi)
+$$
+
+多次元信号の微分特性や方向成分抽出に使われる
+画像勾配評価など
+
+### クロスレシオ変換 (Cross-Ratio)
+
+$$
+\mathrm{CR}(z; z_1,z_2,z_3,z_4)
+=
+\frac{(z - z_1)(z_2 - z_3)}{(z - z_3)(z_2 - z_1)}
+$$
+
+4点で定義される射影不変量
+透視歪み補正などで応用
+
+### ガボール変換
+
+$$
+G_f(x,\omega)
+=
+\int_{-\infty}^{\infty}
+f(t)\,
+e^{- \frac{(t - x)^2}{2\sigma^2}}
+\,e^{-\,i\omega t}
+\,dt
+$$
+
+時間-周波数局在化の解析
+音声・画像のローカル周波数分析
+
+### アポロニウス変換
+
+$$
+z \;\mapsto\;
+\frac{\alpha\,z + \beta}{\gamma\,z + \delta}
+\quad
+(\alpha\delta - \beta\gamma \neq 0)
+$$
+
+メビウス変換の一形態
+円を円に写す等角写像
+
+### ハフ変換
+
+$$
+\rho = x\cos\theta + y\sin\theta
+$$
+
+画像空間上の直線・曲線をパラメータ空間で検出
+エッジ抽出・形状解析
+
+### ラドン変換
+
+$$
+R\{f\}(\rho,\theta)
+=
+\int_{-\infty}^{\infty}
+f(\rho\cos\theta - t\sin\theta,\,
+\rho\sin\theta + t\cos\theta)\,dt
+$$
+
+2D関数を直線積分で表す
+CTスキャンなど断層画像再構成に必須
+
+### S変換
+
+$$
+S_f(\tau,\omega)
+=
+\int_{-\infty}^{\infty}
+f(t)\,
+\frac{1}{\sqrt{2\pi}\,\sigma(\tau)}\,
+e^{-\frac{(t-\tau)^2}{2\sigma(\tau)^2}}
+\,e^{-\,i\,\omega\,t}
+\,dt
+$$
+
+ウェーブレットとSTFTを合わせたような時間周波数解析
+局所化と周波数解像度の両立
+
+### アポロニアンガスクローク変換
+
+具体的完全式は複雑
+異なるサイズの円を連鎖的に埋め込む
+ロジックはアポロニウス円束の変換に基づく
+
+### ヌッジド・エラスティック・バンド (NEB) 変換
+
+固体物理や化学反応経路探索のアルゴリズムでの写像発想
+バンド（一連の状態）をエネルギー勾配で変形
+数学的には座標系を補間しながら最短経路を求める
+
+---
+
+
+
+------------------------------------------------------------------------------------------------
+
+## 数学変換
+
+### フーリエ変換
+
+$$
+\hat{f}(k)
+=
+\int_{-\infty}^{\infty}
+f(x)\,e^{-2\pi i k x}
+\,dx
+$$
+
+時空間と周波数空間の間を結ぶ代表的積分変換
+
+### 離散コサイン変換
+
+$$
+F_{u,v}
+=
+\alpha(u)\,\alpha(v)
+\sum_{x=0}^{N-1}
+\sum_{y=0}^{M-1}
+f_{x,y}
+\cos\Bigl[
+\frac{\pi(2x+1)u}{2N}
+\Bigr]
+\cos\Bigl[
+\frac{\pi(2y+1)v}{2M}
+\Bigr]
+$$
+
+JPEGなど画像圧縮の基礎
+
+### ウェーブレット変換
+
+$$
+W_f(a,b)
+=
+\frac{1}{\sqrt{|a|}}
+\int_{-\infty}^{\infty}
+f(x)\,
+\psi\!\Bigl(\frac{x - b}{a}\Bigr)
+\,dx
+$$
+
+局所的周波数成分解析
+多重解像度解析やノイズ除去で活躍
+
+
+
+### ヒルベルト変換
+実部・虚部の関係を構築
+信号の包絡線や瞬時位相に利用
+
+$$
+\mathcal{H}\{f\}(t)
+=
+\frac{1}{\pi}
+\,\mathrm{P.V.}
+\int_{-\infty}^{\infty}
+\frac{f(\tau)}{t-\tau}
+\,d\tau
+$$
+
+
+### Z変換
+離散信号を多項式表現する変換。フィルタ設計などで必須。
+
+$$
+X(z) = \sum_{n=0}^{\infty} x_n \, z^{-n}
+$$
+
+### ラプラス変換
+連続信号の解析や微分方程式解法に用いられる
+GLSLには直接関係薄いが数理基礎
+
+$$
+\mathcal{L}\{f(t)\}(s)
+=
+\int_{0}^{\infty} e^{-st} f(t)\,dt
+$$
+
+------------------------------------------------------------------------------------------------
+
+## 地図投影
+- 地図投影のユースケース - リーマン球面からの変換
+  - 平面図形を複素平面上の図形だとみなし、それをメビウス変換する。
+  - メビウス変換された図研は複素平面上に投影される
+  - 複素平面上の図形をリーマン球面に投影する
+  - リーマン球面を地図投影で四角形に再投影する
+  - それをpngファイルに落とす
+    - g-sandboxのbranch 8で大方実装。メビウス変換のパラメータもJSONで入出力可能
+    - 水面の歪みよりかなり激しく歪んだ状態
+    - ランベルト正積図法で実装しているはず
+
+### メルカトル投影
+地理座標(経度$\lambda$,緯度$\phi$)を等角投影。高緯度ほど拡大
+
+$$
+\begin{cases}
+x = \lambda,\\
+y = \ln\!\bigl(\tan(\tfrac{\pi}{4} + \tfrac{\phi}{2})\bigr)
+\end{cases}
+$$
+
+```glsl
+vec2 mercatorProjection(vec2 lonLat) {
+    float x = lonLat.x / 3.141592653589793;
+    float y = log(tan(3.141592653589793 / 4.0 + lonLat.y / 2.0)) / 3.141592653589793;
+    return vec2(x, y);
+}
+```
+
+
+### 正射影
+球面上の点を正投影 (地図投影の一種)。中心からの直線を平面に下ろす
+
+$$
+\begin{cases}
+x = \cos\phi\,\cos\theta,\\
+y = \cos\phi\,\sin\theta
+\end{cases}
+$$
+```glsl
+vec2 orthographicProjection(vec3 spherePos) {
+    return spherePos.xy;
+}
+```
+
+
+### ランベルト正積図法
+面積を保つ地図投影。緯度$\phi$、基準緯度$\phi_0$、経度$\lambda$
+
+$$
+\begin{cases}
+x = \lambda\,\cos\phi_0,\\
+y = \sin \phi
+\end{cases}
+$$
+
+```glsl
+vec2 lambertProjection(vec2 lonLat) {
+    float x = lonLat.x / 3.141592653589793;
+    float y = sin(lonLat.y);
+    return vec2(x, y);
+}
+```
+---
+
+
+
+
+### 射影変換 (Projective Transformation)
+
+$$
+\begin{pmatrix}
+x'\\
+y'\\
+1
+\end{pmatrix}
+\;\propto\;
+H
+\begin{pmatrix}
+x\\
+y\\
+1
+\end{pmatrix}
+$$
+
+ここで行列 $H$ は 3×3 の実（または複素）行列で、同次座標を使った写像を表す。
+「$\propto$」は同次座標系ではスカラー倍が同じ点を表すことを意味する。
+
+### 1. $H$ の具体形とコードへの落とし方
+
+- 一般的な 2D 射影変換は、3×3 行列
+$$
+H
+= 
+\begin{pmatrix}
+h_{11} & h_{12} & h_{13}\\
+h_{21} & h_{22} & h_{23}\\
+h_{31} & h_{32} & h_{33}
+\end{pmatrix}
+$$
+を用いて定義される。
+- 射影変換をプログラムで実装するときは、通常「行列 × ベクトル」の形で計算し、最後に「同次座標の正規化」を行う。
+- 座標 $(x, y)$ を拡張して $(x, y, 1)$ とし、これに $H$ をかける：
+
+```glsl
+vec3 p = H * vec3(x, y, 1.0); // Hはmat3型（もしくはmat3x3）
+// p.xy は [x', y']の同次座標
+// p.z が 0 でないことを仮定
+// 同次座標の正規化
+float w = p.z;
+// 実際の (x', y') は (p.x / w, p.y / w)
+```
+
+- GLSL 例:
+
+```glsl
+// uniform mat3 H;
+vec3 p_in= vec3(x, y, 1.0);
+vec3 p_out = H * p_in;
+
+// p_out.z != 0 であると仮定
+vec2 xy_out = p_out.xy / p_out.z;
+```
+
+- これにより `(x, y)` → `(x'/w, y'/w)` となる。
+- 視点変換や四隅指定による画像の台形補正、遠近法などに応用できる。
+
+---
+
+## バイリニア変換とメビウス変換・アポロニウス変換
+
+### 1. メビウス変換
+
+メビウス変換 (Mobius transformation) は、複素数平面上で
+$$
+w \;=\; \frac{a\,z + b}{c\,z + d}
+\quad
+(\;ad - bc \neq 0\;)
+$$
+の形をとる写像。
+- 複素平面上で「直線・円を直線・円へ写す」という特徴を持つ (「円・直線の保存」)。
+- パラメータ $(a, b, c, d)$ は複素数でもよく、実の場合は実平面内での円（または直線）を保つ。
+- 等角写像となる場合が多く、球面（リーマン面）との対応などでも基本的。
+
+### 2. アポロニウス変換
+
+アポロニウス変換 (Apollonius transformation) も
+$$
+z \;\mapsto\; \frac{\alpha\,z + \beta}{\gamma\,z + \delta}
+$$
+という メビウス変換の一種。
+文献によっては「円を別の円に写す変換」を指してアポロニウス変換と呼ぶが、実は メビウス変換全般 が「円や直線を円か直線に写す」性質を持つため、両者はほぼ同じ範疇。
+- 場合によっては「ある特定の実数制約」(実軸上の2点を不動点にする など) を課したメビウス変換をアポロニウス変換と呼ぶこともある。
+- よって「アポロニウス変換 ⊂ メビウス変換」と理解してよい。
+
+### 3. バイリニア変換
+
+「バイリニア変換 (Bilinear transform)」は、制御理論や信号処理 (特に $s$-$z$変換) で有名な
+$$
+w \;=\; \frac{a\,z + b}{c\,z + d}
+$$
+の形を指す。
+- 数学的には「メビウス変換」と同じ形式 (係数 $a,b,c,d$ が実数の場合が多い)。
+- 特に 信号処理 において、「$s$-平面」(連続系) と「$z$-平面」(離散系) を対応させる変換として使われる場合に「バイリニア変換」と呼ぶ。
+- たとえば $s = \frac{1 - z^{-1}}{1 + z^{-1}}\cdot \frac{2}{T}$ などと書いた形も「メビウス変換」の部分的実装例。
+
+#### 何が「特別」か
+
+- メビウス変換：複素数平面全体で円・直線を円・直線へ写す，一般の等角写像
+- アポロニウス変換：メビウス変換の中でも「特定の条件下で円を円に写す」と強調するときの呼び方 (本質的には同じ)
+- バイリニア変換：応用分野(信号処理など)で「メビウス変換の係数が実数 or ラプラス変数との対応が決まっている」場合の呼称。式そのものはメビウスと同型だが，「$z$ と $s$」の関係に特化しているところが「特別」
+
+結局のところ，
+- 式: $w = (a\,z + b)/(c\,z + d)$
+- 総称: メビウス変換 (特に複素解析)
+- 別名: アポロニウス変換 (幾何学的性質を強調)
+- バイリニア変換: 信号処理・制御分野での実数係数版の実用呼称
+
+同じ枠組みだが，「どの観点（幾何学・複素解析・制御理論）で見るか」で名称が変わっている。
+
+
+

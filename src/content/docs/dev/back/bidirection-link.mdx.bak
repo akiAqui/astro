@@ -1,0 +1,315 @@
+---
+title: Astroにおける相互リンク実装
+description: 説明文など
+layout: '../../../layouts/BaseLayout.astro'
+sidebar:
+ order: 2
+ badge: 
+  text: new
+  variant: tip
+---
+
+import CC  from "../../../components/c-c.astro";
+import MermaidChart from '../../../components/MermaidChart.astro';
+
+import {
+         Box, RedBox, WhiteBox, MemoBox, 
+         CodeTitle, TimeStamp,
+         TwoColumn, Left, Right,
+         Indent,StandardStyle} from '../../../components/';
+
+<StandardStyle />
+
+##### TODOs
+
+ - [x] 長期的なデータ整理の狙い
+ 
+
+## 狙い
+- Evernoteを解約し、データをmarkdown形式でobsidianに取り込み、obsidianからmarkdown出力をしてそれをローカルなastroに取り込むことによってキャッシュアウトを削減することを狙いとし、かつ、データの補完性、贈与性等を確保することにある
+- データについては個人情報はgitできなくなるが、それ以外はgitしても問題がないのでその2点を分けて管理できたらいい。
+- まとめてEvernoteから出力しまとめてObsidianからmarkdown出力し、まとめてpersonalなデータとそうでないデータを分けて出力できたらいい。
+- この長期プログラムに基づく第一歩の相互リンク実装となる
+
+
+## ユースケース
+- Markdown（MDX）ドキュメント間で相互リンク構造を構築したい
+  - Obsidian的な被参照表示機能（Backlinks）をAstroで再現
+- 人間が管理・修正するためにリンク切れを明示的に抽出したい
+- ユーザが手動でスクリプトを実行して辞書を更新する形式とする
+
+## UI
+- これまで見ていたmdxがレンダリングされた画面の最後に相互リンクのセクションが挿入される
+- 相互リンクはセクションはフロントマターに定義されたtitleがリンクとして表示されて、そのあとにastro.config.mjsで定義されたディレクトリ内のラベルをカッコ付で表示する
+  - (例）　\[液滴の形状を計算する]\(/fluids/droplet)（液体力学）
+- 相互リンクのセクションは3列の表示とするが、flexboxで表現し、2列、1列へのフォールバックを許すレスポンシブな構
+  成にする
+
+## 前提
+- 静的サイトジェネレータとしてastro/starlightを前提
+- astro/starlightはdocsディレクトリ以下にディレクトリの階層構造を持ちsidebarに表示することもできるが、このプログラムはサブディレクトリがある場合には対応しない
+- Python 3.9を相互リンク辞書等の各種データを生成するユーティリティとして利用
+  - 安定性を優先するため、標準的ライブラリのみを利用する
+- 安定性を優先するため、astro/starlightの仕組み自身には変更を加えないで実装
+
+## アーキテクチャ/実装仕様
+- astro/src/scriptディレクトリを作成してここにPythonスクリプトを保存
+- Pythonスクリプトはastro/src/data配下に辞書データを作成
+  - backlinks.json
+    被参照に関するデータを配置しこれを
+  - missing-links.json
+- レイアウト: `BaseLayout.astro`にて辞書を読み込み、折りたたみで表示
+- リンク構文: `[[page-name]]` 形式（ページ名はファイル名に対応）
+
+## 制限事項
+- 現在現在リンクをしているmakdownのリンク形式のものは対応しない（被参照データは生成されない）
+- BaseLayout.astroの中身を変更する必要がある
+
+## データ仕様
+- 入力:
+  - ディレクトリ: `src/content/docs/*/*.mdx`
+  - リンク構文: `[[page-name]]`（本文中）
+- 出力:
+  - `astro/src/data/backlinks.json`
+    - 形式: `{ target: [source1, source2, ...] }`
+  - `astro/src/data/missing-links.json`
+    - 形式: `[ { source: str, target: str }, ... ]`
+    - 未作成ページやファイル名の誤りは `missing-links.json` に出力される
+
+
+
+
+## プログラム仕様
+- スクリプト: `script/generate-backlinks.py`
+- 目的: 被参照構造の解析とJSON生成
+- 実行方法:
+  - 手動で以下を実行
+    - `python script/generate-backlinks.py`
+
+- エラー処理:
+  - ファイルが存在しない場合に警告
+  - リンク切れは `missing-links.json` に保存
+
+
+
+## 想定プログラム（Python）
+
+### ver 0.1
+```python
+from pathlib import Path
+import re
+import json
+import sys
+# 設定
+content_dir = Path("src/content")
+backlinks_path = Path("src/data/backlinks.json")
+missing_links_path = Path("src/data/missing-links.json")
+try:
+    files = list(content_dir.rglob("*.mdx"))
+    if not files:
+        print("No .mdx files found in content directory.")
+        sys.exit(1)
+    outgoing_links = {}
+    existing_slugs = set()
+    for file in files:
+        slug = file.relative_to(content_dir).with_suffix("").as_posix()
+        existing_slugs.add(slug)
+    for file in files:
+        source_slug = file.relative_to(content_dir).with_suffix("").as_posix()
+        try:
+            with open(file, encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            print(f"Failed to read {file}: {e}")
+            continue
+        links = re.findall(r"\[\[([^\[\]]+)\]\]", content)
+        outgoing_links[source_slug] = links
+    backlinks = {}
+    missing = []
+    for source, targets in outgoing_links.items():
+        for target in targets:
+            if target in existing_slugs:
+                backlinks.setdefault(target, []).append(source)
+            else:
+                missing.append({"source": source, "target": target})
+    backlinks = dict(sorted(backlinks.items()))
+    missing = sorted(missing, key=lambda x: (x["target"], x["source"]))
+    backlinks_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(backlinks_path, "w", encoding="utf-8") as f:
+        json.dump(backlinks, f, ensure_ascii=False, indent=2)
+    with open(missing_links_path, "w", encoding="utf-8") as f:
+        json.dump(missing, f, ensure_ascii=False, indent=2)
+    print("Backlinks and missing links written successfully.")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+    sys.exit(1)
+```
+
+
+## プログラムの連携方法
+- `BaseLayout.astro` に以下を記述：
+  - `import backlinks from '../../data/backlinks.json'`
+  - `Astro.url.pathname.replace(/^\/|\/$/g, '')` をslugとして使用
+  - slugがbacklinksに存在する場合、文末に表示
+
+
+## 依存関係と実行環境
+- Python 3.9+
+- json, re, pathlib, sys（標準ライブラリのみ）
+- Astro設定においては以下の設定が必要：
+  - `markdown.remarkPlugins` に `remark-wiki-link` を追加
+
+
+## 今回の開発では留保する仕様内容
+- astro/contents/docs以下に階層構造をもったディレクトリ内の内のファイルの対応
+## リファレンス
+- [remark-wiki-link](https://github.com/remarkjs/remark-wiki-link)
+
+
+## 用語説明
+
+#### `slug`
+- `src/content`以下の`.mdx`ファイルの拡張子を除いた相対パス
+- 例：`src/content/foo/bar.mdx` → `foo/bar`
+これはAstroが生成するURL `/foo/bar` に対応しており、ページを一意に識別するキーとして用いている。
+
+
+### (参考) astro/src/layout/BaseLayout.astro
+
+#### 変更前
+```
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css" integrity="sha384-7lU0muIg/i1plk7MgygDUp3/bNRA65orrBub4/OSWHECgwEsY83HaS1x3bljA/XV" crossorigin="anonymous">
+  </head>
+  <body>
+    <main data-pagefind-body>
+      <slot /> <!-- 子コンテンツを挿入する場所 -->
+    </main>
+  </body>
+</html>
+```
+#### 想定する変更後
+```
+---
+import backlinks from '../../data/backlinks.json';
+const slug = Astro.url.pathname.replace(/^\/|\/$/g, '');
+const thisPageBacklinks = backlinks[slug] ?? [];
+---
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css" integrity="sha384-7lU0muIg/i1plk7MgygDUp3/bNRA65orrBub4/OSWHECgwEsY83HaS1x3bljA/XV" crossorigin="anonymous">
+    <style>
+      .backlink-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        list-style: none;
+        padding-left: 0;
+        margin-top: 2rem;
+      }
+      .backlink-list li {
+        flex: 0 0 32%;
+      }
+      @media (max-width: 900px) {
+        .backlink-list li {
+          flex: 0 0 48%;
+        }
+      }
+      @media (max-width: 600px) {
+        .backlink-list li {
+          flex: 0 0 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main data-pagefind-body>
+      <slot />
+      {thisPageBacklinks.length > 0 && (
+        <>
+          <h2>このページを参照しているドキュメント</h2>
+          <ul class="backlink-list">
+            {thisPageBacklinks.map(entry => (
+              <li>
+                <a href={`/${entry.slug}`}>{entry.title}</a>
+                {entry.section && `（${entry.section}）`}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </main>
+  </body>
+</html>
+```
+
+### (参考)パフォーマンスリスク
+- Q.被参照リストはドキュメントの数が500000程度の場合一つのmdxファイルのレンダリング速度の低下が想定されないか？
+- A.500,000件程度の `.mdx` ファイルが存在し、それに基づいて構築された `backlinks.json` が非常に大規模になる場合、クライアント側の表示処理がパフォーマンスに影響を及ぼす可能性は少ない。
+  - `.mdx` 500,000件があっても、「1ページが参照されている件数」が常識的な範囲（数十～数百）なら表示遅延はほぼ発生しない
+  - 将来必要になれば、ページごとの部分辞書生成スクリプトも追加可能
+
+#### 1. Astroのビルド時のパフォーマンス
+- `backlinks.json` のサイズが数十MB?数百MBになる可能性がある
+- 各 `.mdx` ページをビルドするたびに `BaseLayout.astro` で全体を import
+- `const thisPageBacklinks = backlinks[slug] ?? []` で対象ページのデータを抽出
+
+##### 影響
+- メモリに全体を読み込むため、全ビルドで若干のメモリ負荷増加
+- ただし、**Astroは静的ビルドでありページ単位のレンダリング**なので、1ページ表示あたりでの影響は限定的
+
+#### 2. ブラウザでのランタイムパフォーマンス（最小）
+- `backlinks.json` はクライアントには送信されない（import時点で静的に展開）
+- Astroはビルド時に`<ul>`リストとしてHTMLに埋め込むため、クライアント実行コストは事実上ゼロ
+
+#### 3. 表示対象数の問題（実際に参照している数が多い場合）
+- 1ページに対する被参照が数百?数千あれば、DOMの生成量が多くなり、初期レンダリングに時間がかかる可能性**
+- ただし、この場合はそもそもUI的に*スクロール負荷や視認性低下が問題になるため、表示数に制限（上限100など）やページネーションが必要になる
+
+
+#### 対応案（必要なら）
+| 対策                       | 内容                                                       |
+|----------------------------|------------------------------------------------------------|
+| JSONの分割                 | `backlinks/page-a.json`, `backlinks/page-b.json`などに分割 |
+| Markdown変換時に補足文挿入 | あらかじめHTMLに加工して持たせることで計算不要に           |
+
+
+### (参考) Flexboxの方がinline-blockよりモバイル対応・レスポンシブ対応に優れている理由
+#### 1. 自動の折り返し制御
+- Flexboxは子要素のサイズや余白に応じて自動的に改行しながら整列できる
+- `inline-block`では要素の幅・高さ・余白などに敏感で、改行の制御が難しく、不安定
+#### 2. 幅の割合指定
+- Flexboxは `flex: 0 0 45%` のように直感的に列数・幅を指定可能
+- `inline-block`では `width` と `margin` を調整する必要があり、細かいバランス取りが必要
+#### 3. ギャップ制御
+- Flexboxは `gap` で項目間の余白をCSSだけで統一設定可能
+- `inline-block`では `margin-right` 等で手動調整する必要があり、横方向の不揃いが出やすい
+#### 4. 整列
+- Flexboxは縦横中央揃え、左寄せ、右寄せなどが簡単
+- `inline-block`はHTML構造や`text-align`に依存しやすく、混在時に崩れやすい
+#### 想定するcss
+```
+.backlink-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-left: 0;
+  list-style: none;
+}
+.backlink-list li {
+  flex: 0 0 32%; /* 約3列（3×32% + gap） */
+}
+@media (max-width: 900px) {
+  .backlink-list li {
+    flex: 0 0 48%; /* 約2列 */
+  }
+}
+@media (max-width: 600px) {
+  .backlink-list li {
+    flex: 0 0 100%; /* 1列 */
+  }
+}
+```
